@@ -19,6 +19,40 @@ _WRITE_HINTS = re.compile(
 )
 
 
+_HEREDOC = re.compile(r"<<-?\s*'?\"?([A-Za-z_]+)'?\"?")
+
+
+def errexit_hazards(script: str) -> list[str]:
+    """Lines whose failure `set -e` would NOT catch when they are not the last line:
+    a negated command (`! cmd`) or a test/systemctl/sudo `&&` list. They must end with
+    `|| exit 1` (or be split), or a failing line could be ignored."""
+    body: list[tuple[int, str]] = []
+    term = None
+    for i, raw in enumerate(script.splitlines()):
+        if term:
+            if raw.strip() == term:
+                term = None
+            continue
+        m = _HEREDOC.search(raw)
+        if m:
+            term = m.group(1)
+        body.append((i, raw))
+    nonempty = [i for i, raw in body if raw.strip()]
+    last = nonempty[-1] if nonempty else -1
+    bad = []
+    for i, raw in body:
+        st = raw.strip()
+        if not st or i == last or st.endswith("|| exit 1") or st.endswith("\\") or st.startswith("#"):
+            continue
+        if st.startswith(("if ", "elif ", "while ", "until ", "for ", "case ")):
+            continue
+        if st.startswith("! ") or (re.match(r"(test |systemctl |sudo |\[ )", st) and " && " in st):
+            bad.append(st)
+        if re.search(r";\s*rc=\$\?", st):
+            bad.append(st)
+    return bad
+
+
 @dataclass(frozen=True)
 class Issue:
     severity: str        # error | warning
@@ -108,6 +142,8 @@ def lint_task(task: Task, bank: Bank) -> list[Issue]:
             err(f"check {c.id!r} has non-positive weight")
         if _WRITE_HINTS.search(c.run):
             warn(f"check {c.id!r} looks like it modifies state; checks must be read-only")
+        for line in errexit_hazards(c.run):
+            err(f"check {c.id!r}: a failure of this line would be ignored (append '|| exit 1'): {line[:80]}")
     for r in task.requirements:
         if r not in covered:
             err(f"requirement {r} is not verified by any check")

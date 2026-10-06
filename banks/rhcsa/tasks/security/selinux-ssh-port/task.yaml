@@ -1,0 +1,48 @@
+title: Let sshd listen on an additional port
+primary: rhcsa.security.selinux-ports
+objectives: [rhcsa.security.selinux-ports, rhcsa.security.firewall]
+facets:
+  - rhcsa.security.selinux-ports:selinux-port
+  - rhcsa.security.firewall:firewall-port
+difficulty: hard
+difficulty_reason: >
+  sshd configuration, SELinux port type and firewall must all change, without breaking the existing
+  port 22 (a mistake there locks everyone out).
+estimated_minutes: 10
+node: node1
+exclusive: [sshd-config-node1]
+params:
+  port: {choice: [2022, 2222, 4422]}
+
+prompt: |
+  On node1, sshd must accept connections on TCP port **{{port}}** in **addition** to port 22, from
+  other systems, persistently. SELinux stays enforcing. Port 22 must keep working.
+
+requirements:
+  R1: "sshd listens on {{port}} and 22"
+  R2: "{{port}} is reachable from another host"
+  R3: "the port is labelled ssh_port_t persistently"
+
+checks:
+  - id: listen
+    covers: [R1]
+    desc: sshd listens on both ports
+    run: |
+      ss -Hlntp | grep sshd | grep -Eq '[:.]{{port}}[[:space:]]'
+      ss -Hlntp | grep sshd | grep -Eq '[:.]22[[:space:]]'
+  - id: remote
+    covers: [R2]
+    on: utility
+    desc: "utility reaches {{lab.node1.ip}}:{{port}} and gets an SSH banner"
+    run: |
+      timeout 5 bash -c 'exec 3<>/dev/tcp/{{lab.node1.ip}}/{{port}}; head -c 7 <&3' 2>/dev/null | grep -q SSH-2.0
+  - id: label
+    covers: [R3]
+    desc: "tcp/{{port}} is ssh_port_t (local policy), enforcing"
+    run: |
+      test "$(getenforce)" = Enforcing
+      semanage port -l -C | grep -E '^ssh_port_t[[:space:]]+tcp' | grep -Eq '(^|[^0-9]){{port}}([^0-9]|$)'
+
+references:
+  - "RHEL 10: Securing networks > OpenSSH (changing the SSH port) and Using SELinux > ssh_port_t"
+  - "man sshd_config(5) (Port), man semanage-port(8)"

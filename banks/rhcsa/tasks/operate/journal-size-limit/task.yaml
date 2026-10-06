@@ -1,0 +1,37 @@
+title: Persistent journal with a size limit
+primary: rhcsa.operate.persistent-journal
+objectives: [rhcsa.operate.persistent-journal, rhcsa.operate.logs]
+facets:
+  - rhcsa.operate.persistent-journal:journal-persistent
+  - rhcsa.operate.logs:journal-query
+difficulty: medium
+difficulty_reason: journald configuration with two settings, applied persistently and verified.
+estimated_minutes: 5
+node: node1
+exclusive: [journald-node1]
+params:
+  size: {choice: [64, 100, 128]}
+
+prompt: |
+  On node1, configure the systemd journal so that it is **stored persistently on disk** and uses at
+  most **{{size}} MB** of disk space. Use a configuration file that survives package updates.
+
+requirements:
+  R1: "the journal is persistent"
+  R2: "SystemMaxUse is {{size}}M"
+
+checks:
+  - id: persistent
+    covers: [R1]
+    desc: journal files in /var/log/journal and more than one boot listed
+    run: |
+      find /var/log/journal -name 'system*.journal' | grep -q .
+      test "$(journalctl --list-boots | grep -c .)" -ge 2
+  - id: size
+    covers: [R2]
+    desc: "SystemMaxUse={{size}}M is in effect"
+    run: |
+      systemd-analyze cat-config systemd/journald.conf | grep -v '^#' | grep -Eq '^SystemMaxUse=({{size}}M|{{size}}m)$'
+
+references:
+  - "man journald.conf(5) (Storage=, SystemMaxUse=; drop-ins in /etc/systemd/journald.conf.d/)"

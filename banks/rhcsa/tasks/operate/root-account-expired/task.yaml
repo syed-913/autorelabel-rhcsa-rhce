@@ -1,0 +1,54 @@
+title: Recover a locked and expired root account
+primary: rhcsa.operate.interrupt-boot
+objectives: [rhcsa.operate.interrupt-boot, rhcsa.users.passwords]
+facets:
+  - rhcsa.operate.interrupt-boot:root-password-reset
+  - rhcsa.users.passwords:chage
+difficulty: hard
+difficulty_reason: >
+  Break into the boot process, then fix two separate account problems (unknown password and an
+  expired account) and keep SELinux labels correct.
+estimated_minutes: 10
+node: node1
+practice_only: true
+console_only: true
+exclusive: [node1-root-password]
+params:
+  new_password: {choice: [revalkin, sorbanet, tremidor]}
+
+prompt: |
+  Nobody can log in as root on node1: the password is unknown **and** the account has expired.
+  Interrupt node1's boot process and repair the root account so that root can log in with the
+  password `{{new_password}}`.
+
+requirements:
+  R1: "root's password is {{new_password}}"
+  R2: "the root account is not expired or locked"
+  R3: "SELinux labels of the password database are correct"
+
+checks:
+  - id: password
+    covers: [R1]
+    desc: "root's password is {{new_password}}"
+    run: |
+      python3 -W ignore - <<'PY'
+      import crypt, subprocess, sys
+      e = subprocess.run(["getent", "shadow", "root"], capture_output=True, text=True).stdout.split(":")
+      sys.exit(0 if len(e) > 2 and crypt.crypt("{{new_password}}", e[1]) == e[1] else 1)
+      PY
+  - id: not-expired
+    covers: [R2]
+    desc: account expiry cleared and not locked
+    run: |
+      IFS=: read -r _ hash _ _ _ _ _ expire _ < <(getent shadow root)
+      case "$hash" in '!'*) exit 1 ;; esac
+      test -z "$expire" -o "$expire" = "-1"
+  - id: labels
+    covers: [R3]
+    desc: /etc/shadow is shadow_t
+    run: |
+      test "$(stat -c %C /etc/shadow | cut -d: -f3)" = shadow_t
+
+references:
+  - "RHEL: Configuring basic system settings > Resetting the forgotten root password on boot"
+  - "man chage(1) (-E -1), man passwd(1) (-u)"

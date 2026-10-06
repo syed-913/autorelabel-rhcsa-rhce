@@ -47,7 +47,7 @@ checks:
     run: |
       out="$(sudo -l -U {{operator}})"
       echo "$out" | grep -Eq 'NOPASSWD: */usr/bin/systemctl restart chronyd$'
-      ! echo "$out" | grep -Eq '\) (NOPASSWD: )?ALL$'
+      ! echo "$out" | grep -Eq '\) (NOPASSWD: )?ALL$' || exit 1
       sudo -n -l -U {{operator}} /usr/bin/systemctl restart chronyd >/dev/null
       ! sudo -n -l -U {{operator}} /usr/bin/systemctl restart sshd >/dev/null 2>&1
   - id: valid

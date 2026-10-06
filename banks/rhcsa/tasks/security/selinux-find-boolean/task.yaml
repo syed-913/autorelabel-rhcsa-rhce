@@ -1,0 +1,42 @@
+title: Find the right SELinux boolean
+primary: rhcsa.security.selinux-booleans
+objectives: [rhcsa.security.selinux-booleans]
+facets: [rhcsa.security.selinux-booleans:boolean-persistent]
+difficulty: medium
+difficulty_reason: Requires searching boolean descriptions (semanage boolean -l) rather than knowing the name.
+estimated_minutes: 5
+node: node2
+params:
+  case:
+    choice:
+      - {desc: "allow the FTP server to read and write files in users' home directories", boolean: ftp_home_dir}
+      - {desc: "allow the Apache HTTP server to send email", boolean: httpd_can_sendmail}
+      - {desc: "allow the Apache HTTP server to connect to databases over the network", boolean: httpd_can_network_connect_db}
+      - {desc: "allow user home directories to be mounted from NFS", boolean: use_nfs_home_dirs}
+
+prompt: |
+  On node2, SELinux must be configured to **{{case.desc}}**.
+
+  Find the SELinux boolean that controls this (search the boolean descriptions), enable it
+  **persistently**, and write its name into `/root/boolean.txt`.
+
+requirements:
+  R1: "the correct boolean is enabled persistently"
+  R2: "/root/boolean.txt contains its name"
+
+checks:
+  - id: enabled
+    covers: [R1]
+    on: node2
+    desc: the boolean is on
+    run: |
+      getsebool {{case.boolean}} | grep -q -- '--> on$'
+  - id: named
+    covers: [R2]
+    on: node2
+    desc: the name is recorded
+    run: |
+      test "$(tr -d '[:space:]' < /root/boolean.txt)" = "{{case.boolean}}"
+
+references:
+  - "man semanage-boolean(8) (-l shows descriptions), man setsebool(8)"

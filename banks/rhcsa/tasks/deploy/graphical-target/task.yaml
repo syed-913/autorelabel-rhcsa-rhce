@@ -1,0 +1,29 @@
+title: Boot into the graphical target by default
+primary: rhcsa.deploy.default-target
+objectives: [rhcsa.deploy.default-target, rhcsa.operate.boot-target-manual]
+facets:
+  - rhcsa.deploy.default-target:set-default-target
+  - rhcsa.operate.boot-target-manual:isolate-target
+difficulty: easy
+difficulty_reason: One systemctl command, plus checking which target is active.
+estimated_minutes: 2
+node: node1
+exclusive: [default-target-node1]
+
+prompt: |
+  Configure node1 so that it boots into the **graphical** target by default (installing a desktop
+  is not required).
+
+requirements:
+  R1: "the default target is graphical.target"
+
+checks:
+  - id: default
+    covers: [R1]
+    desc: get-default is graphical.target and it is active after boot
+    run: |
+      test "$(systemctl get-default)" = graphical.target
+      systemctl is-active -q graphical.target
+
+references:
+  - "man systemctl(1) (set-default), man systemd.special(7) (graphical.target)"

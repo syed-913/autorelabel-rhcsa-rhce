@@ -52,7 +52,7 @@ checks:
     on: node2
     desc: "{{gone}}, its home and mail spool are gone"
     run: |
-      ! getent passwd {{gone}} >/dev/null
+      ! getent passwd {{gone}} >/dev/null || exit 1
       test ! -e /home/{{gone}} && test ! -e /var/spool/mail/{{gone}}
   - id: group-deleted
     covers: [R4]

@@ -30,7 +30,7 @@ checks:
     covers: [R2]
     desc: no fstab entry for /scratch and the system is fully booted
     run: |
-      ! grep -Eq '^[^#]*[[:space:]]/scratch[[:space:]]' /etc/fstab
+      ! grep -Eq '^[^#]*[[:space:]]/scratch[[:space:]]' /etc/fstab || exit 1
       systemctl is-system-running | grep -Eq 'running|degraded'
   - id: vg
     covers: [R3]

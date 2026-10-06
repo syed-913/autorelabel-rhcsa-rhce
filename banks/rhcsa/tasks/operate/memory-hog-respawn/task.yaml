@@ -1,0 +1,48 @@
+title: Stop a memory-hungry process that keeps coming back
+primary: rhcsa.operate.processes
+objectives: [rhcsa.operate.processes, rhcsa.deploy.scheduling]
+facets:
+  - rhcsa.operate.processes:identify-hog
+  - rhcsa.operate.processes:kill-process
+  - rhcsa.deploy.scheduling:cron-system
+difficulty: hard
+difficulty_reason: >
+  Identify the largest memory consumer, then trace why it keeps respawning (a cron job, not a
+  service). Killing it alone is undone within a minute.
+estimated_minutes: 8
+node: node1
+params:
+  word: {pool: words}
+
+prompt: |
+  On node1, a process uses a lot of memory and keeps reappearing after you kill it.
+
+  1. Write the **command name** of the process using the most memory (resident set size) into
+     `/root/memory-hog.txt`.
+  2. Stop it permanently: it must not be running and must not be started again, also after
+     reboots. Do not delete its program file.
+
+requirements:
+  R1: "/root/memory-hog.txt names the command"
+  R2: "the process is not running (after reboot, after more than a minute)"
+  R3: "its program file still exists"
+
+checks:
+  - id: named
+    covers: [R1]
+    desc: the command name is recorded
+    run: test "$(tr -d '[:space:]' < /root/memory-hog.txt)" = "{{word}}-cache"
+  - id: gone
+    covers: [R2]
+    desc: not running, and nothing restarts it within 70 s
+    timeout: 90
+    run: |
+      for i in $(seq 1 14); do pgrep -x {{word}}-cache >/dev/null && exit 1; sleep 5; done; exit 0
+  - id: kept
+    covers: [R3]
+    desc: program file kept
+    run: test -x /usr/local/bin/{{word}}-cache
+
+references:
+  - "RHEL 10: Monitoring and managing system status and performance (top: sort by memory with M)"
+  - "man ps(1) (--sort=-rss), man crontab(5), man pgrep(1)"

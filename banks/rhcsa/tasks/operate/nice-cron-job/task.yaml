@@ -1,0 +1,43 @@
+title: Run a scheduled job with a lower priority
+primary: rhcsa.operate.scheduling
+objectives: [rhcsa.operate.scheduling, rhcsa.deploy.scheduling]
+facets:
+  - rhcsa.operate.scheduling:nice-renice
+  - rhcsa.deploy.scheduling:cron-user
+difficulty: medium
+difficulty_reason: Combining nice with cron syntax for a specific user and schedule.
+estimated_minutes: 6
+node: node2
+params:
+  user: {pool: usernames}
+  nice: {choice: [10, 15, 19]}
+  hour: {choice: ["01", "02", "03"]}
+
+prompt: |
+  On node2, the user `{{user}}` must run the command `/usr/bin/tar -czf /tmp/{{user}}-home.tgz
+  /home/{{user}}` every day at **{{hour}}:30**, from their own crontab, with a **nice value of
+  {{nice}}** so it doesn't slow down other work.
+
+requirements:
+  R1: "{{user}}'s crontab runs the tar command daily at {{hour}}:30 with nice {{nice}}"
+
+checks:
+  - id: cron
+    covers: [R1]
+    on: node2
+    desc: "30 {{hour}} * * * nice -n {{nice}} tar ..."
+    run: |
+      crontab -l -u {{user}} 2>/dev/null | python3 -c '
+      import sys, re
+      for line in sys.stdin:
+          p = line.split(None, 5)
+          if len(p) < 6 or "tar" not in p[5] or "/home/{{user}}" not in p[5]:
+              continue
+          m, h, dom, mon, dow, cmd = p
+          if (m.lstrip("0") or "0") == "30" and (h.lstrip("0") or "0") == ("{{hour}}".lstrip("0") or "0") \
+             and dom == mon == dow == "*" and re.search(r"\bnice\s+(-n\s*{{nice}}|-{{nice}}|--adjustment={{nice}})\b", cmd):
+              sys.exit(0)
+      sys.exit(1)'
+
+references:
+  - "man nice(1), man crontab(5)"

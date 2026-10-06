@@ -1,0 +1,44 @@
+title: Find and fix broken links
+primary: rhcsa.tools.links
+objectives: [rhcsa.tools.links, rhcsa.tools.file-management]
+facets:
+  - rhcsa.tools.links:soft-link
+  - rhcsa.tools.links:hard-link
+  - rhcsa.tools.file-management:find-files
+difficulty: medium
+difficulty_reason: Locate dangling symlinks with find, repoint them, and understand hard-link behaviour.
+estimated_minutes: 6
+node: node1
+params:
+  word: {pool: words}
+
+prompt: |
+  On node1, the directory `/opt/{{word}}/current/` contains symbolic links, one of which is
+  **broken** (its target no longer exists). The real file it should point to now lives in
+  `/opt/{{word}}/releases/2.0/`.
+
+  1. Find the broken link and make it point to the file of the **same name** in
+     `/opt/{{word}}/releases/2.0/`.
+  2. Create a **hard link** `/opt/{{word}}/backup/settings.conf` to
+     `/opt/{{word}}/releases/2.0/settings.conf`.
+
+requirements:
+  R1: "no broken links remain in current/; the fixed link points into releases/2.0"
+  R2: "backup/settings.conf is a hard link to releases/2.0/settings.conf"
+
+checks:
+  - id: links
+    covers: [R1]
+    desc: all links in current/ resolve; the fixed one points into releases/2.0
+    run: |
+      test -z "$(find /opt/{{word}}/current -xtype l)"
+      test "$(readlink -f /opt/{{word}}/current/app.bin)" = /opt/{{word}}/releases/2.0/app.bin
+  - id: hard
+    covers: [R2]
+    desc: same inode
+    run: |
+      test ! -L /opt/{{word}}/backup/settings.conf
+      test "$(stat -c %i /opt/{{word}}/backup/settings.conf)" = "$(stat -c %i /opt/{{word}}/releases/2.0/settings.conf)"
+
+references:
+  - "man find(1) (-xtype l), man ln(1) (-s, -f, -n), man readlink(1)"

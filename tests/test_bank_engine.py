@@ -141,3 +141,12 @@ def test_coverage_gate_levels(synthetic_bank):
     assert coverage.gate_failures(synthetic_bank, "wave1") == []
     full = coverage.gate_failures(synthetic_bank, "full")
     assert any("facet not covered" in f for f in full)   # synthetic tasks only cover the first facet
+
+
+def test_errexit_hazards_detected():
+    script = "test -f a && test -f b\n! grep -q x f\nrc=0; cmd || rc=$?\nout=$(cmd); rc=$?\nfinal\n"
+    bad = lint.errexit_hazards(script)
+    assert "test -f a && test -f b" in bad
+    assert "! grep -q x f" in bad
+    assert "out=$(cmd); rc=$?" in bad
+    assert not lint.errexit_hazards("cat <<'X'\n! not code\nX\n! last line is fine\n")

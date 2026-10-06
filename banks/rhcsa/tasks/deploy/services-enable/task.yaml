@@ -33,7 +33,7 @@ checks:
     desc: "{{word}}-agent is masked and inactive"
     run: |
       test "$(systemctl is-enabled {{word}}-agent.service 2>/dev/null)" = masked
-      ! systemctl is-active -q {{word}}-agent.service
+      ! systemctl is-active -q {{word}}-agent.service || exit 1
       test -f /usr/lib/systemd/system/{{word}}-agent.service
 
 references:

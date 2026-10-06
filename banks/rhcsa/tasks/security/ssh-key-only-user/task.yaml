@@ -1,0 +1,52 @@
+title: Key-only SSH login for one account
+primary: rhcsa.security.ssh-keys
+objectives: [rhcsa.security.ssh-keys]
+facets: [rhcsa.security.ssh-keys:ssh-keygen-copy]
+difficulty: hard
+difficulty_reason: >
+  Key distribution plus an sshd configuration that applies only to one user (Match block / drop-in),
+  validated and reloaded without breaking other logins.
+estimated_minutes: 10
+node: node2
+exclusive: [ssh-keys, sshd-config-node2]
+params:
+  user: {pool: usernames}
+  password: {choice: [Key-Only-55, Key-Only-66]}
+
+prompt: |
+  The user `{{user}}` exists on node1 and node2 (password `{{password}}`).
+
+  1. Let `{{user}}` log in from node1 to node2 with an SSH key (no passphrase).
+  2. On node2, `{{user}}` must **not** be able to log in with a password over SSH anymore. Other
+     users (including root) keep their current password login.
+
+requirements:
+  R1: "{{user}} logs in from node1 to node2 with a key"
+  R2: "password authentication over SSH is refused for {{user}} on node2"
+  R3: "password authentication still works for other users (root)"
+
+checks:
+  - id: key
+    covers: [R1]
+    on: node1
+    desc: key login works from node1
+    run: |
+      sudo -u {{user}} ssh -o BatchMode=yes -o PasswordAuthentication=no -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null -o ConnectTimeout=8 {{user}}@{{lab.node2.ip}} true
+  - id: no-password
+    covers: [R2]
+    on: node2
+    desc: "sshd -T for {{user}} reports passwordauthentication no"
+    run: |
+      sshd -T -C user={{user}},host=node1,addr={{lab.node1.ip}} 2>/dev/null | grep -qx 'passwordauthentication no'
+  - id: others
+    covers: [R3]
+    on: node2
+    desc: root still allows passwords
+    run: |
+      sshd -T -C user=root,host=node1,addr={{lab.node1.ip}} 2>/dev/null | grep -qx 'passwordauthentication yes'
+      systemctl is-active -q sshd
+
+references:
+  - "RHEL 10: Securing networks > Using secure communications between two systems with OpenSSH"
+  - "man sshd_config(5) (Match, PasswordAuthentication), man sshd(8) (-T -C)"

@@ -31,7 +31,7 @@ checks:
     covers: [R2]
     desc: "tuned is running with {{profile}}"
     run: |
-      systemctl is-enabled -q tuned && systemctl is-active -q tuned
+      systemctl is-enabled -q tuned && systemctl is-active -q tuned || exit 1
       tuned-adm active | grep -q 'Current active profile: {{profile}}$'
 
 references:

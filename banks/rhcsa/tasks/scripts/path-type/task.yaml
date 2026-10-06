@@ -46,8 +46,9 @@ checks:
     covers: [R2]
     desc: missing → exit 1
     run: |
-      out="$(/usr/local/bin/{{name}} /no/such/path)"; rc=$?
-      test "$out" = missing && test "$rc" = 1
+      rc=0; out="$(/usr/local/bin/{{name}} /no/such/path)" || rc=$?
+      test "$out" = missing
+      test "$rc" = 1
 
 references:
   - "man bash(1) (CONDITIONAL EXPRESSIONS: -L -d -f -e), man test(1)"

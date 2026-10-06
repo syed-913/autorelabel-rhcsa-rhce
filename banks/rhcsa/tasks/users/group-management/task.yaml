@@ -41,13 +41,13 @@ checks:
     desc: "{{u2}} left {{oldgroup}}"
     run: |
       getent group {{oldgroup}} >/dev/null
-      ! id -nG {{u2}} | tr ' ' '\n' | grep -qx {{oldgroup}}
+      ! id -nG {{u2}} | tr ' ' '\n' | grep -qx {{oldgroup}} || exit 1
       id -nG {{u1}} | tr ' ' '\n' | grep -qx {{oldgroup}}
   - id: renamed
     covers: [R3]
     desc: group renamed, same GID
     run: |
-      ! getent group legacy-{{renamed}} >/dev/null
+      ! getent group legacy-{{renamed}} >/dev/null || exit 1
       test "$(getent group {{renamed}} | cut -d: -f3)" = "$(cat /etc/autorelabel/{{renamed}}-gid)"
 
 references:

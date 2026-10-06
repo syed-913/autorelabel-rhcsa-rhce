@@ -34,23 +34,29 @@ checks:
     desc: no/too many arguments → usage on stderr, exit 2
     run: |
       test -x /usr/local/bin/{{name}}
-      out="$(/usr/local/bin/{{name}} 2>/dev/null)"; rc=$?; test "$rc" = 2 && test -z "$out"
-      err="$(/usr/local/bin/{{name}} 2>&1 >/dev/null)"; test "$err" = "Usage: {{name}} USERNAME"
-      /usr/local/bin/{{name}} a b >/dev/null 2>&1; test $? = 2
+      rc=0; out="$(/usr/local/bin/{{name}} 2>/dev/null)" || rc=$?
+      test "$rc" = 2
+      test -z "$out"
+      err="$(/usr/local/bin/{{name}} 2>&1 >/dev/null)" || true
+      test "$err" = "Usage: {{name}} USERNAME"
+      rc=0; /usr/local/bin/{{name}} a b >/dev/null 2>&1 || rc=$?
+      test "$rc" = 2
   - id: exists
     covers: [R2]
     desc: existing users
     run: |
       for u in root chrony; do
-        out="$(/usr/local/bin/{{name}} "$u")"; rc=$?
-        test "$rc" = 0 && test "$out" = "$u exists with UID $(id -u "$u")"
+        rc=0; out="$(/usr/local/bin/{{name}} "$u")" || rc=$?
+        test "$rc" = 0
+        test "$out" = "$u exists with UID $(id -u "$u")"
       done
   - id: missing
     covers: [R3]
     desc: unknown user
     run: |
-      out="$(/usr/local/bin/{{name}} nosuchuser42)"; rc=$?
-      test "$rc" = 1 && test "$out" = "nosuchuser42 not found"
+      rc=0; out="$(/usr/local/bin/{{name}} nosuchuser42)" || rc=$?
+      test "$rc" = 1
+      test "$out" = "nosuchuser42 not found"
 
 references:
   - "man bash(1) (Special Parameters $# $1, CONDITIONAL EXPRESSIONS, exit), man id(1), man getent(1)"

@@ -1,0 +1,43 @@
+title: A system that always boots into emergency mode
+primary: rhcsa.operate.boot-target-manual
+objectives: [rhcsa.operate.boot-target-manual, rhcsa.deploy.bootloader, rhcsa.deploy.default-target]
+facets:
+  - rhcsa.operate.boot-target-manual:boot-rescue-emergency
+  - rhcsa.deploy.bootloader:kernel-args
+  - rhcsa.deploy.default-target:set-default-target
+difficulty: hard
+difficulty_reason: >
+  The default target looks fine; a kernel argument forces the emergency target. Requires console
+  work, reading /proc/cmdline, and fixing every boot entry.
+estimated_minutes: 8
+node: node2
+breaks_boot: true
+console_only: true
+practice_only: true
+exclusive: [node2-boot-broken, node2-kernel-args]
+
+prompt: |
+  node2 always starts in **emergency mode**, even though its default target is `multi-user.target`.
+  Using its console (`./autorelabel console node2`), find the cause and fix it so node2 boots
+  normally into the multi-user target for every installed kernel.
+
+requirements:
+  R1: "node2 boots normally into multi-user.target"
+  R2: "no boot entry forces another target"
+
+checks:
+  - id: booted
+    covers: [R1]
+    on: node2
+    desc: multi-user target reached
+    run: systemctl is-active -q multi-user.target && ! systemctl is-active -q emergency.target
+  - id: entries
+    covers: [R2]
+    on: node2
+    desc: no systemd.unit= / emergency / single in any entry
+    run: |
+      ! grubby --info=ALL | grep '^args=' | grep -Eq 'systemd\.unit=|(^|[ "])emergency([ "]|$)|(^|[ "])(single|s|1)([ "]|$)'
+
+references:
+  - "RHEL 10: Managing, monitoring, and updating the kernel > Booting to rescue or emergency mode"
+  - "man kernel-command-line(7) (systemd.unit=), man grubby(8)"

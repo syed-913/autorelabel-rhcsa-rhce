@@ -1,0 +1,33 @@
+title: Mirror a directory to another system
+primary: rhcsa.operate.file-transfer
+objectives: [rhcsa.operate.file-transfer]
+facets: [rhcsa.operate.file-transfer:rsync-ssh]
+difficulty: medium
+difficulty_reason: rsync over SSH with archive mode and deletion of extraneous files on the target.
+estimated_minutes: 5
+node: node2
+params:
+  word: {pool: words}
+
+prompt: |
+  node1's directory `/srv/{{word}}-site/` holds the current version of a web site. node2 has an
+  **outdated** copy in `/srv/{{word}}-site/` (with some files that no longer exist on node1).
+
+  Make node2's copy an **exact mirror** of node1's: same files, content, permissions and timestamps,
+  and no extra files. Transfer over SSH.
+
+requirements:
+  R1: "node2's directory matches node1's exactly, with no extra files"
+
+checks:
+  - id: mirror
+    covers: [R1]
+    on: node2
+    desc: same tree digest and no stale files
+    run: |
+      got="$(cd /srv/{{word}}-site && (find . -type f -printf '%P %m %T@\n' | sort && find . -type f -exec sha256sum {} + | sort) | sha256sum | cut -d' ' -f1)"
+      test "$got" = "$(cat /etc/autorelabel/{{word}}-site.digest)"
+      test ! -e /srv/{{word}}-site/old-page.html
+
+references:
+  - "man rsync(1) (-a, --delete, trailing slash semantics)"

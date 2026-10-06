@@ -37,7 +37,7 @@ def placeholders(text: str) -> set[str]:
 def env_for(params: dict[str, Any], lab: dict[str, Any] | None = None) -> dict[str, str]:
     """Parameters as environment variables for setup/check/solution scripts:
     P_<NAME>=value, plus flattened lab facts as LAB_<PATH>=value."""
-    env = {f"P_{k.upper()}": str(v) for k, v in params.items()}
+    env: dict[str, str] = {}
 
     def flatten(prefix: str, obj: Any) -> None:
         if isinstance(obj, dict):
@@ -46,6 +46,8 @@ def env_for(params: dict[str, Any], lab: dict[str, Any] | None = None) -> dict[s
         else:
             env[prefix] = str(obj)
 
+    for k, v in params.items():
+        flatten(f"P_{k.upper()}", v)       # dict parameters become P_NAME_FIELD
     if lab:
         flatten("LAB", lab)
     return env

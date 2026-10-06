@@ -24,7 +24,7 @@ checks:
     desc: removed services and port
     run: |
       s="$(firewall-cmd --list-services)"; p="$(firewall-cmd --list-ports)"
-      ! echo "$s" | tr ' ' '\n' | grep -Eqx 'cockpit|dhcpv6-client'
+      ! echo "$s" | tr ' ' '\n' | grep -Eqx 'cockpit|dhcpv6-client' || exit 1
       ! echo "$p" | tr ' ' '\n' | grep -qx '{{port}}/tcp'
   - id: ssh
     covers: [R2]

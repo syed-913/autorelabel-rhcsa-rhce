@@ -32,7 +32,7 @@ checks:
     on: node2
     desc: no boot entry carries enforcing=0 or selinux=0
     run: |
-      ! grubby --info=ALL 2>/dev/null | grep -Eq '(^|[[:space:]"])(enforcing|selinux)=0'
+      ! grubby --info=ALL 2>/dev/null | grep -Eq '(^|[[:space:]"])(enforcing|selinux)=0' || exit 1
       ! grep -Eq '^GRUB_CMDLINE_LINUX=.*(enforcing|selinux)=0' /etc/default/grub
 
 references:

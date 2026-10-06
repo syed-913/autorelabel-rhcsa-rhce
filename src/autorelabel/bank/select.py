@@ -105,7 +105,7 @@ class _State:
 
 def _attempt(bank: Bank, rng: random.Random, recency: dict[str, float]) -> list[Task] | None:
     st = _State(bank)
-    pool = [t for t in bank.tasks.values()]
+    pool = [t for t in bank.tasks.values() if not t.practice_only]
     # 1. anchors
     for anchor in st.bp.anchors:
         variants = [t for t in pool if t.anchor == anchor and st.can_add(t, as_anchor=True)]

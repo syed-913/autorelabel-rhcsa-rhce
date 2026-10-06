@@ -1,0 +1,41 @@
+title: Time zone and network time
+primary: rhcsa.deploy.time
+objectives: [rhcsa.deploy.time]
+facets: [rhcsa.deploy.time:chrony-client]
+difficulty: medium
+difficulty_reason: Two settings (time zone and NTP source) and verifying synchronization status.
+estimated_minutes: 5
+node: node1
+exclusive: [chrony-node1]
+params:
+  tz: {choice: [Asia/Karachi, Europe/Berlin, America/Chicago, Asia/Tokyo]}
+
+prompt: |
+  On node1:
+  - set the time zone to **{{tz}}**
+  - synchronize time **only** from `{{lab.ntp_server}}` (remove the default public pool), and make
+    sure NTP synchronization is enabled
+
+requirements:
+  R1: "the time zone is {{tz}}"
+  R2: "chrony uses only {{lab.ntp_server}}, NTP enabled"
+
+checks:
+  - id: tz
+    covers: [R1]
+    desc: "timezone {{tz}}"
+    run: test "$(timedatectl show -p Timezone --value)" = "{{tz}}"
+  - id: ntp
+    covers: [R2]
+    desc: only the lab server is a source; NTP active
+    timeout: 90
+    run: |
+      test "$(timedatectl show -p NTP --value)" = yes
+      ! grep -Eq '^[[:space:]]*pool[[:space:]]' /etc/chrony.conf || exit 1
+      for i in $(seq 1 12); do chronyc -n sources 2>/dev/null | grep -qw '{{lab.utility.ip}}' && break; sleep 5; done
+      chronyc -n sources | grep -qw '{{lab.utility.ip}}'
+      test "$(chronyc -n sources | grep -Ec '^\^')" = 1
+
+references:
+  - "RHEL 10: Configuring time synchronization"
+  - "man timedatectl(1), man chrony.conf(5)"

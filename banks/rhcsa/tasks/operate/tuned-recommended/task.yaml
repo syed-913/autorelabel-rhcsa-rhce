@@ -1,0 +1,28 @@
+title: Let tuned choose the profile
+primary: rhcsa.operate.tuned
+objectives: [rhcsa.operate.tuned]
+facets: [rhcsa.operate.tuned:tuned-recommended]
+difficulty: easy
+difficulty_reason: tuned-adm recommend/auto selection; the trap is a disabled service.
+estimated_minutes: 3
+node: node2
+exclusive: [tuned-node2]
+
+prompt: |
+  On node2, someone set a tuning profile that does not suit this system. Configure tuned to use
+  the profile **it recommends for this system**, persistently.
+
+requirements:
+  R1: "the active profile equals tuned-adm recommend, tuned enabled"
+
+checks:
+  - id: recommended
+    covers: [R1]
+    on: node2
+    desc: active profile = recommended, tuned enabled and running
+    run: |
+      systemctl is-enabled -q tuned && systemctl is-active -q tuned || exit 1
+      test "$(tuned-adm active | sed -n 's/^Current active profile: //p')" = "$(tuned-adm recommend)"
+
+references:
+  - "man tuned-adm(8) (recommend, auto_profile, profile)"

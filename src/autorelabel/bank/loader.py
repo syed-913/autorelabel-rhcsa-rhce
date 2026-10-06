@@ -116,6 +116,7 @@ def load_task(path: Path, exam: str) -> Task:
             notes=str(raw.get("notes", "")),
             breaks_boot=bool(raw.get("breaks_boot", False)),
             console_only=bool(raw.get("console_only", False)),
+            practice_only=bool(raw.get("practice_only", False)),
         )
     except KeyError as exc:
         raise BankError(f"{task_id}: missing required field {exc}") from None

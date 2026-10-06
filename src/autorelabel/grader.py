@@ -129,7 +129,8 @@ class Grader:
             return CheckResult(chk.id, chk.desc, node, "error", chk.weight, list(chk.covers),
                                f"template error: {exc}")
         env = render.env_for(params, self.facts)
-        res = remote.run_script(t, script + "\n", env=env, timeout=chk.timeout)
+        # errexit: every failing line fails the check, not just the last one
+        res = remote.run_script(t, "set -e\n" + script + "\n", env=env, timeout=chk.timeout)
         if res.timed_out:
             status, detail = "error", f"check timed out after {chk.timeout}s"
         elif res.rc == 255 and not res.out:
