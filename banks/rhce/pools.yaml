@@ -1,0 +1,2 @@
+# Shared parameter pools for RHCE tasks.
+usernames: [devops, webadmin, dbuser, appuser, opsuser, auditor]

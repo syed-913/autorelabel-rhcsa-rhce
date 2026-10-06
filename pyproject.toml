@@ -1,0 +1,27 @@
+[project]
+name = "autorelabel"
+version = "0.1.0"
+description = "RHCSA (EX200) & RHCE (EX294) practice exam simulator for RHEL 10: timed, auto-graded, hands-on labs graded after a reboot."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "syed-913" }]
+requires-python = ">=3.10"
+dependencies = ["textual>=0.80", "PyYAML>=6.0"]
+keywords = ["rhcsa", "rhce", "ex200", "ex294", "rhel", "practice-exam", "vagrant", "libvirt"]
+
+[project.scripts]
+autorelabel = "autorelabel.__main__:main"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["RUF001", "RUF012", "SIM102", "SIM105", "SIM115", "RUF005"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"

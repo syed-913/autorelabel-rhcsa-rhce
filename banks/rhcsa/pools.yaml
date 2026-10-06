@@ -1,0 +1,7 @@
+# Shared parameter pools. Within one exam, draws are without replacement, so no
+# two tasks ever pick the same user, group, directory or port.
+usernames: [natasha, harry, sarah, alex, john, maria, tom, layla, omar, priya, kenji, elena, david,
+            fatima, lucas, sofia, ivan, amina, noah, chen, ravi, zara, mike, nina, oscar, yuki]
+groupnames: [sysmgrs, devops, auditors, finance, webteam, dbadmins, support, research, marketing, ops]
+shared_dirs: [/common/admin, /srv/projects, /data/shared, /teams/devs, /opt/collab, /srv/reports]
+words: [orion, lyra, vega, atlas, titan, nova, aurora, comet, zenith, nebula, quasar, pulsar]

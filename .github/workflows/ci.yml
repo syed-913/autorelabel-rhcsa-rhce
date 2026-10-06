@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies (hash-locked)
+        run: |
+          python -m pip install --require-hashes --no-deps -r requirements.lock
+          python -m pip install pytest ruff
+
+      - name: Lint Python
+        run: ruff check src tests
+
+      - name: Lint shell scripts
+        run: |
+          shellcheck autorelabel scripts/*.sh packer/scripts/*.sh vagrant/provision/*.sh
+          find banks -name '*.sh' -print0 | xargs -0 -r shellcheck -S warning
+
+      - name: Unit tests (includes the 10,000-seed blueprint simulation)
+        run: python -m pytest -q
+        env:
+          PYTHONPATH: src
+
+      - name: Task bank lint and coverage gate
+        run: python -m autorelabel bank lint rhcsa rhce
+        env:
+          PYTHONPATH: src
+
+      - name: Coverage reports are up to date
+        run: |
+          python -m autorelabel bank coverage rhcsa --check
+          python -m autorelabel bank coverage rhce --check
+        env:
+          PYTHONPATH: src

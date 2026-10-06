@@ -1,0 +1,77 @@
+# autorelabel base box kickstart (RHEL 10, offline from the DVD, no registration)
+# Rendered by Packer templatefile(): avoid dollar-brace in shell below.
+text
+cdrom
+eula --agreed
+lang en_US.UTF-8
+keyboard us
+timezone UTC --utc
+firstboot --disable
+selinux --enforcing
+firewall --enabled --service=ssh
+network --bootproto=dhcp --device=link --activate --onboot=yes --hostname=localhost.localdomain
+rootpw --lock
+user --name=vagrant --password=vagrant --plaintext --groups=wheel
+services --enabled=sshd,chronyd,qemu-guest-agent,tuned --disabled=kdump,rhsmcertd
+
+zerombr
+clearpart --all --initlabel
+reqpart
+part /boot --fstype=xfs --size=1024
+part pv.01 --size=1 --grow
+volgroup rhel pv.01
+logvol swap --vgname=rhel --name=swap --size=1024
+logvol / --vgname=rhel --name=root --fstype=xfs --size=1 --grow
+bootloader --timeout=5 --append="console=tty0 console=ttyS0,115200n8"
+
+reboot
+
+%packages --ignoremissing --inst-langs=en_US
+@core
+qemu-guest-agent
+python3
+tar
+bzip2
+rsync
+bash-completion
+man-pages
+man-db
+vim-enhanced
+nano
+policycoreutils-python-utils
+tuned
+chrony
+-kexec-tools
+-kdump-utils
+-plymouth
+-iwl*-firmware
+-linux-firmware
+-microcode_ctl
+-cockpit*
+-insights-client
+%end
+
+%addon com_redhat_kdump --disable
+%end
+
+%post --erroronfail --log=/root/ks-post.log
+set -euxo pipefail
+
+# Vagrant access (the grader channel); password login is locked after provisioning
+install -d -m 0700 -o vagrant -g vagrant /home/vagrant/.ssh
+cat > /home/vagrant/.ssh/authorized_keys <<'KEYS'
+${vagrant_keys}
+KEYS
+chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+chmod 0600 /home/vagrant/.ssh/authorized_keys
+echo 'vagrant ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/zz-autorelabel-vagrant
+chmod 0440 /etc/sudoers.d/zz-autorelabel-vagrant
+restorecon -R /home/vagrant/.ssh
+
+# Faster SSH, and key-based access for the grader survives candidate sshd edits
+install -d -m 0755 /etc/ssh/sshd_config.d
+cat > /etc/ssh/sshd_config.d/00-autorelabel.conf <<'SSHD'
+UseDNS no
+GSSAPIAuthentication no
+SSHD
+%end

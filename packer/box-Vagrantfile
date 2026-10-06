@@ -1,0 +1,12 @@
+# Embedded in the autorelabel/rhel10 box. Defaults only; the project Vagrantfile
+# (vagrant/Vagrantfile) configures everything else.
+Vagrant.configure("2") do |config|
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.ssh.insert_key = true
+
+  config.vm.provider :libvirt do |lv|
+    lv.driver = "kvm"
+    lv.cpu_mode = "host-passthrough"
+    lv.disk_bus = "virtio"
+  end
+end

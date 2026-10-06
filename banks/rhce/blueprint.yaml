@@ -1,0 +1,30 @@
+# RHCE exam composition (bank under construction until milestone M7).
+tasks: 20
+duration_minutes: 240
+total_points: 300
+pass_mark: 210
+
+points: {easy: 10, medium: 15, hard: 20}
+difficulty_mix: {easy: 6, medium: 8, hard: 6}
+
+domains:
+  rhcsa: [0, 2]
+  core: [1, 4]
+  configure: [1, 2]
+  nodes: [1, 2]
+  run: [1, 2]
+  git: [1, 2]
+  vscode: [1, 2]
+  playbooks: [2, 4]
+  roles: [2, 3]
+  automate: [3, 6]
+  content: [2, 3]
+
+require:
+  - [rhce.content.vault]
+  - [rhce.content.templates]
+  - [rhce.roles.]
+
+anchors: []
+
+coverage_gate: none

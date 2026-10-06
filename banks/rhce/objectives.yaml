@@ -1,0 +1,140 @@
+# RHCE (EX294) objectives, verbatim from Red Hat's exam page, split into facets.
+# Source: https://www.redhat.com/en/services/training/ex294-red-hat-certified-engineer-rhce-exam-red-hat-enterprise-linux
+exam: rhce
+source_url: https://www.redhat.com/en/services/training/ex294-red-hat-certified-engineer-rhce-exam-red-hat-enterprise-linux
+source_checked: 2026-10-03
+persistence_note: "As with all Red Hat performance-based exams, configurations must persist after reboot without intervention."
+
+domains:
+  - id: rhcsa
+    title: Be able to perform all tasks expected of a Red Hat Certified System Administrator
+    objectives:
+      - id: rhce.rhcsa.essential-tools
+        text: Understand and use essential tools
+        facets: [{id: tools, desc: "essential tools on managed nodes"}]
+      - id: rhce.rhcsa.operate
+        text: Operate running systems
+        facets: [{id: operate, desc: "operate running systems"}]
+      - id: rhce.rhcsa.storage
+        text: Configure local storage
+        facets: [{id: storage, desc: "local storage"}]
+      - id: rhce.rhcsa.filesystems
+        text: Create and configure file systems
+        facets: [{id: filesystems, desc: "file systems"}]
+      - id: rhce.rhcsa.deploy
+        text: Deploy, configure, and maintain systems
+        facets: [{id: deploy, desc: "deploy, configure and maintain"}]
+      - id: rhce.rhcsa.users
+        text: Manage users and groups
+        facets: [{id: users, desc: "users and groups"}]
+      - id: rhce.rhcsa.security
+        text: Manage security
+        facets: [{id: security, desc: "security"}]
+      - id: rhce.rhcsa.analyze-scripts
+        text: Be able to analyze simple shell scripts
+        facets:
+          - {id: predict-output, desc: "predict what a script does"}
+          - {id: fix-script, desc: "find and fix a bug in a script"}
+
+  - id: core
+    title: Understand core components of Ansible
+    objectives:
+      - {id: rhce.core.inventories, text: Inventories, facets: [{id: inventory, desc: "inventory structure and host selection"}]}
+      - {id: rhce.core.modules, text: Modules, facets: [{id: modules, desc: "use modules with correct arguments (FQCN)"}]}
+      - id: rhce.core.variables
+        text: Variables
+        facets:
+          - {id: play-vars, desc: "play and task variables"}
+          - {id: host-group-vars, desc: "host_vars / group_vars"}
+      - id: rhce.core.facts
+        text: Facts
+        facets:
+          - {id: use-facts, desc: "use gathered facts"}
+          - {id: custom-facts, desc: "custom (local) facts"}
+      - {id: rhce.core.loops, text: Loops, facets: [{id: loop, desc: "loop over lists and dicts"}]}
+      - {id: rhce.core.conditionals, text: Conditional tasks, facets: [{id: when, desc: "conditional tasks with when"}]}
+      - {id: rhce.core.plays, text: Plays, facets: [{id: plays, desc: "multiple plays with different hosts/become"}]}
+      - id: rhce.core.failures
+        text: Handling task failure
+        facets:
+          - {id: block-rescue, desc: "block/rescue/always"}
+          - {id: failed-changed-when, desc: "failed_when / changed_when / ignore_errors"}
+      - {id: rhce.core.playbooks, text: Playbooks, facets: [{id: playbook, desc: "write and run playbooks"}]}
+      - {id: rhce.core.config-files, text: Configuration files, facets: [{id: config-precedence, desc: "ansible.cfg location and settings"}]}
+      - {id: rhce.core.roles, text: Roles, facets: [{id: role-structure, desc: "role structure and use"}]}
+      - id: rhce.core.docs
+        text: Use provided documentation to look up specific information about Ansible modules and commands
+        facets: [{id: ansible-doc, desc: "find module options with ansible-doc / ansible-navigator doc"}]
+
+  - id: configure
+    title: Configure Ansible
+    objectives:
+      - {id: rhce.configure.ansible-cfg, text: Create and modify ansible.cfg, facets: [{id: ansible-cfg, desc: "ansible.cfg with inventory, remote_user, become, roles_path"}]}
+      - {id: rhce.configure.navigator-yml, text: Modify ansible-navigator.yml, facets: [{id: navigator-yml, desc: "ansible-navigator.yml image, pull policy, mode"}]}
+      - {id: rhce.configure.static-inventory, text: Create a static host inventory file, facets: [{id: static-inventory, desc: "static inventory file"}]}
+      - {id: rhce.configure.inventory-groups, text: Create and use static inventories to define groups of hosts, facets: [{id: inventory-groups, desc: "groups and children groups"}]}
+
+  - id: nodes
+    title: Configure Ansible managed nodes
+    objectives:
+      - {id: rhce.nodes.configure, text: Configure Ansible managed nodes, facets: [{id: managed-node, desc: "prepare managed nodes"}]}
+      - {id: rhce.nodes.ssh-keys, text: Create and distribute SSH keys to managed nodes, facets: [{id: ssh-keys, desc: "generate and distribute SSH keys"}]}
+      - {id: rhce.nodes.privilege, text: Configure privilege escalation on managed nodes, facets: [{id: become, desc: "sudo/become on managed nodes"}]}
+      - {id: rhce.nodes.deploy-files, text: Deploy files to managed nodes, facets: [{id: copy-files, desc: "deploy files to managed nodes"}]}
+
+  - id: run
+    title: Run playbooks
+    objectives:
+      - {id: rhce.run.navigator-and-playbook, text: Know how to run playbooks with ansible-navigator and ansible-playbook, facets: [{id: run-both, desc: "run with ansible-navigator and ansible-playbook"}]}
+      - {id: rhce.run.find-modules, text: Use ansible-navigator to find new modules in available Ansible Content Collections and use them, facets: [{id: navigator-collections, desc: "find modules with ansible-navigator collections/doc"}]}
+      - {id: rhce.run.navigator-inventory, text: Use ansible-navigator to create inventories and configure the Ansible environment, facets: [{id: navigator-inventory, desc: "ansible-navigator inventory/config"}]}
+
+  - id: git
+    title: Perform basic source control operations using Git
+    objectives:
+      - {id: rhce.git.clone, text: Clone a Git repository, facets: [{id: git-clone, desc: "clone a repository"}]}
+      - {id: rhce.git.add, text: Add files to a Git repository, facets: [{id: git-add-push, desc: "add, commit and push files"}]}
+
+  - id: vscode
+    title: "Be familiar with Visual Studio Code (VS Code) and be able to perform the following tasks from within the editor:"
+    objectives:
+      - {id: rhce.vscode.push, text: Create playbooks and push them to a Git repository, facets: [{id: editor-push, desc: "create a playbook in the editor and push it"}]}
+      - {id: rhce.vscode.navigator, text: Configure ansible-navigator, facets: [{id: editor-navigator, desc: "configure ansible-navigator from the editor"}]}
+      - {id: rhce.vscode.devcontainer, text: Run playbooks using an Ansible development container, facets: [{id: devcontainer-run, desc: "run a playbook in the Ansible development container"}]}
+
+  - id: playbooks
+    title: Create Ansible plays and playbooks
+    objectives:
+      - {id: rhce.playbooks.common-modules, text: Know how to work with commonly used Ansible modules, facets: [{id: common-modules, desc: "builtin/posix/general modules"}]}
+      - {id: rhce.playbooks.register, text: Use variables to retrieve the results of running a command, facets: [{id: register, desc: "register command results"}]}
+      - {id: rhce.playbooks.conditionals, text: Use conditionals to control play execution, facets: [{id: conditional-play, desc: "conditionals controlling execution"}]}
+      - {id: rhce.playbooks.error-handling, text: Configure error handling, facets: [{id: error-handling, desc: "error handling in plays"}]}
+      - {id: rhce.playbooks.desired-state, text: Create playbooks to configure systems to a specified state, facets: [{id: desired-state, desc: "idempotent desired-state playbooks"}]}
+
+  - id: roles
+    title: Use roles and Ansible Content Collections
+    objectives:
+      - {id: rhce.roles.create, text: Create and work with roles, facets: [{id: role-create, desc: "create a role"}]}
+      - {id: rhce.roles.install, text: Install roles and use them in playbooks, facets: [{id: role-install, desc: "install roles from requirements.yml"}]}
+      - {id: rhce.roles.collections, text: Install Content Collections and use them in playbooks, facets: [{id: collection-install, desc: "install collections"}]}
+      - {id: rhce.roles.collection-content, text: "Obtain a set of related roles, supplementary modules, and other content from content collections, and use them in a playbook.", facets: [{id: collection-roles, desc: "use roles from a collection (e.g. system roles)"}]}
+
+  - id: automate
+    title: "Automate standard RHCSA tasks using Ansible modules that work with:"
+    objectives:
+      - {id: rhce.automate.packages, text: Software packages and repositories, facets: [{id: packages-repos, desc: "dnf / yum_repository"}]}
+      - {id: rhce.automate.services, text: Services, facets: [{id: services, desc: "service / systemd"}]}
+      - {id: rhce.automate.firewall, text: Firewall rules, facets: [{id: firewall, desc: "firewalld"}]}
+      - {id: rhce.automate.filesystems, text: File systems, facets: [{id: filesystems, desc: "filesystem / mount"}]}
+      - {id: rhce.automate.storage, text: Storage devices, facets: [{id: storage, desc: "parted / lvg / lvol"}]}
+      - {id: rhce.automate.file-content, text: File content, facets: [{id: file-content, desc: "copy / lineinfile / blockinfile / template"}]}
+      - {id: rhce.automate.archiving, text: Archiving, facets: [{id: archiving, desc: "archive / unarchive"}]}
+      - {id: rhce.automate.scheduling, text: Task scheduling, facets: [{id: scheduling, desc: "cron / at"}]}
+      - {id: rhce.automate.security, text: Security, facets: [{id: security, desc: "selinux / seboolean / sefcontext / seport"}]}
+      - {id: rhce.automate.users, text: Users and groups, facets: [{id: users-groups, desc: "user / group"}]}
+
+  - id: content
+    title: Manage content
+    objectives:
+      - {id: rhce.content.templates, text: Create and use templates to create customized configuration files, facets: [{id: jinja-template, desc: "Jinja2 templates with facts/loops/conditionals"}]}
+      - {id: rhce.content.vault, text: Use Ansible Vault in playbooks to protect sensitive data, facets: [{id: vault, desc: "encrypt variables and use them in playbooks"}]}

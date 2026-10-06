@@ -1,0 +1,86 @@
+# -*- mode: ruby -*-
+# autorelabel lab definition. Driven entirely by .workspace/env.json, which the
+# autorelabel app writes. Provisioning is done by the app over SSH (so it can
+# stream progress, retry, and verify), not by Vagrant provisioners.
+#
+# Deliberately NOT set, so Vagrant never overwrites a candidate's work on reload:
+#   - config.vm.hostname        (hostname tasks)
+#   - automatic network config  (auto_config: false on the lab NIC)
+#   - synced folders            (vagrant-libvirt's NFS default would edit host /etc/exports)
+require "json"
+
+env_file = ENV["AUTORELABEL_ENV"] || File.expand_path("../.workspace/env.json", __dir__)
+lab = File.exist?(env_file) ? JSON.parse(File.read(env_file)) : nil
+
+Vagrant.configure("2") do |config|
+  next unless lab
+
+  config.vm.box = lab["box"]
+  config.vm.box_check_update = false
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.vm.boot_timeout = 900
+  config.ssh.insert_key = true
+  config.ssh.connect_timeout = 30
+
+  # vagrant-registration would prompt for Red Hat credentials on RHEL boxes.
+  if Vagrant.has_plugin?("vagrant-registration")
+    config.registration.skip = true
+  end
+
+  lab["vms"].each do |vm|
+    config.vm.define vm["name"], autostart: true do |node|
+      if lab["provider"] == "libvirt"
+        node.vm.network :private_network,
+                        ip: vm["lab_ip"],
+                        mac: vm["lab_mac"],
+                        auto_config: false,
+                        libvirt__network_name: lab["lab_network"],
+                        libvirt__dhcp_enabled: false,
+                        libvirt__forward_mode: "none",
+                        libvirt__always_destroy: false
+      else
+        node.vm.network :private_network,
+                        ip: vm["lab_ip"],
+                        mac: vm["lab_mac"].delete(":"),
+                        auto_config: false,
+                        name: lab["vbox_hostonly"]
+      end
+
+      node.vm.provider :libvirt do |lv|
+        lv.default_prefix = lab["prefix"]
+        lv.storage_pool_name = lab["pool"]
+        lv.management_network_name = lab["mgmt_network"]
+        lv.management_network_address = lab["mgmt_subnet"]
+        lv.management_network_mode = "none"
+        lv.management_network_keep = true
+        lv.management_network_mac = vm["mgmt_mac"]
+        lv.driver = "kvm"
+        lv.cpu_mode = "host-passthrough"
+        lv.cpus = vm["cpus"]
+        lv.memory = vm["memory"]
+        lv.graphics_type = "vnc"
+        lv.graphics_ip = "127.0.0.1"
+        lv.video_type = "virtio"
+        lv.random model: "random"
+        lv.channel type: "unix", target_name: "org.qemu.guest_agent.0", target_type: "virtio"
+        vm["disks"].each do |disk|
+          lv.storage :file, size: "#{disk["size_gb"]}G", type: "qcow2", bus: "virtio"
+        end
+        if vm["attach_iso"]
+          lv.storage :file, device: :cdrom, path: lab["iso_path"], bus: "sata"
+        end
+      end
+
+      node.vm.provider :virtualbox do |vb|
+        vb.name = "#{lab["prefix"]}#{vm["name"]}"
+        vb.cpus = vm["cpus"]
+        vb.memory = vm["memory"]
+        vb.linked_clone = true
+        vb.gui = false
+        vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4", "--uartmode1", "server",
+                      File.join(lab["console_dir"], "#{vm["name"]}.sock")]
+        vb.customize ["modifyvm", :id, "--audio-driver", "none"]
+      end
+    end
+  end
+end

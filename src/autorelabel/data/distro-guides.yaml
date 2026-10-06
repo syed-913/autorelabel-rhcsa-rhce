@@ -1,0 +1,286 @@
+# Host dependency install guidance, per distribution family.
+#
+# Commands come from the official documentation:
+#   HashiCorp (Vagrant, Packer): https://developer.hashicorp.com/vagrant/install
+#                                https://developer.hashicorp.com/packer/install
+#   vagrant-libvirt:             https://vagrant-libvirt.github.io/vagrant-libvirt/installation.html
+#   VirtualBox:                  https://www.virtualbox.org/wiki/Linux_Downloads
+#
+# autorelabel never runs these itself. The doctor shows them (with undo
+# commands) and re-checks after you have run them.
+#
+# Each step: title, run (list of shell commands), undo (list), note (optional).
+
+links:
+  vagrant: https://developer.hashicorp.com/vagrant/install
+  packer: https://developer.hashicorp.com/packer/install
+  vagrant_libvirt: https://vagrant-libvirt.github.io/vagrant-libvirt/installation.html
+  virtualbox: https://www.virtualbox.org/wiki/Linux_Downloads
+
+families:
+  debian:
+    name: Debian / Ubuntu
+    match: [debian, ubuntu, linuxmint, pop, elementary, zorin, kali, neon]
+    steps:
+      python_venv:
+        title: Python venv module
+        run: ["sudo apt install -y python3-venv"]
+        undo: ["sudo apt remove python3-venv"]
+      openssh:
+        title: OpenSSH client
+        run: ["sudo apt install -y openssh-client"]
+        undo: []
+      hashicorp_repo:
+        title: HashiCorp apt repository (for Vagrant and Packer)
+        run:
+          - "wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          - "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main\" | sudo tee /etc/apt/sources.list.d/hashicorp.list"
+        undo:
+          - "sudo rm -f /etc/apt/sources.list.d/hashicorp.list /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+      vagrant:
+        title: Vagrant
+        needs: [hashicorp_repo]
+        run: ["sudo apt update && sudo apt install -y vagrant"]
+        undo: ["sudo apt remove vagrant"]
+      packer:
+        title: Packer
+        needs: [hashicorp_repo]
+        run: ["sudo apt update && sudo apt install -y packer"]
+        undo: ["sudo apt remove packer"]
+      libvirt:
+        title: libvirt + QEMU/KVM
+        run:
+          - "sudo apt install -y qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients"
+          - "sudo systemctl enable --now libvirtd"
+        undo: ["sudo apt remove qemu-system-x86 libvirt-daemon-system"]
+      vagrant_libvirt:
+        title: vagrant-libvirt plugin
+        run:
+          - "sudo apt install -y libvirt-dev build-essential pkg-config ruby-dev libxml2-dev libxslt1-dev zlib1g-dev"
+          - "vagrant plugin install vagrant-libvirt"
+        undo: ["vagrant plugin uninstall vagrant-libvirt"]
+      libvirt_group:
+        title: Allow your user to manage VMs (libvirt group)
+        run: ["sudo usermod -aG libvirt $USER", "# then log out and back in (or reboot)"]
+        undo: ["sudo gpasswd -d $USER libvirt"]
+      kvm_group:
+        title: Allow your user to use /dev/kvm
+        run: ["sudo usermod -aG kvm $USER", "# then log out and back in (or reboot)"]
+        undo: ["sudo gpasswd -d $USER kvm"]
+      virtualbox:
+        title: VirtualBox 7.2.2 or newer
+        run:
+          - "# Install VirtualBox 7.2.x from Oracle's repository: https://www.virtualbox.org/wiki/Linux_Downloads"
+          - "sudo usermod -aG vboxusers $USER"
+        undo: ["sudo gpasswd -d $USER vboxusers"]
+
+  fedora:
+    name: Fedora
+    match: [fedora, nobara, ultramarine]
+    steps:
+      python_venv:
+        title: Python 3
+        run: ["sudo dnf install -y python3"]
+        undo: []
+      openssh:
+        title: OpenSSH client
+        run: ["sudo dnf install -y openssh-clients"]
+        undo: []
+      hashicorp_repo:
+        title: HashiCorp repository (Packer only; keep Fedora's own Vagrant)
+        run:
+          - "wget -O- https://rpm.releases.hashicorp.com/fedora/hashicorp.repo | sudo tee /etc/yum.repos.d/hashicorp.repo"
+          - "sudo sed -i '/^\\[hashicorp\\]/a excludepkgs=vagrant' /etc/yum.repos.d/hashicorp.repo"
+        undo: ["sudo rm -f /etc/yum.repos.d/hashicorp.repo"]
+        note: "Fedora's vagrant-libvirt is built for Fedora's Vagrant, so HashiCorp's Vagrant is excluded."
+      vagrant:
+        title: Vagrant (Fedora package)
+        run: ["sudo dnf install -y vagrant"]
+        undo: ["sudo dnf remove vagrant"]
+      packer:
+        title: Packer
+        needs: [hashicorp_repo]
+        run: ["sudo dnf install -y packer"]
+        undo: ["sudo dnf remove packer"]
+      libvirt:
+        title: libvirt + QEMU/KVM
+        run:
+          - "sudo dnf install -y @virtualization"
+          - "sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket"
+        undo: ["sudo dnf group remove virtualization"]
+      vagrant_libvirt:
+        title: vagrant-libvirt plugin (Fedora package)
+        run: ["sudo dnf install -y vagrant-libvirt"]
+        undo: ["sudo dnf remove vagrant-libvirt"]
+      libvirt_group:
+        title: Allow your user to manage VMs (libvirt group)
+        run: ["sudo usermod -aG libvirt $USER", "# then log out and back in (or reboot)"]
+        undo: ["sudo gpasswd -d $USER libvirt"]
+      kvm_group:
+        title: Allow your user to use /dev/kvm
+        run: ["sudo usermod -aG kvm $USER", "# then log out and back in (or reboot)"]
+        undo: ["sudo gpasswd -d $USER kvm"]
+      virtualbox:
+        title: VirtualBox 7.2.2 or newer
+        run:
+          - "# Install VirtualBox 7.2.x: https://www.virtualbox.org/wiki/Linux_Downloads"
+          - "sudo usermod -aG vboxusers $USER"
+        undo: ["sudo gpasswd -d $USER vboxusers"]
+
+  rhel:
+    name: RHEL / AlmaLinux / Rocky / CentOS Stream
+    match: [rhel, centos, almalinux, rocky, ol, eurolinux]
+    steps:
+      python_venv:
+        title: Python 3
+        run: ["sudo dnf install -y python3"]
+        undo: []
+      openssh:
+        title: OpenSSH client
+        run: ["sudo dnf install -y openssh-clients"]
+        undo: []
+      hashicorp_repo:
+        title: HashiCorp repository (for Vagrant and Packer)
+        run:
+          - "sudo dnf install -y dnf-plugins-core"
+          - "sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo"
+        undo: ["sudo rm -f /etc/yum.repos.d/hashicorp.repo"]
+      vagrant:
+        title: Vagrant
+        needs: [hashicorp_repo]
+        run: ["sudo dnf install -y vagrant"]
+        undo: ["sudo dnf remove vagrant"]
+      packer:
+        title: Packer
+        needs: [hashicorp_repo]
+        run: ["sudo dnf install -y packer"]
+        undo: ["sudo dnf remove packer"]
+      libvirt:
+        title: libvirt + QEMU/KVM
+        run:
+          - "sudo dnf install -y qemu-kvm libvirt virt-install"
+          - "sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket"
+        undo: ["sudo dnf remove qemu-kvm libvirt"]
+      vagrant_libvirt:
+        title: vagrant-libvirt plugin
+        run:
+          - "sudo dnf config-manager --set-enabled crb   # RHEL: sudo subscription-manager repos --enable codeready-builder-for-rhel-$(rpm -E %rhel)-x86_64-rpms"
+          - "sudo dnf install -y gcc make pkgconf-pkg-config libvirt-devel ruby-devel libxml2-devel"
+          - "vagrant plugin install vagrant-libvirt"
+        undo: ["vagrant plugin uninstall vagrant-libvirt"]
+      libvirt_group:
+        title: Allow your user to manage VMs (libvirt group)
+        run: ["sudo usermod -aG libvirt $USER", "# then log out and back in (or reboot)"]
+        undo: ["sudo gpasswd -d $USER libvirt"]
+      kvm_group:
+        title: Allow your user to use /dev/kvm
+        run: ["sudo usermod -aG kvm $USER", "# then log out and back in (or reboot)"]
+        undo: ["sudo gpasswd -d $USER kvm"]
+      virtualbox:
+        title: VirtualBox 7.2.2 or newer
+        run:
+          - "# Install VirtualBox 7.2.x: https://www.virtualbox.org/wiki/Linux_Downloads"
+          - "sudo usermod -aG vboxusers $USER"
+        undo: ["sudo gpasswd -d $USER vboxusers"]
+
+  arch:
+    name: Arch Linux
+    match: [arch, manjaro, endeavouros, garuda, cachyos]
+    steps:
+      python_venv:
+        title: Python 3
+        run: ["sudo pacman -S --needed python"]
+        undo: []
+      openssh:
+        title: OpenSSH client
+        run: ["sudo pacman -S --needed openssh"]
+        undo: []
+      vagrant:
+        title: Vagrant
+        run: ["sudo pacman -S --needed vagrant"]
+        undo: ["sudo pacman -R vagrant"]
+      packer:
+        title: Packer
+        run: ["sudo pacman -S --needed packer   # if unavailable, see https://developer.hashicorp.com/packer/install"]
+        undo: ["sudo pacman -R packer"]
+      libvirt:
+        title: libvirt + QEMU/KVM
+        run:
+          - "sudo pacman -S --needed libvirt qemu-full dnsmasq iptables-nft"
+          - "sudo systemctl enable --now libvirtd"
+        undo: ["sudo pacman -R libvirt qemu-full"]
+      vagrant_libvirt:
+        title: vagrant-libvirt plugin
+        run:
+          - "sudo pacman -S --needed gcc make pkg-config ruby"
+          - "vagrant plugin install vagrant-libvirt"
+        undo: ["vagrant plugin uninstall vagrant-libvirt"]
+      libvirt_group:
+        title: Allow your user to manage VMs (libvirt group)
+        run: ["sudo usermod -aG libvirt $USER", "# then log out and back in (or reboot)"]
+        undo: ["sudo gpasswd -d $USER libvirt"]
+      kvm_group:
+        title: Allow your user to use /dev/kvm
+        run: ["sudo usermod -aG kvm $USER", "# then log out and back in (or reboot)"]
+        undo: ["sudo gpasswd -d $USER kvm"]
+      virtualbox:
+        title: VirtualBox 7.2.2 or newer
+        run: ["sudo pacman -S --needed virtualbox virtualbox-host-modules-arch", "sudo usermod -aG vboxusers $USER"]
+        undo: ["sudo gpasswd -d $USER vboxusers"]
+
+  suse:
+    name: openSUSE
+    match: [opensuse-leap, opensuse-tumbleweed, opensuse, sles, suse]
+    steps:
+      python_venv:
+        title: Python 3
+        run: ["sudo zypper install -y python3"]
+        undo: []
+      openssh:
+        title: OpenSSH client
+        run: ["sudo zypper install -y openssh-clients"]
+        undo: []
+      vagrant:
+        title: Vagrant
+        run: ["sudo zypper install -y vagrant"]
+        undo: ["sudo zypper remove vagrant"]
+      packer:
+        title: Packer
+        run: ["# Download the Linux binary: https://developer.hashicorp.com/packer/install and place it in /usr/local/bin"]
+        undo: ["sudo rm -f /usr/local/bin/packer"]
+      libvirt:
+        title: libvirt + QEMU/KVM
+        run:
+          - "sudo zypper install -y libvirt qemu-kvm polkit"
+          - "sudo systemctl enable --now libvirtd"
+        undo: ["sudo zypper remove libvirt qemu-kvm"]
+      vagrant_libvirt:
+        title: vagrant-libvirt plugin
+        run: ["sudo zypper install -y vagrant-libvirt   # or: vagrant plugin install vagrant-libvirt"]
+        undo: ["sudo zypper remove vagrant-libvirt"]
+      libvirt_group:
+        title: Allow your user to manage VMs (libvirt group)
+        run: ["sudo usermod -aG libvirt $USER", "# then log out and back in (or reboot)"]
+        undo: ["sudo gpasswd -d $USER libvirt"]
+      kvm_group:
+        title: Allow your user to use /dev/kvm
+        run: ["sudo usermod -aG kvm $USER", "# then log out and back in (or reboot)"]
+        undo: ["sudo gpasswd -d $USER kvm"]
+      virtualbox:
+        title: VirtualBox 7.2.2 or newer
+        run: ["sudo zypper install -y virtualbox", "sudo usermod -aG vboxusers $USER"]
+        undo: ["sudo gpasswd -d $USER vboxusers"]
+
+  generic:
+    name: Other Linux
+    match: []
+    steps:
+      python_venv: {title: "Python 3.10+ with the venv module", run: ["# install python3 and its venv module with your package manager"], undo: []}
+      openssh: {title: OpenSSH client, run: ["# install the OpenSSH client"], undo: []}
+      vagrant: {title: Vagrant, run: ["# see https://developer.hashicorp.com/vagrant/install"], undo: []}
+      packer: {title: Packer, run: ["# see https://developer.hashicorp.com/packer/install"], undo: []}
+      libvirt: {title: libvirt + QEMU/KVM, run: ["# install libvirt and QEMU/KVM, then start the libvirt daemon"], undo: []}
+      vagrant_libvirt: {title: vagrant-libvirt plugin, run: ["# see https://vagrant-libvirt.github.io/vagrant-libvirt/installation.html"], undo: []}
+      libvirt_group: {title: libvirt group, run: ["sudo usermod -aG libvirt $USER"], undo: ["sudo gpasswd -d $USER libvirt"]}
+      kvm_group: {title: kvm group, run: ["sudo usermod -aG kvm $USER"], undo: ["sudo gpasswd -d $USER kvm"]}
+      virtualbox: {title: "VirtualBox 7.2.2+", run: ["# see https://www.virtualbox.org/wiki/Linux_Downloads"], undo: []}

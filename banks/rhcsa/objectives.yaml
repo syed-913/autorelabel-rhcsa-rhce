@@ -1,0 +1,380 @@
+# RHCSA (EX200) objectives, verbatim from Red Hat's exam page, split into
+# independently testable facets. The bank linter enforces that every facet has
+# at least one task and every objective line at least two (one primary).
+#
+# Source: https://www.redhat.com/en/services/training/ex200-red-hat-certified-system-administrator-rhcsa-exam
+# Exam based on: Red Hat Enterprise Linux 10
+exam: rhcsa
+source_url: https://www.redhat.com/en/services/training/ex200-red-hat-certified-system-administrator-rhcsa-exam
+source_checked: 2026-10-03
+persistence_note: "As with all Red Hat performance-based exams, configurations must persist after reboot without intervention."
+
+domains:
+  - id: tools
+    title: Understand and use essential tools
+    objectives:
+      - id: rhcsa.tools.shell
+        text: Access a shell prompt and issue commands with correct syntax
+        implicit: true
+        facets:
+          - {id: command-syntax, desc: "compose commands with options/arguments to produce a required result"}
+      - id: rhcsa.tools.redirection
+        text: Use input-output redirection (>, >>, |, 2>, etc.)
+        facets:
+          - {id: redirect-stdout, desc: "overwrite a file with command output (>)"}
+          - {id: redirect-append, desc: "append command output to a file (>>)"}
+          - {id: pipe, desc: "pipe output between commands (|)"}
+          - {id: redirect-stderr, desc: "capture or discard standard error (2>)"}
+          - {id: redirect-both, desc: "capture stdout and stderr together (&> or 2>&1)"}
+      - id: rhcsa.tools.grep
+        text: Use grep and regular expressions to analyze text
+        facets:
+          - {id: grep-basic, desc: "select lines matching a fixed pattern"}
+          - {id: grep-regex, desc: "use anchors, character classes or extended regex"}
+          - {id: grep-save, desc: "save matching lines to a file in original order"}
+      - id: rhcsa.tools.ssh
+        text: Access remote systems using SSH
+        facets:
+          - {id: ssh-remote-command, desc: "run a command on a remote system over SSH"}
+          - {id: ssh-login, desc: "log in to a remote system as a specific user"}
+      - id: rhcsa.tools.switch-users
+        text: Log in and switch users in multi-user targets
+        implicit: true
+        facets:
+          - {id: su-login, desc: "switch to another user with a login shell (su -)"}
+          - {id: sudo-shell, desc: "obtain a root shell with sudo"}
+      - id: rhcsa.tools.archive
+        text: Archive, compress, unpack, and uncompress files using tar, gzip, and bzip2
+        facets:
+          - {id: tar-gzip, desc: "create a gzip-compressed tar archive"}
+          - {id: tar-bzip2, desc: "create a bzip2-compressed tar archive"}
+          - {id: tar-extract, desc: "extract an archive to a given directory"}
+          - {id: gzip-file, desc: "compress or uncompress a single file with gzip/gunzip"}
+          - {id: bzip2-file, desc: "compress or uncompress a single file with bzip2/bunzip2"}
+      - id: rhcsa.tools.edit-files
+        text: Create and edit text files
+        implicit: true
+        facets:
+          - {id: edit-file, desc: "create or modify a text file with exact content"}
+      - id: rhcsa.tools.file-management
+        text: Create, delete, copy, and move files and directories
+        facets:
+          - {id: create-dirs, desc: "create directory trees"}
+          - {id: copy-preserve, desc: "copy files preserving ownership, mode and timestamps"}
+          - {id: move-files, desc: "move or rename files"}
+          - {id: delete-files, desc: "delete files and directories selectively"}
+          - {id: find-files, desc: "locate files by owner, size or name and act on them"}
+      - id: rhcsa.tools.links
+        text: Create hard and soft links
+        facets:
+          - {id: hard-link, desc: "create a hard link"}
+          - {id: soft-link, desc: "create a symbolic link"}
+      - id: rhcsa.tools.permissions
+        text: List, set, and change standard ugo/rwx permissions
+        facets:
+          - {id: chmod-symbolic, desc: "set permissions with symbolic notation"}
+          - {id: chmod-octal, desc: "set permissions with octal notation"}
+          - {id: chown, desc: "change user and group ownership"}
+      - id: rhcsa.tools.docs
+        text: Locate, read, and use system documentation including man, info, and files in /usr/share/doc
+        facets:
+          - {id: man-page, desc: "find information in a man page (including man -k)"}
+          - {id: info-page, desc: "find information in an info page"}
+          - {id: usr-share-doc, desc: "find information in /usr/share/doc"}
+
+  - id: software
+    title: Manage software
+    objectives:
+      - id: rhcsa.software.rpm-repos
+        text: Configure access to RPM repositories
+        facets:
+          - {id: repo-baseos-appstream, desc: "configure BaseOS and AppStream repositories from a URL"}
+          - {id: repo-gpg, desc: "configure GPG checking/keys for a repository"}
+      - id: rhcsa.software.rpm-packages
+        text: Install and remove RPM software packages
+        facets:
+          - {id: rpm-install, desc: "install packages"}
+          - {id: rpm-remove, desc: "remove packages"}
+          - {id: rpm-group, desc: "install a package group"}
+      - id: rhcsa.software.flatpak-repos
+        text: Configure access to Flatpak repositories
+        facets:
+          - {id: flatpak-remote-url, desc: "add a Flatpak remote from a URL"}
+          - {id: flatpak-remote-file, desc: "add a Flatpak remote from a .flatpakrepo file"}
+          - {id: flatpak-remote-scope, desc: "choose system-wide vs per-user remotes"}
+      - id: rhcsa.software.flatpak-apps
+        text: Install and remove Flatpak software packages
+        facets:
+          - {id: flatpak-install, desc: "install a Flatpak application"}
+          - {id: flatpak-uninstall, desc: "uninstall a Flatpak application"}
+          - {id: flatpak-ref, desc: "install from a .flatpakref file"}
+
+  - id: scripts
+    title: Create simple shell scripts
+    objectives:
+      - id: rhcsa.scripts.conditionals
+        text: "Conditionally execute code (use of: if, test, [], etc.)"
+        facets:
+          - {id: if-test, desc: "branch on a test/[ ] condition"}
+          - {id: exit-status, desc: "branch on a command's exit status and set exit codes"}
+      - id: rhcsa.scripts.loops
+        text: Use Looping constructs (for, etc.) to process file, command line input
+        facets:
+          - {id: loop-file, desc: "loop over lines of a file"}
+          - {id: loop-args, desc: "loop over command-line arguments"}
+      - id: rhcsa.scripts.inputs
+        text: Process script inputs ($1, $2, etc.)
+        facets:
+          - {id: positional-args, desc: "use positional parameters"}
+          - {id: arg-count, desc: "validate the number of arguments ($#)"}
+      - id: rhcsa.scripts.command-output
+        text: Processing output of shell commands within a script
+        facets:
+          - {id: command-substitution, desc: "use command substitution $( )"}
+
+  - id: operate
+    title: Operate running systems
+    objectives:
+      - id: rhcsa.operate.boot-reboot
+        text: Boot, reboot, and shut down a system normally
+        implicit: true
+        facets:
+          - {id: reboot-normally, desc: "reboot or shut down cleanly so changes apply"}
+      - id: rhcsa.operate.boot-target-manual
+        text: Boot systems into different targets manually
+        facets:
+          - {id: boot-rescue-emergency, desc: "boot into rescue or emergency target to repair a system"}
+          - {id: isolate-target, desc: "switch the running system to another target"}
+      - id: rhcsa.operate.interrupt-boot
+        text: Interrupt the boot process in order to gain access to a system
+        facets:
+          - {id: root-password-reset, desc: "reset a forgotten root password via the boot loader (rd.break)"}
+      - id: rhcsa.operate.processes
+        text: Identify CPU/memory intensive processes and kill processes
+        facets:
+          - {id: identify-hog, desc: "identify the most CPU- or memory-intensive process"}
+          - {id: kill-process, desc: "terminate a process and keep it from returning"}
+      - id: rhcsa.operate.scheduling
+        text: Adjust  process scheduling
+        facets:
+          - {id: nice-renice, desc: "set or change process niceness"}
+      - id: rhcsa.operate.tuned
+        text: Manage tuning profiles
+        facets:
+          - {id: tuned-profile, desc: "select a specific tuned profile"}
+          - {id: tuned-recommended, desc: "apply the recommended tuned profile"}
+      - id: rhcsa.operate.logs
+        text: Locate and interpret system log files and journals
+        facets:
+          - {id: journal-query, desc: "filter the journal by unit, priority or time"}
+          - {id: log-files, desc: "find information in /var/log files"}
+      - id: rhcsa.operate.persistent-journal
+        text: Preserve system journals
+        facets:
+          - {id: journal-persistent, desc: "make the journal persistent across reboots"}
+      - id: rhcsa.operate.network-services
+        text: Start, stop, and check the status of network services
+        facets:
+          - {id: service-start-stop, desc: "start, stop and check network services"}
+      - id: rhcsa.operate.file-transfer
+        text: Securely transfer files between systems
+        facets:
+          - {id: scp-sftp, desc: "copy files between systems with scp/sftp"}
+          - {id: rsync-ssh, desc: "synchronize files between systems with rsync over SSH"}
+
+  - id: storage
+    title: Configure local storage
+    objectives:
+      - id: rhcsa.storage.partitions
+        text: List, create, and delete partitions on GPT disks
+        facets:
+          - {id: gpt-create, desc: "create GPT partitions of a given size"}
+          - {id: gpt-delete, desc: "delete a partition"}
+      - id: rhcsa.storage.pv
+        text: Create and remove physical volumes
+        facets:
+          - {id: pv-create, desc: "initialize a physical volume"}
+          - {id: pv-remove, desc: "remove a physical volume"}
+      - id: rhcsa.storage.vg
+        text: Assign physical volumes to volume groups
+        facets:
+          - {id: vg-create, desc: "create a volume group (including a specific extent size)"}
+          - {id: vg-extend, desc: "add a physical volume to an existing volume group"}
+      - id: rhcsa.storage.lv
+        text: Create and delete logical volumes
+        facets:
+          - {id: lv-create-size, desc: "create a logical volume by size"}
+          - {id: lv-create-extents, desc: "create a logical volume by number of extents"}
+          - {id: lv-delete, desc: "delete a logical volume"}
+      - id: rhcsa.storage.mount-uuid-label
+        text: Configure systems to mount file systems at boot by universally unique ID (UUID) or label
+        facets:
+          - {id: mount-uuid, desc: "persistent mount by UUID"}
+          - {id: mount-label, desc: "persistent mount by file system label"}
+      - id: rhcsa.storage.non-destructive
+        text: Add new partitions and logical volumes, and swap to a system non-destructively
+        facets:
+          - {id: add-partition, desc: "add a partition alongside existing ones without data loss"}
+          - {id: add-lv, desc: "add a logical volume to a VG in use"}
+          - {id: swap-partition, desc: "add persistent swap on a partition"}
+          - {id: swap-lv, desc: "add persistent swap on a logical volume"}
+
+  - id: filesystems
+    title: Create and configure file systems
+    objectives:
+      - id: rhcsa.filesystems.create-mount
+        text: Create, mount, unmount, and use VFAT, ext4, and XFS file systems
+        facets:
+          - {id: fs-vfat, desc: "create and mount a VFAT file system"}
+          - {id: fs-ext4, desc: "create and mount an ext4 file system"}
+          - {id: fs-xfs, desc: "create and mount an XFS file system (>= 300 MB on RHEL 10)"}
+      - id: rhcsa.filesystems.nfs
+        text: Mount and unmount network file systems using NFS
+        facets:
+          - {id: nfs-mount, desc: "mount an NFS export persistently"}
+      - id: rhcsa.filesystems.autofs
+        text: Configure autofs
+        facets:
+          - {id: autofs-indirect, desc: "indirect automount map"}
+          - {id: autofs-wildcard, desc: "wildcard map for home directories"}
+          - {id: autofs-direct, desc: "direct automount map"}
+      - id: rhcsa.filesystems.extend-lv
+        text: Extend existing logical volumes
+        facets:
+          - {id: extend-xfs, desc: "extend an LV holding XFS and grow the file system"}
+          - {id: extend-ext4, desc: "extend an LV holding ext4 and resize the file system"}
+      - id: rhcsa.filesystems.permissions
+        text: Diagnose and correct file permission problems
+        facets:
+          - {id: setgid-collab, desc: "collaborative directory with setgid"}
+          - {id: sticky-bit, desc: "restrict deletion with the sticky bit"}
+          - {id: acl, desc: "grant access with POSIX ACLs"}
+          - {id: fix-ownership, desc: "diagnose and fix wrong ownership/permissions"}
+
+  - id: deploy
+    title: Deploy, configure, and maintain systems
+    objectives:
+      - id: rhcsa.deploy.scheduling
+        text: Schedule tasks using at, cron and systemd timer units
+        facets:
+          - {id: at-job, desc: "schedule a one-time job with at"}
+          - {id: cron-user, desc: "schedule a recurring job in a user crontab"}
+          - {id: cron-system, desc: "schedule a system cron job"}
+          - {id: systemd-timer, desc: "schedule with a systemd timer unit"}
+      - id: rhcsa.deploy.services
+        text: Start and stop services and configure services to start automatically at boot
+        facets:
+          - {id: service-enable, desc: "enable a service at boot"}
+          - {id: service-disable, desc: "disable or mask a service"}
+      - id: rhcsa.deploy.default-target
+        text: Configure systems to boot into a specific target automatically
+        facets:
+          - {id: set-default-target, desc: "set the default boot target"}
+      - id: rhcsa.deploy.time
+        text: Configure time service clients
+        facets:
+          - {id: chrony-client, desc: "configure chrony to use a given time server"}
+      - id: rhcsa.deploy.packages-sources
+        text: Install and update software packages from Red Hat Content Delivery Network, a remote repository, or from the local file system
+        facets:
+          - {id: pkg-remote-repo, desc: "install/update from a remote repository"}
+          - {id: pkg-local-file, desc: "install from a local RPM file or local repository"}
+          - {id: pkg-cdn, desc: "install from the Red Hat CDN (optional drill; requires your own subscription)", optional: true}
+      - id: rhcsa.deploy.bootloader
+        text: Modify the system bootloader
+        facets:
+          - {id: kernel-args, desc: "add or remove kernel command-line arguments"}
+          - {id: grub-timeout, desc: "change GRUB settings such as the timeout"}
+
+  - id: networking
+    title: Manage basic networking
+    objectives:
+      - id: rhcsa.networking.addresses
+        text: Configure IPv4 and IPv6 addresses
+        facets:
+          - {id: ipv4-static, desc: "static IPv4 address, gateway and DNS"}
+          - {id: ipv6-static, desc: "static IPv6 address"}
+      - id: rhcsa.networking.name-resolution
+        text: Configure hostname resolution
+        facets:
+          - {id: hostname, desc: "set the persistent hostname"}
+          - {id: hosts-file, desc: "static name resolution in /etc/hosts"}
+          - {id: dns-client, desc: "configure DNS servers/search domain"}
+      - id: rhcsa.networking.services-at-boot
+        text: Configure network services to start automatically at boot
+        facets:
+          - {id: net-service-boot, desc: "network service and connection start at boot"}
+      - id: rhcsa.networking.firewall-restrict
+        text: Restrict network access using firewalld and firewall-cmd
+        facets:
+          - {id: firewall-rich-rule, desc: "restrict access by source with a rich rule or zone"}
+          - {id: firewall-remove, desc: "remove an allowed service or port"}
+
+  - id: users
+    title: Manage users and groups
+    objectives:
+      - id: rhcsa.users.accounts
+        text: Create, delete, and modify local user accounts
+        facets:
+          - {id: user-create, desc: "create a user with specific attributes (UID, shell, home, comment)"}
+          - {id: user-modify, desc: "modify an existing user"}
+          - {id: user-delete, desc: "delete a user (with or without home)"}
+      - id: rhcsa.users.passwords
+        text: Change passwords and adjust password aging for local user accounts
+        facets:
+          - {id: set-password, desc: "set a user's password"}
+          - {id: chage, desc: "set password aging for an existing user"}
+          - {id: login-defs, desc: "set password aging defaults for new users"}
+      - id: rhcsa.users.groups
+        text: Create, delete, and modify local groups and group memberships
+        facets:
+          - {id: group-create, desc: "create a group with a specific GID"}
+          - {id: group-membership, desc: "manage supplementary group membership"}
+          - {id: group-delete, desc: "delete a group"}
+      - id: rhcsa.users.privileged
+        text: Configure privileged access
+        facets:
+          - {id: sudo-group, desc: "sudo rights for a group"}
+          - {id: sudo-limited, desc: "sudo rights limited to specific commands / NOPASSWD"}
+
+  - id: security
+    title: Manage security
+    objectives:
+      - id: rhcsa.security.firewall
+        text: Configure firewall settings using firewall-cmd/firewalld
+        facets:
+          - {id: firewall-service, desc: "permanently allow a service"}
+          - {id: firewall-port, desc: "permanently allow a port"}
+          - {id: firewall-zone, desc: "work with zones (default zone, interface binding)"}
+      - id: rhcsa.security.umask
+        text: Manage default file permissions
+        facets:
+          - {id: umask-user, desc: "default permissions for a specific user"}
+          - {id: umask-system, desc: "system-wide default permissions"}
+      - id: rhcsa.security.ssh-keys
+        text: Configure key-based authentication for SSH
+        facets:
+          - {id: ssh-keygen-copy, desc: "generate a key pair and authorize it on another system"}
+      - id: rhcsa.security.selinux-modes
+        text: Set enforcing and permissive modes for SELinux
+        facets:
+          - {id: selinux-enforcing, desc: "set enforcing mode persistently"}
+          - {id: selinux-permissive, desc: "set permissive mode persistently"}
+      - id: rhcsa.security.selinux-contexts
+        text: List and identify SELinux file and process context
+        facets:
+          - {id: file-context, desc: "identify a file's SELinux context"}
+          - {id: process-context, desc: "identify a process's SELinux context"}
+      - id: rhcsa.security.selinux-restore
+        text: Restore default file contexts
+        facets:
+          - {id: restorecon, desc: "restore default contexts with restorecon"}
+          - {id: fcontext-rule, desc: "persistent file-context rule with semanage fcontext"}
+      - id: rhcsa.security.selinux-ports
+        text: Manage SELinux port labels
+        facets:
+          - {id: selinux-port, desc: "label a non-standard port for a service"}
+      - id: rhcsa.security.selinux-booleans
+        text: Use Boolean settings to modify system SELinux settings
+        facets:
+          - {id: boolean-persistent, desc: "set a boolean persistently"}

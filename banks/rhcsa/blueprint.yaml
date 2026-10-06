@@ -1,0 +1,36 @@
+# RHCSA exam composition. Every generated exam satisfies all of these, so every
+# exam is worth exactly 300 points and has a comparable spread and difficulty.
+tasks: 20
+duration_minutes: 180
+total_points: 300
+pass_mark: 210
+
+points: {easy: 10, medium: 15, hard: 20}
+difficulty_mix: {easy: 6, medium: 8, hard: 6}      # 60 + 120 + 120 = 300
+
+# [min, max] tasks per objective domain (anchors count toward their domain)
+domains:
+  tools: [1, 3]
+  software: [2, 3]
+  scripts: [1, 1]
+  operate: [2, 3]
+  storage: [2, 3]
+  filesystems: [2, 3]
+  deploy: [2, 3]
+  networking: [1, 2]
+  users: [2, 3]
+  security: [3, 4]
+
+# Each group: at least one task touching an objective with one of these prefixes
+require:
+  - [rhcsa.software.flatpak-]
+  - [rhcsa.security.selinux-]
+  - [rhcsa.storage.lv, rhcsa.storage.vg, rhcsa.filesystems.extend-lv]
+  - [rhcsa.filesystems.nfs, rhcsa.filesystems.autofs]
+  - [rhcsa.deploy.scheduling]
+
+# Present in every exam, in this order, like the real RHCSA
+anchors: [network-node1, repos, root-reset]
+
+# none | wave1 (every objective line has a primary task) | full (every facet, 2+ tasks per line)
+coverage_gate: none

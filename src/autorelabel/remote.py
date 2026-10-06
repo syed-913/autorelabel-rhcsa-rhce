@@ -1,0 +1,121 @@
+"""Run scripts on lab VMs over the management network (the grader channel).
+
+Uses the per-VM key Vagrant generated, the `vagrant` user and sudo. Connection
+multiplexing keeps dozens of checks fast. Nothing is left on the guest: scripts
+are streamed over stdin and run with `sudo -n bash -s`.
+"""
+
+from __future__ import annotations
+
+import os
+import shlex
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+from . import proc
+
+SSH_OPTS = [
+    "-o", "BatchMode=yes",
+    "-o", "StrictHostKeyChecking=no",
+    "-o", "UserKnownHostsFile=/dev/null",
+    "-o", "LogLevel=ERROR",
+    "-o", "IdentitiesOnly=yes",
+    "-o", "ConnectTimeout=10",
+    "-o", "ServerAliveInterval=5",
+    "-o", "ServerAliveCountMax=3",
+    "-o", "ControlMaster=auto",
+    "-o", "ControlPersist=60",
+]
+
+
+def _control_dir() -> Path:
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    d = Path(runtime) / "autorelabel" if runtime else Path(f"/tmp/autorelabel-{os.getuid()}")
+    d.mkdir(mode=0o700, parents=True, exist_ok=True)
+    return d
+
+
+@dataclass(frozen=True)
+class Target:
+    name: str
+    host: str
+    key: Path
+    user: str = "vagrant"
+    port: int = 22
+
+    def control_path(self) -> str:
+        # Unix sockets are limited to ~108 bytes, so keep this short and independent of
+        # where the repository lives: /run/user/<uid>/autorelabel/<hash>.
+        return str(_control_dir() / "%C")
+
+
+def ssh_base(t: Target) -> list[str]:
+    return ["ssh", *SSH_OPTS, "-o", f"ControlPath={t.control_path()}", "-i", str(t.key),
+            "-p", str(t.port), f"{t.user}@{t.host}"]
+
+
+def run_script(t: Target, script: str, *, env: dict[str, str] | None = None, timeout: float = 120,
+               as_root: bool = True) -> proc.Result:
+    """Run a bash script on the target. Env vars are exported in a prelude."""
+    prelude = "".join(f"export {k}={shlex.quote(str(v))}\n" for k, v in (env or {}).items())
+    remote = "sudo -n bash -s" if as_root else "bash -s"
+    full = "set -o pipefail\n" + prelude + script
+    return proc.run([*ssh_base(t), remote], input=full, timeout=timeout)
+
+
+def stream_script(t: Target, script: str, *, env: dict[str, str] | None = None, timeout: float = 3600,
+                  on_line=None, log_file: Path | None = None, cancel=None) -> proc.Result:
+    """Like run_script, but streams merged output line by line (long provisioning)."""
+    prelude = "".join(f"export {k}={shlex.quote(str(v))}\n" for k, v in (env or {}).items())
+    full = "set -o pipefail\n" + prelude + script
+    return proc.stream([*ssh_base(t), "sudo -n bash -s"], input=full, timeout=timeout, on_line=on_line,
+                       log_file=log_file, cancel=cancel)
+
+
+def run_cmd(t: Target, command: str, *, timeout: float = 60, as_root: bool = True) -> proc.Result:
+    return run_script(t, command + "\n", timeout=timeout, as_root=as_root)
+
+
+class SSHConfigError(RuntimeError):
+    """An SSH failure that retrying cannot fix (bad key, bad options)."""
+
+
+_FATAL = ("too long for Unix domain socket", "Bad configuration option", "no such identity")
+
+
+def reachable(t: Target, timeout: float = 15) -> bool:
+    res = proc.run([*ssh_base(t), "true"], timeout=timeout)
+    if not res.ok and any(f in res.err for f in _FATAL):
+        raise SSHConfigError(f"ssh to {t.name} failed: {res.err.strip()[:300]}")
+    return res.ok
+
+
+def wait_reachable(t: Target, timeout: float = 600, interval: float = 5) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if reachable(t):
+            return True
+        time.sleep(interval)
+    return False
+
+
+def boot_id(t: Target) -> str | None:
+    res = run_cmd(t, "cat /proc/sys/kernel/random/boot_id", timeout=20, as_root=False)
+    return res.out.strip() if res.ok else None
+
+
+def close_master(t: Target) -> None:
+    proc.run([*ssh_base(t)[:-1], "-O", "exit", f"{t.user}@{t.host}"], timeout=10)
+
+
+def copy_to(t: Target, local: Path, remote_path: str, timeout: float = 600) -> proc.Result:
+    """Copy a file to the guest (lands owned by root at remote_path)."""
+    data = local.read_bytes()
+    cmd = [*ssh_base(t), f"sudo -n install -D -m 0644 /dev/stdin {shlex.quote(remote_path)}"]
+    import subprocess
+
+    start = time.monotonic()
+    p = subprocess.run(cmd, input=data, capture_output=True, timeout=timeout)
+    return proc.Result(cmd, p.returncode, p.stdout.decode(errors="replace"),
+                       p.stderr.decode(errors="replace"), time.monotonic() - start)

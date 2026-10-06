@@ -1,0 +1,26 @@
+# Runtime state, logs, caches (created by ./autorelabel)
+/.workspace/
+/.venv/
+
+# Red Hat media and build artifacts (never redistribute RHEL bits)
+*.iso
+*.box
+*.qcow2
+*.vdi
+*.vmdk
+packer_cache/
+output-*/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Editors / OS
+*.swp
+*~
+.DS_Store
+.idea/
+.vscode/
