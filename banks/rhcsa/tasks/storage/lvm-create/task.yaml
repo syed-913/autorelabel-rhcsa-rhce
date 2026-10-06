@@ -1,0 +1,66 @@
+title: Create LVM storage with a specific extent size
+primary: rhcsa.storage.lv
+objectives: [rhcsa.storage.lv, rhcsa.storage.pv, rhcsa.storage.vg, rhcsa.storage.mount-uuid-label, rhcsa.filesystems.create-mount]
+facets:
+  - rhcsa.storage.pv:pv-create
+  - rhcsa.storage.vg:vg-create
+  - rhcsa.storage.lv:lv-create-extents
+  - rhcsa.storage.mount-uuid-label:mount-uuid
+  - rhcsa.filesystems.create-mount:fs-xfs
+difficulty: hard
+difficulty_reason: >
+  A dependency chain (partition → PV → VG with a non-default extent size → LV by extents → XFS →
+  persistent mount by UUID) where every value is exact and a single fstab mistake breaks booting.
+estimated_minutes: 12
+node: node1
+resources:
+  disk: {node1.disk1: 1100}
+params:
+  vg: {choice: [datavg, appvg, storevg]}
+  lv: {choice: [datalv, applv, storelv]}
+  extents: {choice: [20, 25, 30]}
+  pe: {choice: [16, 32]}
+
+prompt: |
+  On node1, using a **new 1 GiB partition** on `{{lab.node1.disk1}}`:
+
+  - create a volume group `{{vg}}` with a physical extent size of **{{pe}} MiB**
+  - create a logical volume `{{lv}}` of exactly **{{extents}} extents**
+  - format it with **XFS** and mount it persistently at `/mnt/{{lv}}`, referencing the file system
+    **by UUID** in `/etc/fstab`
+
+requirements:
+  R1: "VG {{vg}} exists with {{pe}} MiB extents on a partition of {{lab.node1.disk1}}"
+  R2: "LV {{lv}} has exactly {{extents}} extents"
+  R3: "the LV holds an XFS file system mounted at /mnt/{{lv}} after reboot"
+  R4: "/etc/fstab refers to it by UUID"
+
+checks:
+  - id: vg
+    covers: [R1]
+    desc: "{{vg}}: extent size {{pe}} MiB, PV on {{lab.node1.disk1}}"
+    run: |
+      test "$(vgs --noheadings --units m -o vg_extent_size {{vg}} | tr -d ' ')" = "{{pe}}.00m"
+      pvs --noheadings -o pv_name,vg_name | awk '$2=="{{vg}}"{print $1}' | grep -q '^{{lab.node1.disk1}}'
+  - id: lv
+    covers: [R2]
+    desc: "{{lv}} has {{extents}} extents"
+    run: test "$(lvs --noheadings -o seg_size_pe {{vg}}/{{lv}} | tr -d ' ')" = "{{extents}}"
+  - id: mounted
+    covers: [R3]
+    desc: "XFS mounted at /mnt/{{lv}}"
+    run: |
+      test "$(findmnt -no FSTYPE /mnt/{{lv}})" = xfs
+      test "$(findmnt -no SOURCE /mnt/{{lv}})" = "$(readlink -f /dev/{{vg}}/{{lv}})" -o \
+           "$(findmnt -no SOURCE /mnt/{{lv}})" = "/dev/mapper/{{vg}}-{{lv}}"
+  - id: uuid
+    covers: [R4]
+    desc: fstab uses the UUID
+    run: |
+      uuid="$(blkid -s UUID -o value /dev/{{vg}}/{{lv}})"
+      grep -Eq "^[[:space:]]*UUID=\"?$uuid\"?[[:space:]]+/mnt/{{lv}}[[:space:]]+xfs" /etc/fstab
+
+references:
+  - "RHEL 10: Configuring and managing logical volumes > Managing LVM volume groups / logical volumes"
+  - "RHEL 10: Managing file systems > Mounting file systems persistently"
+  - "man vgcreate(8) (-s), man lvcreate(8) (-l), man mkfs.xfs(8), man fstab(5)"

@@ -45,6 +45,8 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
 EOF
 
 step "Installing services"
+# Unregistered lab systems: silence the subscription-manager dnf plugin.
+sed -i 's/^enabled=.*/enabled=0/' /etc/dnf/plugins/subscription-manager.conf /etc/dnf/plugins/product-id.conf 2>/dev/null || true
 dnf -y -q install httpd dnsmasq nfs-utils chrony flatpak ostree createrepo_c rpm-build python3 >/dev/null
 systemctl enable --now httpd >/dev/null
 
@@ -80,7 +82,7 @@ systemctl enable --now chronyd >/dev/null
 systemctl restart chronyd
 
 step "NFS server"
-install -d -m 0755 /exports
+install -d -m 0755 /exports /etc/exports.d
 touch /etc/exports
 systemctl enable --now nfs-server >/dev/null
 exportfs -ra

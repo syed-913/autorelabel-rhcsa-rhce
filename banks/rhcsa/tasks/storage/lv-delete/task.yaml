@@ -1,0 +1,42 @@
+title: Remove a logical volume cleanly
+primary: rhcsa.storage.lv
+objectives: [rhcsa.storage.lv, rhcsa.storage.mount-uuid-label]
+facets:
+  - rhcsa.storage.lv:lv-delete
+difficulty: easy
+difficulty_reason: umount, fstab cleanup, lvremove; the trap is a stale fstab entry that breaks the next boot.
+estimated_minutes: 4
+node: node1
+resources:
+  disk: {node1.disk1: 600}
+params:
+  vg: {choice: [oldvg, tempvg, retiredvg]}
+
+prompt: |
+  On node1, the logical volume `{{vg}}/scratch` (mounted at `/scratch`) is no longer needed. Remove
+  it cleanly: the system must boot normally afterwards. Keep the volume group `{{vg}}` itself.
+
+requirements:
+  R1: "{{vg}}/scratch no longer exists"
+  R2: "nothing refers to it at boot (fstab) and the system boots normally"
+  R3: "the VG {{vg}} still exists"
+
+checks:
+  - id: removed
+    covers: [R1]
+    desc: LV gone
+    run: "! lvs {{vg}}/scratch >/dev/null 2>&1"
+  - id: fstab
+    covers: [R2]
+    desc: no fstab entry for /scratch and the system is fully booted
+    run: |
+      ! grep -Eq '^[^#]*[[:space:]]/scratch[[:space:]]' /etc/fstab
+      systemctl is-system-running | grep -Eq 'running|degraded'
+  - id: vg
+    covers: [R3]
+    desc: "{{vg}} still exists"
+    run: vgs {{vg}} >/dev/null 2>&1
+
+references:
+  - "RHEL 10: Configuring and managing logical volumes > Removing logical volumes"
+  - "man lvremove(8), man fstab(5)"

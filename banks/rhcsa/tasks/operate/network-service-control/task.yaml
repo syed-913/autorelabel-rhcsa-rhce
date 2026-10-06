@@ -1,0 +1,40 @@
+title: Control network services and their sockets
+primary: rhcsa.operate.network-services
+objectives: [rhcsa.operate.network-services, rhcsa.deploy.services]
+facets:
+  - rhcsa.operate.network-services:service-start-stop
+  - rhcsa.deploy.services:service-disable
+difficulty: medium
+difficulty_reason: >
+  Stopping a socket-activated service requires handling its .socket unit too; checking what is
+  listening (ss) proves it.
+estimated_minutes: 6
+node: node2
+
+prompt: |
+  On node2:
+  1. The web server `httpd` is installed but stopped. Start it and make it start at boot.
+  2. Nothing may listen on TCP/UDP port **111** (rpcbind), now or after reboots. Do not remove any
+     packages.
+
+  Check the result by looking at which ports are listening.
+
+requirements:
+  R1: "httpd is running and enabled"
+  R2: "nothing listens on port 111 after a reboot"
+
+checks:
+  - id: httpd
+    covers: [R1]
+    on: node2
+    desc: httpd active and enabled
+    run: systemctl is-active -q httpd && systemctl is-enabled -q httpd
+  - id: rpcbind
+    covers: [R2]
+    on: node2
+    desc: port 111 closed
+    run: "! ss -Hlntu | awk '{print $5}' | grep -Eq '[:.]111$'"
+
+references:
+  - "RHEL 10: Using systemd unit files > Managing system services (socket activation)"
+  - "man systemctl(1), man ss(8), man systemd.socket(5)"

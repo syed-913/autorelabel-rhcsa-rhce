@@ -1,0 +1,42 @@
+title: Schedule a system cron job
+primary: rhcsa.deploy.scheduling
+objectives: [rhcsa.deploy.scheduling]
+facets: [rhcsa.deploy.scheduling:cron-system]
+difficulty: easy
+difficulty_reason: One file in /etc/cron.d with the system crontab format (which has a user field).
+estimated_minutes: 4
+node: node2
+params:
+  every: {choice: [5, 10, 15, 20]}
+  word: {pool: words}
+
+prompt: |
+  On node2, create a **system** cron job, in a file under `/etc/cron.d/`, that runs every
+  **{{every}} minutes** as the user `root`:
+
+      /usr/bin/logger -t {{word}} "system job"
+
+requirements:
+  R1: "a file in /etc/cron.d runs the command every {{every}} minutes as root"
+
+checks:
+  - id: cron-d
+    covers: [R1]
+    on: node2
+    desc: "/etc/cron.d has */{{every}} * * * * root ... logger -t {{word}}"
+    run: |
+      grep -hE '^[[:space:]]*[^#]' /etc/cron.d/* 2>/dev/null | python3 -c '
+      import sys
+      for line in sys.stdin:
+          p = line.split(None, 6)
+          if len(p) < 7 or "logger -t {{word}}" not in p[6]:
+              continue
+          m, h, dom, mon, dow, user = p[:6]
+          ok_min = m == "*/{{every}}" or sorted(int(x) for x in m.split(",") if x.isdigit()) == list(range(0, 60, {{every}}))
+          if ok_min and h == dom == mon == dow == "*" and user == "root":
+              sys.exit(0)
+      sys.exit(1)'
+
+references:
+  - "RHEL 10: Configuring basic system settings > Scheduling recurring jobs with cron"
+  - "man crontab(5) (system crontab files have a user field), man cron(8)"

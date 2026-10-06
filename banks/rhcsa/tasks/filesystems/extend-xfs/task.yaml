@@ -1,0 +1,45 @@
+title: Extend a logical volume and its XFS file system
+primary: rhcsa.filesystems.extend-lv
+objectives: [rhcsa.filesystems.extend-lv]
+facets: [rhcsa.filesystems.extend-lv:extend-xfs]
+difficulty: medium
+difficulty_reason: Grow the LV and the file system online, to a size range, without losing data.
+estimated_minutes: 5
+node: node1
+exclusive: [node1-disk2-vg]
+resources:
+  disk: {node1.disk2: 1100}
+params:
+  vg: {choice: [salesvg, hrvg, opsdatavg]}
+  target: {choice: [700, 800, 900]}
+
+prompt: |
+  On node1, the logical volume `{{vg}}/datalv` (XFS, mounted at `/srv/{{vg}}`) is too small.
+  Extend it so that the **logical volume** is between **{{target}} MiB and {{target}}+50 MiB**, and
+  the file system uses the new space. Data must be preserved and it must stay mounted at boot.
+
+requirements:
+  R1: "the LV is between {{target}} and {{target}}+50 MiB"
+  R2: "the XFS file system uses the space"
+  R3: "data intact and still mounted after reboot"
+
+checks:
+  - id: lv-size
+    covers: [R1]
+    desc: "LV size within range"
+    run: |
+      s="$(lvs --noheadings --units m -o lv_size {{vg}}/datalv | tr -d ' m' | cut -d. -f1)"
+      test "$s" -ge {{target}} && test "$s" -le $(({{target}} + 50))
+  - id: fs-size
+    covers: [R2]
+    desc: the file system grew too
+    run: test "$(df -m --output=size /srv/{{vg}} | tail -1 | tr -d ' ')" -ge $(({{target}} - 60))
+  - id: data
+    covers: [R3]
+    desc: data intact
+    run: cd /srv/{{vg}} && sha256sum -c --quiet /etc/autorelabel/{{vg}}-data.sha256
+
+references:
+  - "RHEL 10: Configuring and managing logical volumes > Extending a logical volume (lvextend -r)"
+  - "RHEL 10: Managing file systems > Increasing the size of an XFS file system (xfs_growfs)"
+  - "man lvextend(8), man xfs_growfs(8)"

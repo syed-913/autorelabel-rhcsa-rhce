@@ -1,0 +1,52 @@
+title: Create a collaborative directory
+primary: rhcsa.filesystems.permissions
+objectives: [rhcsa.filesystems.permissions, rhcsa.tools.permissions]
+facets:
+  - rhcsa.filesystems.permissions:setgid-collab
+  - rhcsa.filesystems.permissions:sticky-bit
+  - rhcsa.tools.permissions:chown
+difficulty: medium
+difficulty_reason: Special permission bits (setgid for group inheritance, sticky for deletion) on top of ownership.
+estimated_minutes: 5
+node: node2
+params:
+  group: {pool: groupnames}
+  user1: {pool: usernames}
+  user2: {pool: usernames}
+
+prompt: |
+  On node2, create the directory `/common/{{group}}` for the members of the group `{{group}}`
+  (`{{user1}}` and `{{user2}}` are members):
+
+  - group owner `{{group}}`; members can create files in it, other users have **no** access
+  - files created in it automatically belong to the group `{{group}}`
+  - users can delete only their **own** files in it
+
+requirements:
+  R1: "the directory is owned by group {{group}} with no access for others"
+  R2: "new files inherit the group (setgid)"
+  R3: "users can only delete their own files (sticky bit)"
+
+checks:
+  - id: owner-mode
+    covers: [R1]
+    on: node2
+    desc: "group {{group}}, rwx for group, nothing for others"
+    run: |
+      test "$(stat -c %G /common/{{group}})" = {{group}}
+      m="$(stat -c %a /common/{{group}})"; m="${m: -3}"
+      test "${m:1:1}" = 7 && test "${m:2:1}" = 0
+  - id: setgid
+    covers: [R2]
+    on: node2
+    desc: setgid bit set
+    run: test -g /common/{{group}}
+  - id: sticky
+    covers: [R3]
+    on: node2
+    desc: sticky bit set
+    run: test -k /common/{{group}}
+
+references:
+  - "RHEL 10: Managing file systems > Managing file permissions (special permissions: SetGID, sticky bit)"
+  - "man chmod(1) (special bits)"

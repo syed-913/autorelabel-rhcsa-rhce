@@ -1,0 +1,41 @@
+title: Process a file line by line
+primary: rhcsa.scripts.loops
+objectives: [rhcsa.scripts.loops, rhcsa.scripts.command-output, rhcsa.scripts.conditionals]
+facets:
+  - rhcsa.scripts.loops:loop-file
+  - rhcsa.scripts.command-output:command-substitution
+  - rhcsa.scripts.conditionals:if-test
+difficulty: medium
+difficulty_reason: A while-read loop with filtering and command substitution per line.
+estimated_minutes: 8
+node: node1
+params:
+  name: {choice: [resolve-hosts, hostlookup, check-hosts]}
+
+prompt: |
+  On node1, create the executable script `/usr/local/bin/{{name}}` that takes a **file name** as
+  its argument. The file contains one host name per line. Lines that are **empty** or start with
+  `#` must be ignored. For every other line, print
+
+      HOSTNAME ADDRESS
+
+  where ADDRESS is the first IPv4 address the system resolves for that name, or `unknown` if it
+  cannot be resolved.
+
+requirements:
+  R1: "every host line produces 'HOSTNAME ADDRESS' using the system resolver"
+  R2: "empty and comment lines are skipped; unresolvable names print 'unknown'"
+
+checks:
+  - id: resolve
+    covers: [R1, R2]
+    desc: output for a test file
+    run: |
+      test -x /usr/local/bin/{{name}}
+      f="$(mktemp)"; trap 'rm -f "$f"' EXIT
+      printf '# lab hosts\nlocalhost\n\nutility.lab.example.com\nno-such-host.invalid\n' > "$f"
+      want="$(printf 'localhost 127.0.0.1\nutility.lab.example.com {{lab.utility.ip}}\nno-such-host.invalid unknown')"
+      test "$(/usr/local/bin/{{name}} "$f")" = "$want"
+
+references:
+  - "man bash(1) (while, read, Command Substitution), man getent(1) (ahostsv4)"

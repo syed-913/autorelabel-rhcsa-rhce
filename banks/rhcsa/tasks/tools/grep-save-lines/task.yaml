@@ -1,0 +1,31 @@
+title: Extract matching lines from a file
+primary: rhcsa.tools.grep
+objectives: [rhcsa.tools.grep, rhcsa.tools.redirection]
+facets:
+  - rhcsa.tools.grep:grep-basic
+  - rhcsa.tools.grep:grep-save
+  - rhcsa.tools.redirection:redirect-stdout
+difficulty: easy
+difficulty_reason: One grep with a redirect; the pitfalls are case sensitivity and keeping the order.
+estimated_minutes: 3
+node: node2
+params:
+  word: {choice: [backup, timeout, denied, quota]}
+
+prompt: |
+  On node2, the file `/usr/share/doc/lab/events.log` contains many lines. Copy every line that
+  contains the string `{{word}}` (exactly, case-sensitive), in its original order, into
+  `/root/{{word}}-lines.txt`. Do not include any other lines, and do not include empty lines.
+
+requirements:
+  R1: "the output file has exactly the matching lines, in order"
+
+checks:
+  - id: lines
+    covers: [R1]
+    on: node2
+    desc: "/root/{{word}}-lines.txt equals grep '{{word}}' events.log"
+    run: diff <(grep -F -- '{{word}}' /usr/share/doc/lab/events.log) /root/{{word}}-lines.txt >/dev/null
+
+references:
+  - "man grep(1)"

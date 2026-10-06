@@ -1,0 +1,39 @@
+title: Select a tuning profile
+primary: rhcsa.operate.tuned
+objectives: [rhcsa.operate.tuned]
+facets:
+  - rhcsa.operate.tuned:tuned-profile
+  - rhcsa.operate.tuned:tuned-recommended
+difficulty: easy
+difficulty_reason: tuned-adm commands; the trap is a stopped/disabled tuned service.
+estimated_minutes: 4
+node: node1
+exclusive: [tuned-node1]
+params:
+  profile: {choice: [throughput-performance, latency-performance, powersave, balanced]}
+
+prompt: |
+  On node1:
+  1. Find out which tuning profile tuned **recommends** for this system and write its name, alone,
+     into `/root/tuned-recommended.txt`.
+  2. Activate the profile **`{{profile}}`** and make sure it is still active after reboots.
+
+requirements:
+  R1: "/root/tuned-recommended.txt contains the recommended profile"
+  R2: "{{profile}} is the active profile after a reboot"
+
+checks:
+  - id: recommended
+    covers: [R1]
+    desc: /root/tuned-recommended.txt matches tuned-adm recommend
+    run: test "$(tr -d '[:space:]' < /root/tuned-recommended.txt)" = "$(tuned-adm recommend | tr -d '[:space:]')"
+  - id: active
+    covers: [R2]
+    desc: "tuned is running with {{profile}}"
+    run: |
+      systemctl is-enabled -q tuned && systemctl is-active -q tuned
+      tuned-adm active | grep -q 'Current active profile: {{profile}}$'
+
+references:
+  - "RHEL 10: Monitoring and managing system status and performance > Getting started with TuneD"
+  - "man tuned-adm(8)"

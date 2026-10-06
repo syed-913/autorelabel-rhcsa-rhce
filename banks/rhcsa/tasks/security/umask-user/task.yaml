@@ -1,0 +1,35 @@
+title: Default file permissions for one user
+primary: rhcsa.security.umask
+objectives: [rhcsa.security.umask]
+facets: [rhcsa.security.umask:umask-user]
+difficulty: easy
+difficulty_reason: One setting in one user's shell startup file; the trap is translating permissions into a umask.
+estimated_minutes: 4
+node: node1
+exclusive: [umask-node1]
+params:
+  user: {pool: usernames}
+  password: {choice: [redhat123, labpass42, trustno1x]}
+
+prompt: |
+  On node1, the user `{{user}}` exists. Configure their account so that, by default,
+  new **files** they create get the permissions `rw-r-----` and new **directories** get
+  `rwxr-x---`. Other users must not be affected.
+
+requirements:
+  R1: "{{user}}'s login shells use umask 0027"
+  R2: "other users keep the default umask"
+
+checks:
+  - id: user-umask
+    covers: [R1]
+    desc: "{{user}}'s login shell reports umask 0027"
+    run: test "$(su - {{user}} -c umask 2>/dev/null | tail -1)" = 0027
+  - id: others
+    covers: [R2]
+    desc: root keeps umask 0022
+    run: test "$(su - root -c umask 2>/dev/null | tail -1)" = 0022
+
+references:
+  - "RHEL 10: Managing file systems > Managing file permissions > Changing the default umask for a specific user (bash)"
+  - "man bash(1) (umask, startup files), man umask(1p)"

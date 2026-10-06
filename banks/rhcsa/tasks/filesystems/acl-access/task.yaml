@@ -1,0 +1,60 @@
+title: Grant access with ACLs
+primary: rhcsa.filesystems.permissions
+objectives: [rhcsa.filesystems.permissions, rhcsa.software.rpm-packages]
+facets:
+  - rhcsa.filesystems.permissions:acl
+  - rhcsa.software.rpm-packages:rpm-install
+difficulty: medium
+difficulty_reason: Named-user ACL entries plus a default ACL for new files; the tools may need installing.
+estimated_minutes: 6
+node: node1
+params:
+  owner: {pool: usernames}
+  reader: {pool: usernames}
+  writer: {pool: usernames}
+  word: {pool: words}
+
+prompt: |
+  On node1, the directory `/srv/{{word}}` and the file `/srv/{{word}}/budget.csv` belong to
+  `{{owner}}` (mode 0750 and 0640). Without changing owners, groups or the normal permission bits:
+
+  - `{{reader}}` must be able to **read** `budget.csv`, but not modify it
+  - `{{writer}}` must be able to **read and write** `budget.csv`
+  - both must be able to enter the directory, and **new files** created in `/srv/{{word}}` must
+    automatically grant `{{writer}}` read and write access
+
+  (ACL tools may need to be installed.)
+
+requirements:
+  R1: "{{reader}} can read but not write budget.csv"
+  R2: "{{writer}} can read and write budget.csv"
+  R3: "both can enter the directory; a default ACL gives {{writer}} rw on new files"
+  R4: "owner, group and base permission bits are unchanged"
+
+checks:
+  - id: reader
+    covers: [R1]
+    desc: "{{reader}}: read yes, write no"
+    run: |
+      sudo -u {{reader}} test -r /srv/{{word}}/budget.csv
+      ! sudo -u {{reader}} test -w /srv/{{word}}/budget.csv
+  - id: writer
+    covers: [R2]
+    desc: "{{writer}}: read and write"
+    run: sudo -u {{writer}} test -r /srv/{{word}}/budget.csv && sudo -u {{writer}} test -w /srv/{{word}}/budget.csv
+  - id: default
+    covers: [R3]
+    desc: directory access and default ACL for {{writer}}
+    run: |
+      sudo -u {{reader}} test -x /srv/{{word}} && sudo -u {{writer}} test -x /srv/{{word}}
+      getfacl -p /srv/{{word}} 2>/dev/null | grep -Eq '^default:user:{{writer}}:rw'
+  - id: unchanged
+    covers: [R4]
+    desc: owner/mode unchanged
+    run: |
+      test "$(stat -c '%U %a' /srv/{{word}})" = "{{owner}} 750"
+      test "$(stat -c '%U %a' /srv/{{word}}/budget.csv)" = "{{owner}} 640" -o "$(stat -c '%U %a' /srv/{{word}}/budget.csv)" = "{{owner}} 660"
+
+references:
+  - "RHEL 10: Managing file systems > Managing Access Control Lists"
+  - "man setfacl(1), man getfacl(1), man acl(5)"

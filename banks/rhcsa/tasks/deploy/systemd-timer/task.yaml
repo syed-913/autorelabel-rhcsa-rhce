@@ -1,0 +1,49 @@
+title: Schedule a job with a systemd timer
+primary: rhcsa.deploy.scheduling
+objectives: [rhcsa.deploy.scheduling, rhcsa.deploy.services]
+facets:
+  - rhcsa.deploy.scheduling:systemd-timer
+  - rhcsa.deploy.services:service-enable
+difficulty: medium
+difficulty_reason: Two unit files with the right sections and calendar syntax, then enabling the timer (not the service).
+estimated_minutes: 8
+node: node1
+params:
+  word: {pool: words}
+  hour: {choice: ["02", "03", "04", "22", "23"]}
+  minute: {choice: ["10", "20", "30", "40"]}
+
+prompt: |
+  On node1, create a systemd **service** unit `{{word}}-report.service` that runs (once, then exits):
+
+      /usr/bin/logger -t {{word}} "timer job"
+
+  and a systemd **timer** `{{word}}-report.timer` that starts that service every day at
+  **{{hour}}:{{minute}}**. The timer must be active now and after reboots.
+
+requirements:
+  R1: "{{word}}-report.service runs the logger command"
+  R2: "{{word}}-report.timer fires every day at {{hour}}:{{minute}}"
+  R3: "the timer is enabled and active"
+
+checks:
+  - id: service
+    covers: [R1]
+    desc: "{{word}}-report.service runs logger -t {{word}}"
+    run: |
+      systemctl cat {{word}}-report.service >/dev/null 2>&1
+      systemctl show -p ExecStart {{word}}-report.service | grep -q 'logger'
+      systemctl show -p ExecStart {{word}}-report.service | grep -q -- '-t {{word}}\|{{word}}'
+  - id: schedule
+    covers: [R2]
+    desc: "timer OnCalendar is daily at {{hour}}:{{minute}}"
+    run: |
+      systemctl show -p TimersCalendar {{word}}-report.timer | grep -q 'OnCalendar=\*-\*-\* {{hour}}:{{minute}}:00'
+  - id: enabled
+    covers: [R3]
+    desc: timer enabled and active
+    run: systemctl is-enabled -q {{word}}-report.timer && systemctl is-active -q {{word}}-report.timer
+
+references:
+  - "RHEL 10: Using systemd unit files to customize and optimize your system > Working with systemd timer units"
+  - "man systemd.timer(5), man systemd.time(7) (calendar events), man systemd.service(5)"

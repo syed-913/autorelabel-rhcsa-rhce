@@ -1,0 +1,41 @@
+title: Control services at boot
+primary: rhcsa.deploy.services
+objectives: [rhcsa.deploy.services, rhcsa.operate.network-services]
+facets:
+  - rhcsa.deploy.services:service-enable
+  - rhcsa.deploy.services:service-disable
+  - rhcsa.operate.network-services:service-start-stop
+difficulty: easy
+difficulty_reason: systemctl enable/disable/mask; the trap is "stopped now" vs "never starts" (mask).
+estimated_minutes: 4
+node: node1
+params:
+  word: {pool: words}
+
+prompt: |
+  On node1:
+
+  1. The `rsyslog` service is stopped and disabled. It must run now and start at every boot.
+  2. The service `{{word}}-agent.service` must be stopped and must **never** start again, not even
+     manually or as a dependency of another unit (do not delete its unit file).
+
+requirements:
+  R1: "rsyslog is enabled and running"
+  R2: "{{word}}-agent is stopped and cannot be started (masked)"
+
+checks:
+  - id: rsyslog
+    covers: [R1]
+    desc: rsyslog enabled and running
+    run: systemctl is-enabled -q rsyslog && systemctl is-active -q rsyslog
+  - id: masked
+    covers: [R2]
+    desc: "{{word}}-agent is masked and inactive"
+    run: |
+      test "$(systemctl is-enabled {{word}}-agent.service 2>/dev/null)" = masked
+      ! systemctl is-active -q {{word}}-agent.service
+      test -f /usr/lib/systemd/system/{{word}}-agent.service
+
+references:
+  - "RHEL 10: Using systemd unit files to customize and optimize your system > Managing system services with systemctl"
+  - "man systemctl(1) (enable, disable, mask)"

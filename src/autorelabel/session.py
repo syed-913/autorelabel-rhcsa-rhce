@@ -123,9 +123,9 @@ class Session:
         self.dir.mkdir(parents=True, exist_ok=True)
         atomic_write_json(self.file, asdict(self), mode=0o600)
 
-    def event(self, kind: str, **data: Any) -> None:
+    def event(self, event_name: str, /, **data: Any) -> None:
         self.dir.mkdir(parents=True, exist_ok=True)
-        append_line(self.journal, json.dumps({"ts": time.time(), "event": kind, **data}, sort_keys=True))
+        append_line(self.journal, json.dumps({"ts": time.time(), **data, "event": event_name}, sort_keys=True))
 
     def transition(self, new: str, **data: Any) -> None:
         if new != self.state and new not in TRANSITIONS.get(self.state, set()):

@@ -1,0 +1,62 @@
+title: Password aging policies
+primary: rhcsa.users.passwords
+objectives: [rhcsa.users.passwords]
+facets:
+  - rhcsa.users.passwords:chage
+  - rhcsa.users.passwords:login-defs
+  - rhcsa.users.passwords:set-password
+difficulty: medium
+difficulty_reason: >
+  Two mechanisms that candidates often confuse: chage changes existing accounts, login.defs only
+  affects accounts created afterwards. Several exact values.
+estimated_minutes: 7
+node: node1
+exclusive: [login-defs-node1]
+params:
+  user: {pool: usernames}
+  maxdays: {choice: [45, 60, 90]}
+  warn: {choice: [5, 7, 10]}
+  expire: {choice: ["2027-03-31", "2027-06-30", "2027-12-31"]}
+  defmax: {choice: [30, 60, 120]}
+
+prompt: |
+  On node1:
+
+  1. The existing user `{{user}}` must change their password every **{{maxdays}}** days and be
+     warned **{{warn}}** days before it expires. Their account must expire on **{{expire}}**.
+  2. `{{user}}` must be forced to choose a new password at their next login.
+  3. Every user **created from now on** must, by default, change their password every
+     **{{defmax}}** days.
+
+requirements:
+  R1: "{{user}}: maximum password age {{maxdays}} days, warning {{warn}} days"
+  R2: "{{user}}: account expires on {{expire}}"
+  R3: "{{user}} must change the password at next login"
+  R4: "new accounts default to a maximum password age of {{defmax}} days"
+
+checks:
+  - id: aging
+    covers: [R1]
+    desc: "chage for {{user}}: max {{maxdays}}, warn {{warn}}"
+    run: |
+      IFS=: read -r _ _ _ _ max warn _ _ _ < <(getent shadow {{user}})
+      test "$max" = "{{maxdays}}" && test "$warn" = "{{warn}}"
+  - id: expire
+    covers: [R2]
+    desc: "{{user}}'s account expires on {{expire}}"
+    run: |
+      exp="$(getent shadow {{user}} | cut -d: -f8)"
+      test -n "$exp" && test "$(date -u -d "@$((exp * 86400))" +%F)" = "{{expire}}"
+  - id: forced
+    covers: [R3]
+    desc: "{{user}} must change the password at next login (last change = 0)"
+    run: |
+      test "$(getent shadow {{user}} | cut -d: -f3)" = 0
+  - id: defaults
+    covers: [R4]
+    desc: "PASS_MAX_DAYS {{defmax}} in /etc/login.defs"
+    run: test "$(awk '$1=="PASS_MAX_DAYS"{v=$2} END{print v}' /etc/login.defs)" = "{{defmax}}"
+
+references:
+  - "RHEL 10: Configuring basic system settings > Managing users and groups (password aging)"
+  - "man chage(1), man login.defs(5), man passwd(1)"

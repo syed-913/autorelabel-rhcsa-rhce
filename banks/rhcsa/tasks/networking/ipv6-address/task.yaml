@@ -1,0 +1,47 @@
+title: Add a static IPv6 address
+primary: rhcsa.networking.addresses
+objectives: [rhcsa.networking.addresses]
+facets: [rhcsa.networking.addresses:ipv6-static]
+difficulty: medium
+difficulty_reason: Modify an existing connection to add (not replace) an IPv6 address persistently.
+estimated_minutes: 5
+node: node2
+exclusive: [node2-lab-connection]
+params:
+  host: {choice: [101, 150, 200, 250]}
+
+prompt: |
+  On node2, add the IPv6 address `{{lab.ipv6_prefix}}{{host}}/64` to the lab interface
+  `{{lab.node2.nic}}`, **in addition to** its current IPv4 and IPv6 addresses. It must be configured
+  at boot.
+
+requirements:
+  R1: "{{lab.ipv6_prefix}}{{host}}/64 is configured on {{lab.node2.nic}} after reboot"
+  R2: "the existing IPv4 ({{lab.node2.ip}}) and IPv6 ({{lab.node2.ipv6}}) addresses remain"
+  R3: "the new address is reachable from another host"
+
+checks:
+  - id: new
+    covers: [R1]
+    on: node2
+    desc: new IPv6 address present
+    run: |
+      nic="$(sed -n 's/^lab_nic=//p' /etc/autorelabel/facts)"
+      ip -6 -o addr show dev "$nic" | grep -qw '{{lab.ipv6_prefix}}{{host}}/64'
+  - id: kept
+    covers: [R2]
+    on: node2
+    desc: old addresses kept
+    run: |
+      nic="$(sed -n 's/^lab_nic=//p' /etc/autorelabel/facts)"
+      ip -4 -o addr show dev "$nic" | grep -qw '{{lab.node2.ip}}/{{lab.prefix}}'
+      ip -6 -o addr show dev "$nic" | grep -qw '{{lab.node2.ipv6}}/64'
+  - id: reachable
+    covers: [R3]
+    on: utility
+    desc: utility can ping the new address
+    run: ping -6 -c 2 -W 2 {{lab.ipv6_prefix}}{{host}} >/dev/null
+
+references:
+  - "RHEL 10: Configuring and managing networking > Configuring an Ethernet connection (IPv6 settings with nmcli)"
+  - "man nmcli(1) (+ipv6.addresses), man nm-settings-nmcli(5)"

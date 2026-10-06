@@ -1,0 +1,65 @@
+title: Modify and remove user accounts
+primary: rhcsa.users.accounts
+objectives: [rhcsa.users.accounts, rhcsa.users.groups]
+facets:
+  - rhcsa.users.accounts:user-modify
+  - rhcsa.users.accounts:user-delete
+  - rhcsa.users.groups:group-delete
+  - rhcsa.users.groups:group-membership
+difficulty: easy
+difficulty_reason: usermod/userdel/groupdel options; the traps are -a with -G and removing the home directory.
+estimated_minutes: 6
+node: node2
+params:
+  keep: {pool: usernames}
+  gone: {pool: usernames}
+  oldgroup: {pool: groupnames}
+  newgroup: {pool: groupnames}
+  comment: {choice: ["Database Administrator", "Release Engineer", "Security Auditor"]}
+
+prompt: |
+  On node2:
+
+  - User `{{keep}}`: set the comment (GECOS) field to `{{comment}}`, change the login shell to
+    `/bin/sh`, and **add** them to the group `{{newgroup}}` while keeping their existing
+    supplementary groups.
+  - Delete the user `{{gone}}` **together with their home directory and mail spool**.
+  - Delete the group `{{oldgroup}}`, which nobody uses as a primary group.
+
+requirements:
+  R1: "{{keep}} has the comment {{comment}} and shell /bin/sh"
+  R2: "{{keep}} is in {{newgroup}} and still in their original supplementary group"
+  R3: "{{gone}} no longer exists and its home directory and mail spool are gone"
+  R4: "the group {{oldgroup}} no longer exists"
+
+checks:
+  - id: comment-shell
+    covers: [R1]
+    on: node2
+    desc: "{{keep}}: comment and shell"
+    run: |
+      test "$(getent passwd {{keep}} | cut -d: -f5)" = "{{comment}}"
+      case "$(getent passwd {{keep}} | cut -d: -f7)" in /bin/sh|/usr/bin/sh) ;; *) exit 1 ;; esac
+  - id: groups
+    covers: [R2]
+    on: node2
+    desc: "{{keep}} is in {{newgroup}} and still in the 'wheel' group"
+    run: |
+      g="$(id -nG {{keep}} | tr ' ' '\n')"
+      echo "$g" | grep -qx {{newgroup}} && echo "$g" | grep -qx wheel
+  - id: deleted
+    covers: [R3]
+    on: node2
+    desc: "{{gone}}, its home and mail spool are gone"
+    run: |
+      ! getent passwd {{gone}} >/dev/null
+      test ! -e /home/{{gone}} && test ! -e /var/spool/mail/{{gone}}
+  - id: group-deleted
+    covers: [R4]
+    on: node2
+    desc: "group {{oldgroup}} is gone"
+    run: "! getent group {{oldgroup}} >/dev/null"
+
+references:
+  - "RHEL 10: Configuring basic system settings > Managing users and groups"
+  - "man usermod(8) (-a -G, -c, -s), man userdel(8) (-r), man groupdel(8)"

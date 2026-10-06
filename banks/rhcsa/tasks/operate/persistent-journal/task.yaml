@@ -1,0 +1,39 @@
+title: Preserve the system journal across reboots
+primary: rhcsa.operate.persistent-journal
+objectives: [rhcsa.operate.persistent-journal, rhcsa.operate.logs]
+facets:
+  - rhcsa.operate.persistent-journal:journal-persistent
+  - rhcsa.operate.logs:journal-query
+difficulty: easy
+difficulty_reason: One configuration change (RHEL 10 keeps the journal in /run by default).
+estimated_minutes: 4
+node: node2
+exclusive: [journald-node2]
+
+prompt: |
+  On node2, the systemd journal is lost at every reboot. Configure journald so that the journal is
+  **stored persistently on disk** and messages from previous boots remain available.
+
+requirements:
+  R1: "the journal is stored under /var/log/journal"
+  R2: "logs from the previous boot are available after a reboot"
+
+checks:
+  - id: on-disk
+    covers: [R1]
+    on: node2
+    desc: journal files live in /var/log/journal
+    run: |
+      test -d /var/log/journal
+      find /var/log/journal -name 'system*.journal' | grep -q .
+      ! journalctl --header 2>/dev/null | grep -q 'File path: /run/log/journal/.*/system.journal' || \
+        find /var/log/journal -name 'system.journal' | grep -q .
+  - id: previous-boot
+    covers: [R2]
+    on: node2
+    desc: journalctl --list-boots shows more than one boot
+    run: test "$(journalctl --list-boots 2>/dev/null | grep -c .)" -ge 2
+
+references:
+  - "RHEL 10: Configuring basic system settings > Making systemd-journald storage persistent"
+  - "man journald.conf(5) (Storage=), man journalctl(1)"

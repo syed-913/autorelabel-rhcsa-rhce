@@ -1,0 +1,38 @@
+title: Work as root through sudo
+primary: rhcsa.tools.switch-users
+objectives: [rhcsa.tools.switch-users, rhcsa.users.privileged]
+facets:
+  - rhcsa.tools.switch-users:sudo-shell
+difficulty: easy
+difficulty_reason: Log in as a regular user and use sudo; the evidence is in the security log.
+estimated_minutes: 3
+node: node2
+params:
+  user: {pool: usernames}
+  password: {choice: [Wheel-Lab-11, Wheel-Lab-22]}
+  word: {pool: words}
+
+prompt: |
+  On node2, the user `{{user}}` (password `{{password}}`) is a member of `wheel`.
+  **Log in as `{{user}}`** and, using `sudo` (do not log in as root or use `su` to root), create the
+  empty file `/root/{{word}}-by-sudo`.
+
+requirements:
+  R1: "/root/{{word}}-by-sudo exists"
+  R2: "{{user}} used sudo to create it"
+
+checks:
+  - id: file
+    covers: [R1]
+    on: node2
+    desc: the file exists
+    run: test -f /root/{{word}}-by-sudo
+  - id: sudo-log
+    covers: [R2]
+    on: node2
+    desc: "/var/log/secure records {{user}} running a command with sudo"
+    run: |
+      grep -Eq "sudo\[[0-9]+\]: +{{user}} : .*USER=root ; COMMAND=.*" /var/log/secure
+
+references:
+  - "man sudo(8) (-i, -s), man sudoers(5)"

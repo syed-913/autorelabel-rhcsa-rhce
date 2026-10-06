@@ -1,0 +1,31 @@
+title: Change the boot loader menu timeout
+primary: rhcsa.deploy.bootloader
+objectives: [rhcsa.deploy.bootloader]
+facets: [rhcsa.deploy.bootloader:grub-timeout]
+difficulty: easy
+difficulty_reason: One setting and one regeneration command; the trap is not regenerating grub.cfg.
+estimated_minutes: 4
+node: node2
+exclusive: [node2-grub-config]
+params:
+  timeout: {choice: [8, 10, 12, 15]}
+
+prompt: |
+  On node2, the boot loader menu must wait **{{timeout}} seconds** before booting the default
+  entry. Make the change permanent.
+
+requirements:
+  R1: "the GRUB menu timeout is {{timeout}} seconds"
+
+checks:
+  - id: timeout
+    covers: [R1]
+    on: node2
+    desc: "grub.cfg and /etc/default/grub both use a {{timeout}} s timeout"
+    run: |
+      grep -Eq '^GRUB_TIMEOUT=["]?{{timeout}}["]?$' /etc/default/grub
+      grep -Eq '^[[:space:]]*set timeout={{timeout}}$' /boot/grub2/grub.cfg
+
+references:
+  - "RHEL 10: Managing, monitoring, and updating the kernel > Making persistent changes to the GRUB boot loader"
+  - "man grub2-mkconfig(8); info grub2 (GRUB_TIMEOUT)"

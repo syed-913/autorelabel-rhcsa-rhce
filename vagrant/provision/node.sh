@@ -26,6 +26,8 @@ chmod 0600 /etc/ssh/sshd_config.d/01-permitrootlogin.conf
 passwd -l vagrant >/dev/null
 
 step "Software sources"
+# Unregistered lab systems: silence the subscription-manager dnf plugin.
+sed -i 's/^enabled=.*/enabled=0/' /etc/dnf/plugins/subscription-manager.conf /etc/dnf/plugins/product-id.conf 2>/dev/null || true
 # Exam nodes start with no repositories; candidates configure them.
 rm -f /etc/yum.repos.d/*.repo
 dnf clean all >/dev/null 2>&1 || true

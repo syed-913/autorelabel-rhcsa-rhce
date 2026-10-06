@@ -1,0 +1,62 @@
+title: Update a package from an additional repository
+primary: rhcsa.deploy.packages-sources
+objectives: [rhcsa.deploy.packages-sources, rhcsa.software.rpm-repos]
+facets:
+  - rhcsa.deploy.packages-sources:pkg-remote-repo
+  - rhcsa.software.rpm-repos:repo-gpg
+difficulty: medium
+difficulty_reason: >
+  Define a repository with per-repository settings (no signatures for this one only) and update a
+  package installed from elsewhere; disabling GPG globally or on the command line is the trap.
+estimated_minutes: 6
+node: node2
+exclusive: [labtools-node2]
+
+prompt: |
+  node2 has the package `labtools` 1.0 installed. A newer version is available in the repository
+  `http://{{lab.utility_fqdn}}/extras/`, whose packages are **not signed**.
+
+  1. Configure that repository on node2 with the repository id `extras`. Disable signature
+     checking **for this repository only**.
+  2. Update `labtools` to the newest version available.
+
+requirements:
+  R1: "repository 'extras' is configured with the URL, enabled, gpgcheck disabled for it only"
+  R2: "labtools is at version 1.1"
+  R3: "global signature checking (dnf.conf) is still on"
+
+checks:
+  - id: repo
+    covers: [R1]
+    on: node2
+    desc: "[extras] enabled, baseurl .../extras, gpgcheck=0"
+    run: |
+      python3 - <<'PY'
+      import configparser, glob, sys
+      for p in glob.glob("/etc/yum.repos.d/*.repo"):
+          cp = configparser.ConfigParser(interpolation=None, strict=False)
+          try:
+              cp.read(p)
+          except configparser.Error:
+              continue
+          if cp.has_section("extras"):
+              s = cp["extras"]
+              ok = ("utility.lab.example.com/extras" in s.get("baseurl", "") or "{{lab.utility.ip}}/extras" in s.get("baseurl", "")) \
+                  and s.get("enabled", "1").strip() in ("1", "yes", "true") and s.get("gpgcheck", "1").strip() in ("0", "no", "false")
+              sys.exit(0 if ok else 1)
+      sys.exit(1)
+      PY
+  - id: version
+    covers: [R2]
+    on: node2
+    desc: labtools 1.1 installed
+    run: test "$(rpm -q --qf '%{VERSION}' labtools)" = 1.1
+  - id: global-gpg
+    covers: [R3]
+    on: node2
+    desc: dnf.conf still has gpgcheck=1
+    run: grep -Eq '^gpgcheck[[:space:]]*=[[:space:]]*(1|True|true|yes)' /etc/dnf/dnf.conf
+
+references:
+  - "RHEL 10: Managing software with the DNF tool > Managing custom software repositories"
+  - "man dnf.conf(5) (gpgcheck per repository)"

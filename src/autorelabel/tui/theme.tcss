@@ -1,0 +1,125 @@
+/* autorelabel TUI */
+Screen {
+    background: $surface;
+}
+
+#banner {
+    height: auto;
+    padding: 1 2 0 2;
+    content-align: center middle;
+    width: 100%;
+}
+
+#tagline {
+    padding: 0 2 1 2;
+    color: $text-muted;
+    width: 100%;
+    content-align: center middle;
+}
+
+.title {
+    text-style: bold;
+    color: $accent;
+    padding: 1 0 0 0;
+}
+
+.muted { color: $text-muted; }
+.ok { color: $success; }
+.warn { color: $warning; }
+.err { color: $error; }
+
+#statusline {
+    height: 1;
+    padding: 0 2;
+    color: $text-muted;
+    background: $panel;
+    dock: bottom;
+}
+
+/* Home */
+#home-body {
+    align: center top;
+    height: 1fr;
+}
+#menu {
+    width: 80;
+    height: auto;
+    max-height: 20;
+    border: round $accent;
+    padding: 0 1;
+}
+#home-info {
+    width: 80;
+    height: auto;
+    padding: 1 1;
+}
+
+/* Generic panels */
+.panel {
+    border: round $panel-lighten-2;
+    padding: 0 1;
+    height: auto;
+}
+
+/* Operation (long task) screen */
+#op-title { text-style: bold; padding: 1 2 0 2; }
+#op-step { padding: 0 2; color: $accent; }
+#op-log { height: 1fr; margin: 1 2; border: round $panel-lighten-2; }
+#op-buttons { height: auto; padding: 0 2 1 2; }
+#op-buttons Button { margin-right: 2; }
+
+/* Doctor */
+#doctor-table { height: 1fr; margin: 0 2; }
+#doctor-fix { height: 12; margin: 0 2; border: round $warning; padding: 0 1; }
+
+/* Exam */
+#exam-header {
+    height: 3;
+    padding: 0 2;
+    background: $panel;
+    layout: horizontal;
+}
+#exam-title { width: 1fr; content-align: left middle; text-style: bold; }
+#exam-clock { width: 22; content-align: right middle; text-style: bold; }
+#exam-clock.low { color: $warning; }
+#exam-clock.critical { color: $error; text-style: bold reverse; }
+#exam-banner { height: auto; padding: 0 2; background: $error 30%; display: none; }
+#exam-banner.show { display: block; }
+#exam-body { height: 1fr; }
+#task-list { width: 46; border-right: solid $panel-lighten-2; }
+#task-view { width: 1fr; padding: 0 2; }
+#node-bar { height: 3; padding: 0 2; background: $panel; }
+
+/* Results */
+#score {
+    height: 5;
+    content-align: center middle;
+    text-style: bold;
+}
+#score.pass { color: $success; }
+#score.fail { color: $error; }
+#results-body { height: 1fr; }
+#results-tasks { width: 52; }
+#results-detail { width: 1fr; padding: 0 2; }
+
+/* Forms */
+.field-label { padding: 1 0 0 0; text-style: bold; }
+.field-help { color: $text-muted; }
+Input { margin: 0 0 0 0; }
+#form { padding: 0 2; height: 1fr; }
+#form-buttons { height: auto; padding: 1 2; }
+#form-buttons Button { margin-right: 2; }
+
+ModalScreen {
+    align: center middle;
+}
+#dialog {
+    width: 76;
+    height: auto;
+    max-height: 90%;
+    border: thick $accent;
+    background: $surface;
+    padding: 1 2;
+}
+#dialog-buttons { height: auto; padding: 1 0 0 0; }
+#dialog-buttons Button { margin-right: 2; }

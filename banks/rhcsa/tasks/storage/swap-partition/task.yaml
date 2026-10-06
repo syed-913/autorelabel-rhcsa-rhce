@@ -1,0 +1,50 @@
+title: Add swap space on a new partition
+primary: rhcsa.storage.non-destructive
+objectives: [rhcsa.storage.non-destructive, rhcsa.storage.partitions]
+facets:
+  - rhcsa.storage.non-destructive:swap-partition
+  - rhcsa.storage.non-destructive:add-partition
+  - rhcsa.storage.partitions:gpt-create
+difficulty: medium
+difficulty_reason: Partition + mkswap + persistent fstab entry, without disturbing the existing swap.
+estimated_minutes: 6
+node: node2
+resources:
+  disk: {node2.disk1: 560}
+params:
+  size: {choice: [384, 512]}
+
+prompt: |
+  node2 needs more swap. Add a **{{size}} MiB swap partition** on `{{lab.node2.disk1}}` that is
+  active now and after every reboot. The existing swap space must stay in use.
+
+requirements:
+  R1: "a {{size}} MiB swap partition on {{lab.node2.disk1}} is active after reboot"
+  R2: "it is configured in /etc/fstab"
+  R3: "the original swap is still active"
+
+checks:
+  - id: active
+    covers: [R1]
+    on: node2
+    desc: "a ~{{size}} MiB swap partition on {{lab.node2.disk1}} is in use"
+    run: |
+      swapon --show=NAME,SIZE --bytes --noheadings | awk -v d="{{lab.node2.disk1}}" -v s={{size}} \
+        'index($1,d)==1 && $2/1048576>=s-12 && $2/1048576<=s+12 {f=1} END{exit !f}'
+  - id: fstab
+    covers: [R2]
+    on: node2
+    desc: fstab has a swap entry for it
+    run: |
+      dev="$(swapon --show=NAME --noheadings | grep '^{{lab.node2.disk1}}' | head -1)"
+      uuid="$(blkid -s UUID -o value "$dev")"
+      grep -Eq "^[[:space:]]*(UUID=\"?$uuid\"?|$dev|/dev/disk/by-[a-z]+/[^ ]+)[[:space:]]+(none|swap)[[:space:]]+swap" /etc/fstab
+  - id: original
+    covers: [R3]
+    on: node2
+    desc: the rhel-swap LV is still active
+    run: swapon --show=NAME --noheadings | grep -Eq 'dm-|rhel-swap'
+
+references:
+  - "RHEL 10: Managing storage devices > Getting started with swap > Creating a swap partition / Extending swap"
+  - "man mkswap(8), man swapon(8), man fstab(5)"

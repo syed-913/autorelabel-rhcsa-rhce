@@ -1,0 +1,40 @@
+title: Switch user and create a file as that user
+primary: rhcsa.tools.switch-users
+objectives: [rhcsa.tools.switch-users, rhcsa.tools.edit-files]
+facets:
+  - rhcsa.tools.switch-users:su-login
+  - rhcsa.tools.edit-files:edit-file
+difficulty: easy
+difficulty_reason: su to another account and create a file with exact content.
+estimated_minutes: 3
+node: node1
+params:
+  user: {pool: usernames}
+  password: {choice: [Switch-Me-12, Become-User-34]}
+  word: {pool: words}
+
+prompt: |
+  On node1, the user `{{user}}` has the password `{{password}}`. Acting **as `{{user}}`**, create
+  the file `~/{{word}}.txt` (in their home directory) containing exactly these two lines:
+
+      project={{word}}
+      owner={{user}}
+
+  The file must be owned by `{{user}}`.
+
+requirements:
+  R1: "the file has exactly the two lines"
+  R2: "the file is owned by {{user}} and lives in their home"
+
+checks:
+  - id: content
+    covers: [R1]
+    desc: exact content
+    run: diff <(printf 'project={{word}}\nowner={{user}}\n') /home/{{user}}/{{word}}.txt >/dev/null
+  - id: owner
+    covers: [R2]
+    desc: "owned by {{user}}"
+    run: test "$(stat -c %U /home/{{user}}/{{word}}.txt)" = "{{user}}"
+
+references:
+  - "man su(1), man sudo(8) (-u, -i)"

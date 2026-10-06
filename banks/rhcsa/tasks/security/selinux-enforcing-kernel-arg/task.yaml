@@ -1,0 +1,41 @@
+title: Find out why SELinux stays permissive and fix it
+primary: rhcsa.security.selinux-modes
+objectives: [rhcsa.security.selinux-modes, rhcsa.deploy.bootloader]
+facets:
+  - rhcsa.security.selinux-modes:selinux-enforcing
+  - rhcsa.deploy.bootloader:kernel-args
+difficulty: medium
+difficulty_reason: >
+  Two subsystems: the SELinux configuration file looks correct, but a kernel argument overrides it.
+  Diagnosing it means reading /proc/cmdline and fixing the bootloader persistently.
+estimated_minutes: 6
+node: node2
+exclusive: [selinux-mode-node2, node2-kernel-args]
+
+prompt: |
+  node2's SELinux configuration file says `enforcing`, yet node2 comes up in **permissive** mode
+  after every boot. Find the cause and fix it, so node2 boots with SELinux enforcing for all
+  installed kernels. Do not disable SELinux.
+
+requirements:
+  R1: "node2 boots with SELinux enforcing"
+  R2: "no kernel argument forces permissive mode, for any installed kernel"
+
+checks:
+  - id: running
+    covers: [R1]
+    on: node2
+    desc: getenforce reports Enforcing after the reboot
+    run: test "$(getenforce)" = Enforcing && ! grep -qw 'enforcing=0' /proc/cmdline
+  - id: bootloader
+    covers: [R2]
+    on: node2
+    desc: no boot entry carries enforcing=0 or selinux=0
+    run: |
+      ! grubby --info=ALL 2>/dev/null | grep -Eq '(^|[[:space:]"])(enforcing|selinux)=0'
+      ! grep -Eq '^GRUB_CMDLINE_LINUX=.*(enforcing|selinux)=0' /etc/default/grub
+
+references:
+  - "RHEL 10: Using SELinux > Changing SELinux states and modes (kernel parameters enforcing= and selinux=)"
+  - "RHEL 10: Managing, monitoring, and updating the kernel > Configuring kernel command-line parameters (grubby)"
+  - "man grubby(8), man selinux_config(5)"

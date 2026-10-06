@@ -1,0 +1,56 @@
+title: Script with arguments, tests and exit codes
+primary: rhcsa.scripts.inputs
+objectives: [rhcsa.scripts.inputs, rhcsa.scripts.conditionals]
+facets:
+  - rhcsa.scripts.inputs:positional-args
+  - rhcsa.scripts.inputs:arg-count
+  - rhcsa.scripts.conditionals:if-test
+  - rhcsa.scripts.conditionals:exit-status
+difficulty: medium
+difficulty_reason: Argument validation, a conditional on a command's exit status, exact output and exit codes.
+estimated_minutes: 8
+node: node1
+params:
+  name: {choice: [whois-user, usercheck, finduser]}
+
+prompt: |
+  On node1, create the executable script `/usr/local/bin/{{name}}` that takes **one** argument,
+  a user name:
+
+  - called with **no argument** (or more than one): print `Usage: {{name}} USERNAME` to standard
+    **error** and exit with status **2**
+  - if the user **exists**: print `USER exists with UID N` (USER = the name, N = its UID) and exit
+    with status **0**
+  - otherwise: print `USER not found` and exit with status **1**
+
+requirements:
+  R1: "wrong argument count: usage on stderr, exit 2"
+  R2: "existing user: correct message and UID, exit 0"
+  R3: "unknown user: correct message, exit 1"
+
+checks:
+  - id: usage
+    covers: [R1]
+    desc: no/too many arguments → usage on stderr, exit 2
+    run: |
+      test -x /usr/local/bin/{{name}}
+      out="$(/usr/local/bin/{{name}} 2>/dev/null)"; rc=$?; test "$rc" = 2 && test -z "$out"
+      err="$(/usr/local/bin/{{name}} 2>&1 >/dev/null)"; test "$err" = "Usage: {{name}} USERNAME"
+      /usr/local/bin/{{name}} a b >/dev/null 2>&1; test $? = 2
+  - id: exists
+    covers: [R2]
+    desc: existing users
+    run: |
+      for u in root chrony; do
+        out="$(/usr/local/bin/{{name}} "$u")"; rc=$?
+        test "$rc" = 0 && test "$out" = "$u exists with UID $(id -u "$u")"
+      done
+  - id: missing
+    covers: [R3]
+    desc: unknown user
+    run: |
+      out="$(/usr/local/bin/{{name}} nosuchuser42)"; rc=$?
+      test "$rc" = 1 && test "$out" = "nosuchuser42 not found"
+
+references:
+  - "man bash(1) (Special Parameters $# $1, CONDITIONAL EXPRESSIONS, exit), man id(1), man getent(1)"

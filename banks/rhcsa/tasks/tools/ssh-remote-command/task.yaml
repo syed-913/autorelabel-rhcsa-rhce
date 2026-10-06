@@ -1,0 +1,30 @@
+title: Run commands on a remote system with SSH
+primary: rhcsa.tools.ssh
+objectives: [rhcsa.tools.ssh, rhcsa.tools.shell]
+facets:
+  - rhcsa.tools.ssh:ssh-remote-command
+  - rhcsa.tools.shell:command-syntax
+difficulty: easy
+difficulty_reason: One ssh invocation with a remote command and local redirection.
+estimated_minutes: 3
+node: node1
+
+prompt: |
+  From node1, run the command `lsblk -o NAME,SIZE,TYPE` **on node2** (over SSH, as root), and save
+  its output into `/root/node2-disks.txt` **on node1**.
+
+requirements:
+  R1: "node1:/root/node2-disks.txt holds node2's lsblk output"
+
+checks:
+  - id: output
+    covers: [R1]
+    desc: the file shows node2's disks (not node1's)
+    run: |
+      f=/root/node2-disks.txt
+      grep -Eq '^NAME[[:space:]]+SIZE[[:space:]]+TYPE' "$f"
+      grep -Eq "^$(basename {{lab.node2.disk1}})[[:space:]]+{{lab.node2.disk1_gb}}G" "$f"
+      ! grep -Eq "^$(basename {{lab.node1.disk2}})[[:space:]]" "$f"
+
+references:
+  - "man ssh(1) (ssh host command), man lsblk(8)"

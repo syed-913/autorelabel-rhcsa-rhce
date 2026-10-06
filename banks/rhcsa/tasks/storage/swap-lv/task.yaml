@@ -1,0 +1,47 @@
+title: Add swap space on a logical volume
+primary: rhcsa.storage.non-destructive
+objectives: [rhcsa.storage.non-destructive, rhcsa.storage.lv]
+facets:
+  - rhcsa.storage.non-destructive:swap-lv
+  - rhcsa.storage.non-destructive:add-lv
+  - rhcsa.storage.lv:lv-create-size
+difficulty: medium
+difficulty_reason: New LV in a VG that is already in use, mkswap, and a persistent fstab entry.
+estimated_minutes: 6
+node: node1
+exclusive: [node1-disk2-vg]
+resources:
+  disk: {node1.disk2: 1100}
+params:
+  vg: {choice: [labvg, opsvg, sysvg]}
+  size: {choice: [256, 384]}
+
+prompt: |
+  On node1, the volume group `{{vg}}` already holds a logical volume in use. Without affecting it,
+  create a new logical volume `swaplv` of **{{size}} MiB** in `{{vg}}` and use it as additional
+  swap space, active now and after every reboot.
+
+requirements:
+  R1: "{{vg}}/swaplv exists with {{size}} MiB"
+  R2: "it is active swap after reboot (fstab)"
+  R3: "the existing LV and its data are intact"
+
+checks:
+  - id: lv
+    covers: [R1]
+    desc: "{{vg}}/swaplv is {{size}} MiB"
+    run: test "$(lvs --noheadings --units m -o lv_size {{vg}}/swaplv | tr -d ' ' | cut -d. -f1)" = "{{size}}"
+  - id: swap
+    covers: [R2]
+    desc: swaplv is active swap and in fstab
+    run: |
+      swapon --show=NAME --noheadings | grep -q "$(readlink -f /dev/{{vg}}/swaplv)"
+      grep -Eq '^[[:space:]]*(/dev/{{vg}}/swaplv|/dev/mapper/{{vg}}-swaplv|UUID=[^ ]+)[[:space:]]+(none|swap)[[:space:]]+swap' /etc/fstab
+  - id: intact
+    covers: [R3]
+    desc: existing data intact
+    run: cd /srv/{{vg}}-data && sha256sum -c --quiet /etc/autorelabel/{{vg}}-data.sha256
+
+references:
+  - "RHEL 10: Managing storage devices > Getting started with swap > Creating an LVM2 logical volume for swap"
+  - "man lvcreate(8), man mkswap(8)"

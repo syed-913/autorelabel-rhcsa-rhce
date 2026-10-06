@@ -1,0 +1,53 @@
+title: Classify paths with test conditions
+primary: rhcsa.scripts.conditionals
+objectives: [rhcsa.scripts.conditionals, rhcsa.scripts.inputs]
+facets:
+  - rhcsa.scripts.conditionals:if-test
+  - rhcsa.scripts.conditionals:exit-status
+  - rhcsa.scripts.inputs:positional-args
+difficulty: medium
+difficulty_reason: Several test operators in the right order (a symlink is also a file) and exit codes.
+estimated_minutes: 7
+node: node1
+params:
+  name: {choice: [pathtype, whatis-path, classify]}
+
+prompt: |
+  On node1, create the executable script `/usr/local/bin/{{name}}` that takes one path as argument
+  and prints exactly one word, then exits with the given status:
+
+  | the path is…               | prints      | exit |
+  |----------------------------|-------------|------|
+  | a symbolic link            | `symlink`   | 0    |
+  | a directory                | `directory` | 0    |
+  | a regular file             | `file`      | 0    |
+  | something else that exists | `other`     | 0    |
+  | missing                    | `missing`   | 1    |
+
+  (A symbolic link must be reported as `symlink` even if it points to a directory or file.)
+
+requirements:
+  R1: "symlinks, directories, regular files and other types are classified correctly (exit 0)"
+  R2: "missing paths print 'missing' and exit 1"
+
+checks:
+  - id: kinds
+    covers: [R1]
+    desc: classification
+    run: |
+      test -x /usr/local/bin/{{name}}
+      d="$(mktemp -d)"; trap 'rm -rf "$d"' EXIT
+      touch "$d/f"; mkdir "$d/dir"; ln -s "$d/dir" "$d/l"
+      test "$(/usr/local/bin/{{name}} "$d/l")" = symlink
+      test "$(/usr/local/bin/{{name}} "$d/dir")" = directory
+      test "$(/usr/local/bin/{{name}} "$d/f")" = file
+      test "$(/usr/local/bin/{{name}} /dev/null)" = other
+  - id: missing
+    covers: [R2]
+    desc: missing → exit 1
+    run: |
+      out="$(/usr/local/bin/{{name}} /no/such/path)"; rc=$?
+      test "$out" = missing && test "$rc" = 1
+
+references:
+  - "man bash(1) (CONDITIONAL EXPRESSIONS: -L -d -f -e), man test(1)"

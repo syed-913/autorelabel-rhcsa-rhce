@@ -79,6 +79,12 @@ def cmd_config(args: argparse.Namespace) -> int:
     return 0
 
 
+def _tui(start: str | None = None) -> int:
+    from .tui.app import run_tui
+
+    return run_tui(start)
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="autorelabel",
@@ -103,6 +109,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("uninstall", help="remove everything autorelabel created on this host "
                                      "(--dry-run, --keep-box, --yes)")
 
+    for name, hlp in (("rhcsa", "open the TUI and start a new RHCSA exam"),
+                      ("rhce", "open the TUI and start a new RHCE exam"),
+                      ("resume", "open the TUI and return to the current session")):
+        sp = sub.add_parser(name, help=hlp)
+        sp.set_defaults(func=lambda a, n=name: _tui(n))
+
     from . import commands  # registers the remaining subcommands
     commands.register(sub)
     return p
@@ -114,9 +126,7 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
     log.setup(debug=getattr(args, "debug", False))
     if args.command is None:
-        from .tui.app import run_tui
-
-        return run_tui()
+        return _tui()
     try:
         return int(args.func(args) or 0)
     except KeyboardInterrupt:

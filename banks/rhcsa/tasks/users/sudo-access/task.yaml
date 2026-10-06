@@ -1,0 +1,61 @@
+title: Configure privileged access with sudo
+primary: rhcsa.users.privileged
+objectives: [rhcsa.users.privileged, rhcsa.users.groups]
+facets:
+  - rhcsa.users.privileged:sudo-group
+  - rhcsa.users.privileged:sudo-limited
+  - rhcsa.users.groups:group-membership
+difficulty: medium
+difficulty_reason: >
+  Sudoers syntax for a group rule and a command-limited NOPASSWD rule, written safely (visudo or a
+  drop-in) so the file stays valid.
+estimated_minutes: 7
+node: node2
+exclusive: [sudoers-node2]
+params:
+  group: {pool: groupnames}
+  admin: {pool: usernames}
+  operator: {pool: usernames}
+  password: {choice: [Sudo-Lab-11, Sudo-Lab-22, Sudo-Lab-33]}
+
+prompt: |
+  On node2 (users `{{admin}}` and `{{operator}}` already exist, password `{{password}}`):
+
+  1. Members of the group `{{group}}` may run **any** command as root with sudo
+     (they are asked for their own password). Make `{{admin}}` a member of `{{group}}`.
+  2. `{{operator}}` may run **only** `/usr/bin/systemctl restart chronyd` as root with sudo,
+     **without** being asked for a password, and nothing else.
+
+requirements:
+  R1: "members of {{group}} may run all commands as root (with a password)"
+  R2: "{{admin}} is a member of {{group}}"
+  R3: "{{operator}} may run exactly /usr/bin/systemctl restart chronyd, without a password"
+  R4: "the sudo configuration is valid"
+
+checks:
+  - id: group-rule
+    covers: [R1, R2]
+    on: node2
+    desc: "{{admin}} (via {{group}}) may run any command"
+    run: |
+      id -nG {{admin}} | tr ' ' '\n' | grep -qx {{group}}
+      sudo -l -U {{admin}} | grep -Eq '\(ALL( : ALL)?\) ALL$'
+  - id: operator-rule
+    covers: [R3]
+    on: node2
+    desc: "{{operator}}: only systemctl restart chronyd, NOPASSWD"
+    run: |
+      out="$(sudo -l -U {{operator}})"
+      echo "$out" | grep -Eq 'NOPASSWD: */usr/bin/systemctl restart chronyd$'
+      ! echo "$out" | grep -Eq '\) (NOPASSWD: )?ALL$'
+      sudo -n -l -U {{operator}} /usr/bin/systemctl restart chronyd >/dev/null
+      ! sudo -n -l -U {{operator}} /usr/bin/systemctl restart sshd >/dev/null 2>&1
+  - id: valid
+    covers: [R4]
+    on: node2
+    desc: visudo reports no errors
+    run: visudo -c -q
+
+references:
+  - "RHEL 10: Configuring basic system settings > Managing sudo access"
+  - "man sudoers(5), man visudo(8)"

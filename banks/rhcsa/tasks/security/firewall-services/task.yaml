@@ -1,0 +1,46 @@
+title: Open services and ports in the firewall
+primary: rhcsa.security.firewall
+objectives: [rhcsa.security.firewall]
+facets:
+  - rhcsa.security.firewall:firewall-service
+  - rhcsa.security.firewall:firewall-port
+difficulty: easy
+difficulty_reason: One subsystem with standard firewall-cmd options; the trap is runtime-only rules.
+estimated_minutes: 4
+node: node2
+params:
+  service: {choice: [https, nfs, ftp, smtp, mysql, postgresql, dns]}
+  port: {range: [8400, 8499]}
+
+prompt: |
+  On node2, configure the firewall (default zone) so that it allows:
+  - the `{{service}}` service
+  - TCP port `{{port}}`
+
+  SSH access must keep working. The rules must survive a reboot.
+
+requirements:
+  R1: "the {{service}} service is allowed in the default zone"
+  R2: "TCP port {{port}} is allowed in the default zone"
+  R3: "ssh is still allowed"
+
+checks:
+  - id: service
+    covers: [R1]
+    on: node2
+    desc: "{{service}} is allowed (after reboot)"
+    run: firewall-cmd --list-services | tr ' ' '\n' | grep -qx '{{service}}'
+  - id: port
+    covers: [R2]
+    on: node2
+    desc: "{{port}}/tcp is allowed (after reboot)"
+    run: firewall-cmd --list-ports | tr ' ' '\n' | grep -qx '{{port}}/tcp'
+  - id: ssh
+    covers: [R3]
+    on: node2
+    desc: ssh is still allowed
+    run: firewall-cmd --list-services | tr ' ' '\n' | grep -qx ssh
+
+references:
+  - "RHEL 10: Configuring firewalls and packet filters > Using and configuring firewalld"
+  - "man firewall-cmd(1)"

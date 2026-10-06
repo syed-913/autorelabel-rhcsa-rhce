@@ -1,0 +1,37 @@
+title: Search the manual pages
+primary: rhcsa.tools.docs
+objectives: [rhcsa.tools.docs]
+facets: [rhcsa.tools.docs:man-page]
+difficulty: easy
+difficulty_reason: Uses man -k (which needs the man index) and a man page section; no configuration.
+estimated_minutes: 4
+node: node1
+params:
+  keyword: {choice: [partition, journal, firewall, password]}
+
+prompt: |
+  On node1:
+  1. Save the list of manual pages whose name or short description matches the keyword
+     `{{keyword}}` (the output of a keyword search of the manual) into `/root/man-{{keyword}}.txt`.
+     If the search finds nothing, the manual page index may need to be built first.
+  2. The manual page `passwd(5)` describes a file format. Write the **section number** that
+     documents file formats into `/root/man-section.txt` (just the number).
+
+requirements:
+  R1: "/root/man-{{keyword}}.txt holds the keyword search results"
+  R2: "/root/man-section.txt holds the file-format section number"
+
+checks:
+  - id: search
+    covers: [R1]
+    desc: "the file equals man -k {{keyword}}"
+    run: |
+      want="$(man -k {{keyword}} 2>/dev/null)"
+      test -n "$want" && diff <(echo "$want" | sort) <(sort /root/man-{{keyword}}.txt) >/dev/null
+  - id: section
+    covers: [R2]
+    desc: the section number is 5
+    run: test "$(tr -d '[:space:]' < /root/man-section.txt)" = 5
+
+references:
+  - "man man(1) (sections, -k), man apropos(1), man mandb(8)"

@@ -1,0 +1,45 @@
+title: Set ownership and permissions
+primary: rhcsa.tools.permissions
+objectives: [rhcsa.tools.permissions]
+facets:
+  - rhcsa.tools.permissions:chmod-octal
+  - rhcsa.tools.permissions:chmod-symbolic
+  - rhcsa.tools.permissions:chown
+difficulty: easy
+difficulty_reason: chown and chmod with exact modes.
+estimated_minutes: 4
+node: node1
+params:
+  user: {pool: usernames}
+  group: {pool: groupnames}
+  word: {pool: words}
+
+prompt: |
+  On node1, in `/srv/{{word}}/`:
+  - `report.txt`: owner `{{user}}`, group `{{group}}`, permissions `rw-r-----`
+  - `run.sh`: owner `{{user}}`, group `{{group}}`, readable and executable by owner and group,
+    writable only by the owner, no access for others (`rwxr-x---`)
+  - the directory `/srv/{{word}}` itself: owner `root`, group `{{group}}`, others must have no access
+    at all; owner full access; group may list and enter it but not create files.
+
+requirements:
+  R1: "report.txt: {{user}}:{{group}} 640"
+  R2: "run.sh: {{user}}:{{group}} 750"
+  R3: "/srv/{{word}}: root:{{group}} 750"
+
+checks:
+  - id: report
+    covers: [R1]
+    desc: report.txt ownership and mode
+    run: test "$(stat -c '%U:%G %a' /srv/{{word}}/report.txt)" = "{{user}}:{{group}} 640"
+  - id: script
+    covers: [R2]
+    desc: run.sh ownership and mode
+    run: test "$(stat -c '%U:%G %a' /srv/{{word}}/run.sh)" = "{{user}}:{{group}} 750"
+  - id: dir
+    covers: [R3]
+    desc: directory ownership and mode
+    run: test "$(stat -c '%U:%G %a' /srv/{{word}})" = "root:{{group}} 750"
+
+references:
+  - "man chmod(1), man chown(1)"

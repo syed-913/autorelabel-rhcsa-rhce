@@ -1,0 +1,38 @@
+title: Replace a Flatpak application using a .flatpakref file
+primary: rhcsa.software.flatpak-apps
+objectives: [rhcsa.software.flatpak-apps]
+facets:
+  - rhcsa.software.flatpak-apps:flatpak-uninstall
+  - rhcsa.software.flatpak-apps:flatpak-ref
+difficulty: medium
+difficulty_reason: Uninstall one app and install another from a .flatpakref URL (which also configures its origin).
+estimated_minutes: 6
+node: node2
+exclusive: [flatpak-node2]
+
+prompt: |
+  On node2, Firefox is installed as a Flatpak. Users now need **Thunderbird** instead:
+
+  1. Uninstall the Firefox Flatpak (`org.mozilla.firefox`).
+  2. Install Thunderbird system-wide using its Flatpak reference file:
+     `http://{{lab.utility_fqdn}}/flatpak/org.mozilla.Thunderbird.flatpakref`
+
+requirements:
+  R1: "org.mozilla.firefox is not installed"
+  R2: "org.mozilla.Thunderbird is installed system-wide"
+
+checks:
+  - id: firefox-gone
+    covers: [R1]
+    on: node2
+    desc: Firefox Flatpak removed
+    run: "! flatpak list --app --columns=application 2>/dev/null | grep -qx org.mozilla.firefox"
+  - id: thunderbird
+    covers: [R2]
+    on: node2
+    desc: Thunderbird installed system-wide
+    run: flatpak list --system --app --columns=application 2>/dev/null | grep -qx org.mozilla.Thunderbird
+
+references:
+  - "RHEL 10: Installing and managing applications with Flatpak"
+  - "man flatpak-install(1) (--from), man flatpak-uninstall(1)"

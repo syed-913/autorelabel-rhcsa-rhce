@@ -1,0 +1,29 @@
+title: Set the default boot target
+primary: rhcsa.deploy.default-target
+objectives: [rhcsa.deploy.default-target]
+facets: [rhcsa.deploy.default-target:set-default-target]
+difficulty: easy
+difficulty_reason: One systemctl command; the trap is isolating the target instead of setting the default.
+estimated_minutes: 2
+node: node2
+exclusive: [default-target-node2]
+
+prompt: |
+  node2 is configured to boot into the graphical target, but it is a server without a desktop.
+  Configure it to boot into the **multi-user** (text) target by default.
+
+requirements:
+  R1: "the default target is multi-user.target"
+
+checks:
+  - id: default
+    covers: [R1]
+    on: node2
+    desc: systemctl get-default is multi-user.target, and node2 booted into it
+    run: |
+      test "$(systemctl get-default)" = multi-user.target
+      ! systemctl is-active -q graphical.target
+
+references:
+  - "RHEL 10: Using systemd unit files to customize and optimize your system > Changing the default target to boot into"
+  - "man systemctl(1) (set-default, get-default, isolate), man systemd.special(7)"

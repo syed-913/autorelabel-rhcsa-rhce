@@ -1,0 +1,38 @@
+title: Bring the network up automatically at boot
+primary: rhcsa.networking.services-at-boot
+objectives: [rhcsa.networking.services-at-boot]
+facets: [rhcsa.networking.services-at-boot:net-service-boot]
+difficulty: medium
+difficulty_reason: >
+  The symptom ("network gone after reboot") must be traced to the connection profile; activating it
+  by hand fixes nothing permanently.
+estimated_minutes: 5
+node: node2
+exclusive: [node2-lab-connection]
+
+prompt: |
+  After every reboot, node2 is unreachable on the lab network until someone activates its network
+  connection by hand. Fix this so the lab network on `{{lab.node2.nic}}` comes up automatically at
+  boot.
+
+requirements:
+  R1: "after a reboot node2 is reachable on {{lab.node2.ip}} without manual action"
+
+checks:
+  - id: reachable
+    covers: [R1]
+    on: utility
+    desc: utility reaches node2 after the reboot
+    run: ping -c 2 -W 2 {{lab.node2.ip}} >/dev/null
+  - id: profile
+    covers: [R1]
+    on: node2
+    desc: the lab connection autoconnects
+    run: |
+      nic="$(sed -n 's/^lab_nic=//p' /etc/autorelabel/facts)"
+      con="$(nmcli -g GENERAL.CONNECTION device show "$nic")"
+      test -n "$con" && test "$(nmcli -g connection.autoconnect connection show "$con")" = yes
+
+references:
+  - "RHEL 10: Configuring and managing networking > Configuring NetworkManager connection profiles (connection.autoconnect)"
+  - "man nm-settings-nmcli(5) (connection.autoconnect)"

@@ -1,0 +1,54 @@
+title: Recover root access on node2
+primary: rhcsa.operate.interrupt-boot
+objectives: [rhcsa.operate.interrupt-boot, rhcsa.users.passwords]
+facets:
+  - rhcsa.operate.interrupt-boot:root-password-reset
+  - rhcsa.users.passwords:set-password
+difficulty: hard
+difficulty_reason: >
+  Recovering a system you cannot log in to: interrupt GRUB from the console, work in the initramfs
+  (rd.break, remount, chroot), and restore SELinux labels. Forgetting the relabel leaves a system
+  where nobody can log in.
+estimated_minutes: 10
+node: node2
+anchor: root-reset
+console_only: false
+exclusive: [node2-root-password]
+params:
+  new_password: {choice: [flectrag, atenorth, varkulos, meridane, trosvali, kelpimar]}
+
+prompt: |
+  Nobody knows the root password of node2. Interrupt node2's boot process and reset the root
+  password to `{{new_password}}`.
+
+  Use node2's console: `./autorelabel console node2` (reboot it from there, or with
+  `./autorelabel node reset node2`, to reach the GRUB menu).
+
+requirements:
+  R1: "root's password is {{new_password}}"
+  R2: "node2 boots normally and its password database has correct SELinux labels"
+
+checks:
+  - id: password
+    covers: [R1]
+    on: node2
+    desc: "root's password is {{new_password}}"
+    run: |
+      python3 -W ignore - <<'PY'
+      import crypt, subprocess, sys
+      entry = subprocess.run(["getent", "shadow", "root"], capture_output=True, text=True).stdout
+      stored = entry.split(":")[1] if entry.count(":") > 2 else ""
+      sys.exit(0 if stored and crypt.crypt("{{new_password}}", stored) == stored else 1)
+      PY
+  - id: shadow-label
+    covers: [R2]
+    on: node2
+    desc: /etc/shadow has its default SELinux type (shadow_t)
+    run: |
+      test "$(stat -c %C /etc/shadow | cut -d: -f3)" = shadow_t
+      test "$(stat -c %C /etc/passwd | cut -d: -f3)" = passwd_file_t
+
+references:
+  - "RHEL 9/10: Configuring basic system settings > Changing and resetting the root password > Resetting the forgotten root password on boot"
+  - "RHEL 10: Managing, monitoring, and updating the kernel > Making temporary changes to the GRUB menu"
+  - "man dracut.cmdline(7) (rd.break), man selinux(8) (/.autorelabel)"

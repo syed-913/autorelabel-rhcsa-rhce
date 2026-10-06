@@ -1,0 +1,37 @@
+title: Install and remove packages
+primary: rhcsa.software.rpm-packages
+objectives: [rhcsa.software.rpm-packages]
+facets:
+  - rhcsa.software.rpm-packages:rpm-install
+  - rhcsa.software.rpm-packages:rpm-remove
+difficulty: easy
+difficulty_reason: dnf install/remove with the configured repositories.
+estimated_minutes: 3
+node: node2
+params:
+  pkgs: {choice: ["tmux zsh", "nmap tcpdump", "lsof strace", "tree mtr"]}
+  remove: {choice: [nano, bash-completion]}
+
+prompt: |
+  On node2, install the packages `{{pkgs}}` and remove the package `{{remove}}`.
+
+requirements:
+  R1: "{{pkgs}} are installed"
+  R2: "{{remove}} is not installed"
+
+checks:
+  - id: installed
+    covers: [R1]
+    on: node2
+    desc: "{{pkgs}} installed"
+    run: rpm -q {{pkgs}} >/dev/null
+  - id: removed
+    covers: [R2]
+    on: node2
+    desc: "{{remove}} removed"
+    run: "! rpm -q {{remove}} >/dev/null"
+
+references:
+  - "RHEL 10: Managing software with the DNF tool > Installing and removing software"
+  - "man dnf(8)"
+mistakes_na: "An install either happened or not; there is no partial-credit trap to simulate."

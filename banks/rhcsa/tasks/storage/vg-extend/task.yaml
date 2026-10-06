@@ -1,0 +1,43 @@
+title: Grow a volume group with a new physical volume
+primary: rhcsa.storage.vg
+objectives: [rhcsa.storage.vg, rhcsa.storage.pv, rhcsa.storage.non-destructive]
+facets:
+  - rhcsa.storage.vg:vg-extend
+  - rhcsa.storage.pv:pv-create
+  - rhcsa.storage.non-destructive:add-partition
+difficulty: medium
+difficulty_reason: New partition, pvcreate and vgextend on a disk and VG that are in use.
+estimated_minutes: 6
+node: node2
+resources:
+  disk: {node2.disk1: 1000}
+params:
+  vg: {choice: [webvg, logvg, dbvg]}
+
+prompt: |
+  On node2, the volume group `{{vg}}` is almost full. Add a new **500 MiB** partition on
+  `{{lab.node2.disk1}}` to it, so that `{{vg}}` has **at least 800 MiB** in total. The existing
+  logical volume and its data must not be affected.
+
+mistakes_na: "Only one sensible way exists (new partition + vgextend); wrong sizes are caught by the size check."
+requirements:
+  R1: "{{vg}} has two PVs and at least 800 MiB total"
+  R2: "the existing LV and its data are intact"
+
+checks:
+  - id: size
+    covers: [R1]
+    on: node2
+    desc: "{{vg}} ≥ 800 MiB with 2 PVs"
+    run: |
+      test "$(vgs --noheadings -o pv_count {{vg}} | tr -d ' ')" = 2
+      test "$(vgs --noheadings --units m -o vg_size {{vg}} | tr -d ' m' | cut -d. -f1)" -ge 800
+  - id: intact
+    covers: [R2]
+    on: node2
+    desc: data intact
+    run: cd /srv/{{vg}} && sha256sum -c --quiet /etc/autorelabel/{{vg}}-data.sha256
+
+references:
+  - "RHEL 10: Configuring and managing logical volumes > Managing LVM volume groups (vgextend)"
+  - "man pvcreate(8), man vgextend(8)"

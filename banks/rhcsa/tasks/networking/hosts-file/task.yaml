@@ -1,0 +1,29 @@
+title: Static host name resolution
+primary: rhcsa.networking.name-resolution
+objectives: [rhcsa.networking.name-resolution]
+facets: [rhcsa.networking.name-resolution:hosts-file]
+difficulty: easy
+difficulty_reason: One /etc/hosts line in the right field order.
+estimated_minutes: 3
+node: node2
+params:
+  alias: {choice: [repo, mirror, depot, files]}
+
+prompt: |
+  On node2, the names `{{alias}}.lab.example.com` and `{{alias}}` must resolve to
+  `{{lab.utility.ip}}` **without using DNS** (local static resolution).
+
+requirements:
+  R1: "both names resolve to {{lab.utility.ip}} from /etc/hosts"
+
+checks:
+  - id: resolve
+    covers: [R1]
+    on: node2
+    desc: "getent hosts returns {{lab.utility.ip}} for both names, from the hosts database"
+    run: |
+      test "$(getent -s files hosts {{alias}}.lab.example.com | awk '{print $1}')" = "{{lab.utility.ip}}"
+      test "$(getent -s files hosts {{alias}} | awk '{print $1}')" = "{{lab.utility.ip}}"
+
+references:
+  - "man hosts(5), man nsswitch.conf(5), man getent(1)"

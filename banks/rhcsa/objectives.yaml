@@ -144,7 +144,7 @@ domains:
         text: Boot systems into different targets manually
         facets:
           - {id: boot-rescue-emergency, desc: "boot into rescue or emergency target to repair a system"}
-          - {id: isolate-target, desc: "switch the running system to another target"}
+          - {id: isolate-target, desc: "switch the running system to another target (practice drill: leaves nothing to grade after a reboot)", optional: true}
       - id: rhcsa.operate.interrupt-boot
         text: Interrupt the boot process in order to gain access to a system
         facets:

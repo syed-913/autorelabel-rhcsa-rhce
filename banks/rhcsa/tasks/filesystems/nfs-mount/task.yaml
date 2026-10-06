@@ -1,0 +1,36 @@
+title: Mount an NFS share persistently
+primary: rhcsa.filesystems.nfs
+objectives: [rhcsa.filesystems.nfs, rhcsa.software.rpm-packages]
+facets:
+  - rhcsa.filesystems.nfs:nfs-mount
+  - rhcsa.software.rpm-packages:rpm-install
+difficulty: medium
+difficulty_reason: Client tools, the export path, and a persistent network mount that must not hang the boot.
+estimated_minutes: 6
+node: node1
+params:
+  share: {choice: [public, software, manuals, archive]}
+
+prompt: |
+  The utility server exports the NFS share `{{lab.nfs_server}}:/exports/{{share}}`.
+  On node1, mount it at `/mnt/{{share}}` so that it is mounted automatically at every boot.
+
+requirements:
+  R1: "the share is mounted at /mnt/{{share}} after a reboot"
+  R2: "its content is readable"
+
+checks:
+  - id: mounted
+    covers: [R1]
+    desc: "NFS mount at /mnt/{{share}} from the utility server"
+    run: |
+      findmnt -no FSTYPE /mnt/{{share}} | grep -q '^nfs'
+      findmnt -no SOURCE /mnt/{{share}} | grep -Eq '^(utility(\.lab\.example\.com)?|{{lab.utility.ip}}):/exports/{{share}}/?$'
+  - id: readable
+    covers: [R2]
+    desc: the share's README is readable
+    run: grep -q '{{share}} share' /mnt/{{share}}/README.txt
+
+references:
+  - "RHEL 10: Configuring and using network file services > Mounting NFS shares"
+  - "man nfs(5), man fstab(5) (_netdev), man mount(8)"

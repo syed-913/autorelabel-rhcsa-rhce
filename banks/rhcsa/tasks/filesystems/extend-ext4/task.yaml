@@ -1,0 +1,44 @@
+title: Extend a logical volume with an ext4 file system
+primary: rhcsa.filesystems.extend-lv
+objectives: [rhcsa.filesystems.extend-lv, rhcsa.storage.vg]
+facets:
+  - rhcsa.filesystems.extend-lv:extend-ext4
+  - rhcsa.storage.vg:vg-extend
+difficulty: hard
+difficulty_reason: >
+  The VG has no free space: add a PV first, then extend the LV and resize ext4 online, preserving
+  data. Two subsystems and a dependency chain.
+estimated_minutes: 10
+node: node2
+resources:
+  disk: {node2.disk1: 1100}
+params:
+  vg: {choice: [mailvg, printvg, labvg2]}
+
+prompt: |
+  On node2, the ext4 file system on `{{vg}}/homelv` (mounted at `/srv/{{vg}}-home`) must grow to
+  **at least 700 MiB**. The volume group `{{vg}}` has no free space left; you may create a new
+  partition on `{{lab.node2.disk1}}` for it. Keep the data and the mount.
+
+requirements:
+  R1: "the ext4 file system is at least 700 MiB"
+  R2: "data intact, mounted after reboot"
+
+checks:
+  - id: size
+    covers: [R1]
+    on: node2
+    desc: file system ≥ 700 MiB (ext4)
+    run: |
+      test "$(findmnt -no FSTYPE /srv/{{vg}}-home)" = ext4
+      test "$(df -m --output=size /srv/{{vg}}-home | tail -1 | tr -d ' ')" -ge 650
+      test "$(lvs --noheadings --units m -o lv_size {{vg}}/homelv | tr -d ' m' | cut -d. -f1)" -ge 700
+  - id: data
+    covers: [R2]
+    on: node2
+    desc: data intact
+    run: cd /srv/{{vg}}-home && sha256sum -c --quiet /etc/autorelabel/{{vg}}-data.sha256
+
+references:
+  - "RHEL 10: Configuring and managing logical volumes > Extending a logical volume"
+  - "man vgextend(8), man lvextend(8), man resize2fs(8)"

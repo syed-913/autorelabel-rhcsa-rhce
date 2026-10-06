@@ -1,0 +1,41 @@
+title: Configure the time service client
+primary: rhcsa.deploy.time
+objectives: [rhcsa.deploy.time, rhcsa.deploy.services]
+facets:
+  - rhcsa.deploy.time:chrony-client
+  - rhcsa.deploy.services:service-enable
+difficulty: easy
+difficulty_reason: One configuration line and enabling the service.
+estimated_minutes: 4
+node: node2
+exclusive: [chrony-node2]
+
+prompt: |
+  Configure node2 to synchronize its clock with the time server `{{lab.ntp_server}}`,
+  as its time source, now and after reboots.
+
+requirements:
+  R1: "chrony uses {{lab.ntp_server}} as a time source"
+  R2: "chronyd is enabled and running"
+
+checks:
+  - id: source
+    covers: [R1]
+    on: node2
+    desc: "chronyc lists {{lab.ntp_server}} ({{lab.utility.ip}}) as a source"
+    timeout: 90
+    run: |
+      for i in $(seq 1 12); do
+        chronyc -n sources 2>/dev/null | grep -qw '{{lab.utility.ip}}' && exit 0
+        sleep 5
+      done
+      exit 1
+  - id: service
+    covers: [R2]
+    on: node2
+    desc: chronyd enabled and running
+    run: systemctl is-enabled -q chronyd && systemctl is-active -q chronyd
+
+references:
+  - "RHEL 10: Configuring time synchronization > Using the Chrony suite to configure NTP"
+  - "man chrony.conf(5), man chronyc(1)"

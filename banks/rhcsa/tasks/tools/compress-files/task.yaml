@@ -1,0 +1,44 @@
+title: Compress and uncompress files
+primary: rhcsa.tools.archive
+objectives: [rhcsa.tools.archive]
+facets:
+  - rhcsa.tools.archive:gzip-file
+  - rhcsa.tools.archive:bzip2-file
+difficulty: easy
+difficulty_reason: gzip, bzip2 and gunzip on single files.
+estimated_minutes: 3
+node: node1
+params:
+  word: {pool: words}
+
+prompt: |
+  In node1's directory `/srv/{{word}}-logs/`:
+  - compress `app.log` with **gzip** (resulting in `app.log.gz`)
+  - compress `db.log` with **bzip2** (resulting in `db.log.bz2`)
+  - uncompress `old.log.gz` (resulting in `old.log`)
+
+  Afterwards only `app.log.gz`, `db.log.bz2` and `old.log` may be in the directory.
+
+requirements:
+  R1: "app.log.gz is gzip-compressed app.log"
+  R2: "db.log.bz2 is bzip2-compressed db.log"
+  R3: "old.log is the uncompressed content and only the three files remain"
+
+checks:
+  - id: gzip
+    covers: [R1]
+    desc: app.log.gz decompresses to the original
+    run: test "$(gzip -dc /srv/{{word}}-logs/app.log.gz | sha256sum | cut -d' ' -f1)" = "$(sed -n 1p /etc/autorelabel/{{word}}-logs.sums)"
+  - id: bzip2
+    covers: [R2]
+    desc: db.log.bz2 decompresses to the original
+    run: test "$(bzip2 -dc /srv/{{word}}-logs/db.log.bz2 | sha256sum | cut -d' ' -f1)" = "$(sed -n 2p /etc/autorelabel/{{word}}-logs.sums)"
+  - id: gunzip
+    covers: [R3]
+    desc: old.log restored and nothing else left over
+    run: |
+      test "$(sha256sum < /srv/{{word}}-logs/old.log | cut -d' ' -f1)" = "$(sed -n 3p /etc/autorelabel/{{word}}-logs.sums)"
+      test "$(ls /srv/{{word}}-logs | sort | tr '\n' ' ')" = "app.log.gz db.log.bz2 old.log "
+
+references:
+  - "man gzip(1), man bzip2(1)"

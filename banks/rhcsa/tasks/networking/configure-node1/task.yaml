@@ -1,0 +1,73 @@
+title: Configure networking on node1
+primary: rhcsa.networking.addresses
+objectives:
+  - rhcsa.networking.addresses
+  - rhcsa.networking.name-resolution
+  - rhcsa.networking.services-at-boot
+facets:
+  - rhcsa.networking.addresses:ipv4-static
+  - rhcsa.networking.name-resolution:hostname
+  - rhcsa.networking.name-resolution:dns-client
+  - rhcsa.networking.services-at-boot:net-service-boot
+difficulty: medium
+difficulty_reason: >
+  Two subsystems (a NetworkManager connection and the static hostname) configured from the
+  console because the node has no network; the trap is persistence (runtime `ip`/`hostname`
+  changes are lost at reboot).
+estimated_minutes: 8
+node: node1
+anchor: network-node1
+console_only: true
+exclusive: [node1-lab-network, node1-hostname]
+
+prompt: |
+  node1 has no network configuration on its lab interface `{{lab.node1.nic}}`, so you cannot
+  reach it over SSH yet. Use its console (`./autorelabel console node1`) and configure:
+
+  - IPv4 address: `{{lab.node1.ip}}/{{lab.prefix}}`
+  - Default gateway: `{{lab.gateway}}`
+  - DNS server: `{{lab.dns}}`
+  - Hostname: `{{lab.node1.fqdn}}`
+
+  The connection must come up automatically at boot.
+
+requirements:
+  R1: "{{lab.node1.nic}} has the IPv4 address {{lab.node1.ip}}/{{lab.prefix}}"
+  R2: "the default gateway is {{lab.gateway}}"
+  R3: "the DNS server is {{lab.dns}}"
+  R4: "the static hostname is {{lab.node1.fqdn}}"
+  R5: "the connection is active at boot"
+
+checks:
+  - id: address
+    covers: [R1]
+    desc: "{{lab.node1.nic}} has {{lab.node1.ip}}/{{lab.prefix}}"
+    run: |
+      nic="$(sed -n 's/^lab_nic=//p' /etc/autorelabel/facts)"
+      ip -4 -o addr show dev "$nic" | grep -qw "{{lab.node1.ip}}/{{lab.prefix}}"
+  - id: gateway
+    covers: [R2]
+    desc: "default route via {{lab.gateway}}"
+    run: ip -4 route show default | grep -qw "via {{lab.gateway}}"
+  - id: dns
+    covers: [R3]
+    desc: "{{lab.dns}} is the DNS server and lab names resolve"
+    run: |
+      grep -Eq '^nameserver[[:space:]]+{{lab.dns}}([[:space:]]|$)' /etc/resolv.conf
+      getent hosts {{lab.utility_fqdn}} >/dev/null
+  - id: hostname
+    covers: [R4]
+    desc: "static hostname is {{lab.node1.fqdn}}"
+    run: test "$(tr -d '[:space:]' < /etc/hostname)" = "{{lab.node1.fqdn}}"
+  - id: reachable
+    covers: [R5]
+    on: utility
+    desc: "node1 answers on {{lab.node1.ip}} after a reboot"
+    run: ping -c 2 -W 2 {{lab.node1.ip}} >/dev/null
+
+references:
+  - "RHEL 10: Configuring and managing networking > Configuring an Ethernet connection > Configuring an Ethernet connection by using nmcli"
+  - "RHEL 10: Configuring and managing networking > Manually configuring the /etc/resolv.conf file (why direct edits are overwritten)"
+  - "man nmcli-examples(7), man nmcli(1), man hostnamectl(1)"
+
+mistakes_na: ""

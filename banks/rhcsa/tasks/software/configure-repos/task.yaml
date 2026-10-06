@@ -1,0 +1,106 @@
+title: Configure software repositories on node1 and node2
+primary: rhcsa.software.rpm-repos
+objectives: [rhcsa.software.rpm-repos]
+facets:
+  - rhcsa.software.rpm-repos:repo-baseos-appstream
+  - rhcsa.software.rpm-repos:repo-gpg
+difficulty: easy
+difficulty_reason: >
+  One subsystem (DNF repository definitions) and a few lines of configuration per host; the only
+  pitfalls are exact URLs and keeping signature checking on.
+estimated_minutes: 6
+node: node1
+anchor: repos
+exclusive: [repo-config]
+
+prompt: |
+  The default repositories are not available. Configure **node1 and node2** to install software
+  from these repositories:
+
+  - `{{lab.repo_baseos}}`
+  - `{{lab.repo_appstream}}`
+
+  Package signatures must be verified with the Red Hat release key
+  (`/etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release`, also published at `{{lab.repo_gpgkey}}`).
+
+requirements:
+  R1: "node1 uses the BaseOS and AppStream repositories"
+  R2: "node2 uses the BaseOS and AppStream repositories"
+  R3: "GPG signature checking stays enabled and the Red Hat key is used"
+
+checks:
+  - id: node1-repos
+    covers: [R1]
+    desc: node1 has both repositories enabled and can read their metadata
+    timeout: 120
+    run: &repos |
+      python3 - <<'PY'
+      import configparser, glob, sys
+      want = {"{{lab.repo_baseos}}".rstrip("/"), "{{lab.repo_appstream}}".rstrip("/")}
+      found = set()
+      for path in glob.glob("/etc/yum.repos.d/*.repo"):
+          cp = configparser.ConfigParser(interpolation=None, strict=False)
+          try:
+              cp.read(path)
+          except configparser.Error:
+              continue
+          for name in cp.sections():
+              sec = cp[name]
+              if sec.get("enabled", "1").strip().lower() not in ("1", "yes", "true"):
+                  continue
+              for url in sec.get("baseurl", "").replace(",", " ").split():
+                  if url.rstrip("/") in want:
+                      found.add(url.rstrip("/"))
+      missing = want - found
+      if missing:
+          print("missing or disabled:", ", ".join(sorted(missing)))
+          sys.exit(1)
+      PY
+      timeout 100 dnf -q --refresh makecache >/dev/null 2>&1
+  - id: node2-repos
+    covers: [R2]
+    on: node2
+    desc: node2 has both repositories enabled and can read their metadata
+    timeout: 120
+    run: *repos
+  - id: gpg
+    covers: [R3]
+    desc: signature checking is on for both repositories and the Red Hat key is configured or imported
+    run: &gpg |
+      python3 - <<'PY'
+      import configparser, glob, subprocess, sys
+      want = {"{{lab.repo_baseos}}".rstrip("/"), "{{lab.repo_appstream}}".rstrip("/")}
+      main = configparser.ConfigParser(interpolation=None, strict=False)
+      main.read("/etc/dnf/dnf.conf")
+      default_check = main.get("main", "gpgcheck", fallback="1").strip().lower() in ("1", "yes", "true")
+      imported = subprocess.run(["rpm", "-q", "gpg-pubkey"], capture_output=True).returncode == 0
+      ok = 0
+      for path in glob.glob("/etc/yum.repos.d/*.repo"):
+          cp = configparser.ConfigParser(interpolation=None, strict=False)
+          try:
+              cp.read(path)
+          except configparser.Error:
+              continue
+          for name in cp.sections():
+              sec = cp[name]
+              urls = {u.rstrip("/") for u in sec.get("baseurl", "").replace(",", " ").split()}
+              if not urls & want:
+                  continue
+              check = sec.get("gpgcheck", None)
+              enabled = default_check if check is None else check.strip().lower() in ("1", "yes", "true")
+              key = "redhat-release" in sec.get("gpgkey", "") or imported
+              if not enabled or not key:
+                  print(f"{name}: gpgcheck={check!r} key={'yes' if key else 'no'}")
+                  sys.exit(1)
+              ok += 1
+      sys.exit(0 if ok >= 2 else 1)
+      PY
+  - id: gpg-node2
+    covers: [R3]
+    on: node2
+    desc: same on node2
+    run: *gpg
+
+references:
+  - "RHEL 10: Managing software with the DNF tool > Managing custom software repositories"
+  - "man dnf.conf(5) (repository options: baseurl, enabled, gpgcheck, gpgkey)"

@@ -1,0 +1,48 @@
+title: Loop over command-line arguments
+primary: rhcsa.scripts.loops
+objectives: [rhcsa.scripts.loops, rhcsa.scripts.inputs]
+facets:
+  - rhcsa.scripts.loops:loop-args
+  - rhcsa.scripts.inputs:positional-args
+difficulty: medium
+difficulty_reason: A for loop over "$@" with arithmetic and exact output formatting.
+estimated_minutes: 6
+node: node2
+params:
+  name: {choice: [count-chars, wordlen, measure]}
+
+prompt: |
+  On node2, create the executable script `/usr/local/bin/{{name}}` that processes **each** command-line
+  argument and prints one line per argument in the form
+
+      ARGUMENT: LENGTH
+
+  (LENGTH = number of characters of that argument), followed by a final line
+
+      total: N
+
+  where N is the number of arguments. Arguments may contain spaces; with no arguments it prints
+  only `total: 0`.
+
+requirements:
+  R1: "one 'ARG: LENGTH' line per argument, in order, spaces handled"
+  R2: "a final 'total: N' line"
+
+checks:
+  - id: lines
+    covers: [R1, R2]
+    on: node2
+    desc: output for several argument sets
+    run: |
+      test -x /usr/local/bin/{{name}}
+      test "$(/usr/local/bin/{{name}} alpha bc)" = "$(printf 'alpha: 5\nbc: 2\ntotal: 2')"
+      test "$(/usr/local/bin/{{name}} 'two words' x)" = "$(printf 'two words: 9\nx: 1\ntotal: 2')"
+  - id: empty
+    covers: [R2]
+    on: node2
+    desc: no arguments
+    run: |
+      test "$(/usr/local/bin/{{name}})" = "total: 0"
+
+references:
+  - "man bash(1) (for, Special Parameters $@ and $#, ${#parameter})"

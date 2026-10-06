@@ -1,0 +1,36 @@
+title: Remove unneeded firewall openings
+primary: rhcsa.networking.firewall-restrict
+objectives: [rhcsa.networking.firewall-restrict]
+facets: [rhcsa.networking.firewall-restrict:firewall-remove]
+difficulty: easy
+difficulty_reason: firewall-cmd --remove-service, persistently.
+estimated_minutes: 3
+node: node2
+params:
+  port: {range: [9100, 9199]}
+
+prompt: |
+  On node2, the default firewall zone allows more than needed. Permanently remove the
+  `cockpit` and `dhcpv6-client` services and the port `{{port}}/tcp` from it. SSH must remain allowed.
+
+requirements:
+  R1: "cockpit, dhcpv6-client and {{port}}/tcp are not allowed after a reboot"
+  R2: "ssh is still allowed"
+
+checks:
+  - id: removed
+    covers: [R1]
+    on: node2
+    desc: removed services and port
+    run: |
+      s="$(firewall-cmd --list-services)"; p="$(firewall-cmd --list-ports)"
+      ! echo "$s" | tr ' ' '\n' | grep -Eqx 'cockpit|dhcpv6-client'
+      ! echo "$p" | tr ' ' '\n' | grep -qx '{{port}}/tcp'
+  - id: ssh
+    covers: [R2]
+    on: node2
+    desc: ssh remains
+    run: firewall-cmd --list-services | tr ' ' '\n' | grep -qx ssh
+
+references:
+  - "man firewall-cmd(1) (--remove-service, --remove-port, --permanent)"

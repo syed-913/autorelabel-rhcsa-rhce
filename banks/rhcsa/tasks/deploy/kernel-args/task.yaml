@@ -1,0 +1,41 @@
+title: Add a kernel argument permanently
+primary: rhcsa.deploy.bootloader
+objectives: [rhcsa.deploy.bootloader, rhcsa.operate.boot-reboot]
+facets: [rhcsa.deploy.bootloader:kernel-args, rhcsa.operate.boot-reboot:reboot-normally]
+difficulty: medium
+difficulty_reason: >
+  RHEL 10 keeps kernel arguments in BLS entries; editing /etc/default/grub alone changes nothing.
+  The argument must reach every installed kernel and be in effect after the reboot.
+estimated_minutes: 5
+node: node1
+exclusive: [node1-kernel-args]
+params:
+  arg: {choice: ["audit_backlog_limit=8192", "panic=30", "printk.devkmsg=on", "consoleblank=600"]}
+
+prompt: |
+  Configure node1 so that **every installed kernel** boots with the kernel argument
+  `{{arg}}`. It must be active after the next reboot and remain configured for kernels
+  installed later.
+
+requirements:
+  R1: "{{arg}} is on the running kernel's command line after the reboot"
+  R2: "every boot entry has {{arg}}"
+
+checks:
+  - id: running
+    covers: [R1]
+    desc: "/proc/cmdline contains {{arg}}"
+    run: tr ' ' '\n' < /proc/cmdline | grep -qx '{{arg}}'
+  - id: entries
+    covers: [R2]
+    desc: "all boot entries contain {{arg}}"
+    run: |
+      n=0; ok=0
+      while read -r line; do
+        n=$((n+1)); echo "$line" | tr ' "' '\n\n' | grep -qx '{{arg}}' && ok=$((ok+1))
+      done < <(grubby --info=ALL | grep '^args=')
+      test "$n" -gt 0 && test "$n" = "$ok"
+
+references:
+  - "RHEL 10: Managing, monitoring, and updating the kernel > Configuring kernel command-line parameters > Changing kernel command-line parameters for all boot entries"
+  - "man grubby(8)"

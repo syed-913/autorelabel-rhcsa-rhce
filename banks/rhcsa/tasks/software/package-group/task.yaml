@@ -1,0 +1,23 @@
+title: Install a package group
+primary: rhcsa.software.rpm-packages
+objectives: [rhcsa.software.rpm-packages]
+facets: [rhcsa.software.rpm-packages:rpm-group]
+difficulty: easy
+difficulty_reason: Find the group name and install it with dnf.
+estimated_minutes: 4
+node: node1
+prompt: |
+  On node1, install the package group **System Tools** (its default packages).
+requirements:
+  R1: "the System Tools group is installed"
+checks:
+  - id: group
+    covers: [R1]
+    desc: System Tools is installed and its default packages are present
+    run: |
+      dnf -q group list --installed 2>/dev/null | grep -q 'System Tools'
+      rpm -q tmux zsh nmap >/dev/null
+references:
+  - "RHEL 10: Managing software with the DNF tool > Managing package groups"
+  - "man dnf(8) (group)"
+mistakes_na: "Installing the group's packages one by one is not a mistake the checks should punish; the group marker is checked."

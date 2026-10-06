@@ -1,0 +1,48 @@
+title: Install a Flatpak application from a repository
+primary: rhcsa.software.flatpak-repos
+objectives: [rhcsa.software.flatpak-repos, rhcsa.software.flatpak-apps, rhcsa.software.rpm-packages]
+facets:
+  - rhcsa.software.flatpak-repos:flatpak-remote-file
+  - rhcsa.software.flatpak-repos:flatpak-remote-scope
+  - rhcsa.software.flatpak-apps:flatpak-install
+  - rhcsa.software.rpm-packages:rpm-install
+difficulty: medium
+difficulty_reason: >
+  Install Flatpak, add a remote system-wide from a .flatpakrepo file (with its signing key), and
+  install an application together with the runtime it needs.
+estimated_minutes: 8
+node: node1
+exclusive: [flatpak-node1]
+params:
+  remote: {choice: [lab-flatpaks, rhel-local, labrepo]}
+
+prompt: |
+  The utility server publishes Red Hat Flatpak applications. Its repository description file is
+  `{{lab.flatpak_repofile}}`.
+
+  On node1:
+  1. Add this Flatpak repository **system-wide** under the remote name `{{remote}}`.
+  2. Install the **Firefox** application (`org.mozilla.firefox`) from it, system-wide.
+
+  Flatpak may need to be installed first.
+
+requirements:
+  R1: "a system-wide Flatpak remote named {{remote}} points to the utility repository"
+  R2: "org.mozilla.firefox is installed system-wide from {{remote}}"
+
+checks:
+  - id: remote
+    covers: [R1]
+    desc: "system remote {{remote}} → {{lab.flatpak_repo}}"
+    run: |
+      flatpak remotes --system --columns=name,url 2>/dev/null | awk '{print $1, $2}' \
+        | grep -E '^{{remote}} ' | grep -q 'utility.lab.example.com/flatpak/repo'
+  - id: app
+    covers: [R2]
+    desc: org.mozilla.firefox installed system-wide from {{remote}}
+    run: |
+      flatpak list --system --app --columns=application,origin 2>/dev/null | grep -Eq '^org\.mozilla\.firefox[[:space:]]+{{remote}}$'
+
+references:
+  - "RHEL 10: Installing and managing applications with Flatpak (adding Flatpak remotes, installing applications)"
+  - "man flatpak-remote-add(1), man flatpak-install(1), man flatpak-remotes(1)"

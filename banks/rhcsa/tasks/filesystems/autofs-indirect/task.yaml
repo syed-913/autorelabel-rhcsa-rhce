@@ -1,0 +1,43 @@
+title: Automount NFS shares with an indirect map
+primary: rhcsa.filesystems.autofs
+objectives: [rhcsa.filesystems.autofs, rhcsa.filesystems.nfs]
+facets:
+  - rhcsa.filesystems.autofs:autofs-indirect
+  - rhcsa.filesystems.nfs:nfs-mount
+difficulty: medium
+difficulty_reason: autofs master map plus an indirect map, enabled at boot; mounts appear only on access.
+estimated_minutes: 8
+node: node2
+exclusive: [autofs-projects-node2]
+
+prompt: |
+  The utility server exports the directories `alpha`, `beta` and `gamma` under
+  `{{lab.nfs_server}}:/exports/projects/`.
+
+  On node2, configure **autofs** so that accessing `/projects/alpha`, `/projects/beta` or
+  `/projects/gamma` automatically mounts the matching export. The automounter must be active
+  after reboots.
+
+requirements:
+  R1: "autofs is enabled and running"
+  R2: "/projects/<name> automounts the export of the same name for alpha, beta and gamma"
+
+checks:
+  - id: service
+    covers: [R1]
+    on: node2
+    desc: autofs enabled and running
+    run: systemctl is-enabled -q autofs && systemctl is-active -q autofs
+  - id: automount
+    covers: [R2]
+    on: node2
+    desc: each project directory mounts on access
+    run: |
+      for p in alpha beta gamma; do
+        grep -q "project $p" /projects/$p/README.txt
+        findmnt -no FSTYPE /projects/$p | grep -q '^nfs'
+      done
+
+references:
+  - "RHEL 10: Configuring and using network file services > Mounting file systems on demand (autofs, indirect maps)"
+  - "man auto.master(5), man autofs(5)"

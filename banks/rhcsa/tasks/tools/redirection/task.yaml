@@ -1,0 +1,56 @@
+title: Redirect output and errors
+primary: rhcsa.tools.redirection
+objectives: [rhcsa.tools.redirection]
+facets:
+  - rhcsa.tools.redirection:redirect-stdout
+  - rhcsa.tools.redirection:redirect-stderr
+  - rhcsa.tools.redirection:redirect-append
+  - rhcsa.tools.redirection:redirect-both
+  - rhcsa.tools.redirection:pipe
+difficulty: easy
+difficulty_reason: Shell redirection operators, each used once.
+estimated_minutes: 5
+node: node2
+
+prompt: |
+  On node2, the command `lab-inventory` prints normal output and error messages.
+
+  1. Run `lab-inventory` so that its normal output goes to `/root/inventory.out` and its error
+     messages go to `/root/inventory.err`.
+  2. Run `lab-inventory --summary` and **append** its normal output to `/root/inventory.out`.
+  3. Run `lab-inventory --verbose` and send **both** its normal output and its errors into
+     `/root/inventory.all`.
+  4. Count the lines of `lab-inventory` normal output that contain `disk` and write only the number
+     into `/root/disk-count.txt` (use a pipe).
+
+requirements:
+  R1: "inventory.out holds the plain run's stdout followed by the summary's stdout"
+  R2: "inventory.err holds only the plain run's error messages"
+  R3: "inventory.all holds stdout and stderr of the verbose run"
+  R4: "disk-count.txt holds the number of matching lines"
+
+checks:
+  - id: out
+    covers: [R1]
+    on: node2
+    desc: stdout of both runs, in order
+    run: diff <(lab-inventory 2>/dev/null; lab-inventory --summary 2>/dev/null) /root/inventory.out >/dev/null
+  - id: err
+    covers: [R2]
+    on: node2
+    desc: only the error messages
+    run: diff <(lab-inventory 2>&1 >/dev/null) /root/inventory.err >/dev/null
+  - id: all
+    covers: [R3]
+    on: node2
+    desc: both streams of --verbose
+    run: |
+      test "$(sort /root/inventory.all | sha256sum)" = "$(lab-inventory --verbose 2>&1 | sort | sha256sum)"
+  - id: count
+    covers: [R4]
+    on: node2
+    desc: the count is right
+    run: test "$(tr -d '[:space:]' < /root/disk-count.txt)" = "$(lab-inventory 2>/dev/null | grep -c disk)"
+
+references:
+  - "man bash(1) (REDIRECTION, Pipelines)"

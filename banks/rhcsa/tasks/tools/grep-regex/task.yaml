@@ -1,0 +1,32 @@
+title: Select lines with a regular expression
+primary: rhcsa.tools.grep
+objectives: [rhcsa.tools.grep]
+facets:
+  - rhcsa.tools.grep:grep-regex
+  - rhcsa.tools.grep:grep-save
+difficulty: medium
+difficulty_reason: Anchors, character classes and repetition in one expression; exactness matters.
+estimated_minutes: 5
+node: node1
+params:
+  prefix: {choice: [ERROR, WARN, FAIL]}
+
+prompt: |
+  On node1, from the file `/usr/share/doc/lab/app.log`, save into `/root/{{prefix}}-codes.txt` every
+  line that:
+  - **starts** with the word `{{prefix}}` (uppercase), and
+  - **ends** with a numeric code of exactly **4 digits** (for example `... code 4031`).
+
+  Keep the original order. No other lines.
+
+requirements:
+  R1: "the file contains exactly the lines that start with {{prefix}} and end with a 4-digit number"
+
+checks:
+  - id: lines
+    covers: [R1]
+    desc: output matches the expected lines
+    run: diff <(grep -E '^{{prefix}}([^[:alnum:]].*)?[^0-9][0-9]{4}$' /usr/share/doc/lab/app.log) /root/{{prefix}}-codes.txt >/dev/null
+
+references:
+  - "man grep(1) (-E), man 7 regex"

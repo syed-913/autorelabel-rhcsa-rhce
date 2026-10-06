@@ -1,0 +1,47 @@
+title: Change the default firewall zone
+primary: rhcsa.security.firewall
+objectives: [rhcsa.security.firewall, rhcsa.networking.firewall-restrict]
+facets:
+  - rhcsa.security.firewall:firewall-zone
+  - rhcsa.security.firewall:firewall-service
+difficulty: medium
+difficulty_reason: >
+  Requires understanding zones: the default zone decides which rules apply to the interface,
+  and services must be added to the right zone, persistently.
+estimated_minutes: 6
+node: node1
+exclusive: [firewall-zone-node1]
+params:
+  zone: {choice: [work, internal, home]}
+
+prompt: |
+  On node1, make `{{zone}}` the **default** firewall zone, so that it applies to the lab interface
+  `{{lab.node1.nic}}`. In that zone, allow the `https` service in addition to `ssh`.
+  Everything must persist across reboots.
+
+requirements:
+  R1: "{{zone}} is the default zone"
+  R2: "the lab interface is in the {{zone}} zone"
+  R3: "https and ssh are allowed in the {{zone}} zone"
+
+checks:
+  - id: default
+    covers: [R1]
+    desc: "default zone is {{zone}}"
+    run: test "$(firewall-cmd --get-default-zone)" = "{{zone}}"
+  - id: interface
+    covers: [R2]
+    desc: "{{lab.node1.nic}} is in {{zone}}"
+    run: |
+      nic="$(sed -n 's/^lab_nic=//p' /etc/autorelabel/facts)"
+      test "$(firewall-cmd --get-zone-of-interface="$nic" 2>/dev/null || firewall-cmd --get-default-zone)" = "{{zone}}"
+  - id: services
+    covers: [R3]
+    desc: "https and ssh allowed in {{zone}}"
+    run: |
+      s="$(firewall-cmd --zone={{zone}} --list-services)"
+      echo "$s" | tr ' ' '\n' | grep -qx https && echo "$s" | tr ' ' '\n' | grep -qx ssh
+
+references:
+  - "RHEL 10: Configuring firewalls and packet filters > Working with firewalld zones"
+  - "man firewall-cmd(1), man firewalld.zones(5)"

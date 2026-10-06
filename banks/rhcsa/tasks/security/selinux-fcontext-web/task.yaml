@@ -1,0 +1,54 @@
+title: Fix web content blocked by SELinux file contexts
+primary: rhcsa.security.selinux-restore
+objectives: [rhcsa.security.selinux-restore, rhcsa.security.selinux-contexts]
+facets:
+  - rhcsa.security.selinux-restore:fcontext-rule
+  - rhcsa.security.selinux-restore:restorecon
+  - rhcsa.security.selinux-contexts:file-context
+difficulty: medium
+difficulty_reason: >
+  Diagnose a 403 caused by SELinux labels and fix it persistently (policy rule plus relabel).
+  The trap: chcon makes it work but does not survive a relabel.
+estimated_minutes: 8
+node: node1
+exclusive: [httpd-node1]
+params:
+  site: {choice: [intranet, reports, docs, portal, wiki]}
+  token: {token: 10}
+
+prompt: |
+  The Apache web server on node1 is configured to serve the content of `/srv/{{site}}`, but
+  `http://localhost/` answers **403 Forbidden**.
+
+  Fix it so that node1 serves that content at `http://localhost/`:
+  - SELinux must remain **enforcing**
+  - do not move the content or change the Apache configuration
+  - the fix must survive reboots and a full file system relabel, and must also apply to files
+    created in `/srv/{{site}}` later
+
+requirements:
+  R1: "http://localhost/ on node1 returns the content of /srv/{{site}}"
+  R2: "a persistent SELinux file-context rule labels /srv/{{site}} and everything below it for web content"
+  R3: "SELinux is enforcing"
+
+checks:
+  - id: served
+    covers: [R1]
+    desc: http://localhost/ returns the page from /srv/{{site}}
+    run: curl -fsS --max-time 5 http://localhost/ | grep -q "AR-{{token}}"
+  - id: rule
+    covers: [R2]
+    desc: "the default context of /srv/{{site}} (and new files in it) is httpd_sys_content_t"
+    run: |
+      matchpathcon -n /srv/{{site}}/index.html | grep -q httpd_sys_content_t
+      matchpathcon -n /srv/{{site}}/new-file.html | grep -q httpd_sys_content_t
+      matchpathcon -V /srv/{{site}}/index.html | grep -q verified
+  - id: enforcing
+    covers: [R3]
+    desc: SELinux is enforcing
+    run: test "$(getenforce)" = Enforcing
+
+references:
+  - "RHEL 10: Using SELinux > Troubleshooting problems related to SELinux"
+  - "RHEL 10: Using SELinux > Configuring SELinux for applications and services with non-standard configurations > Customizing the SELinux policy for the Apache HTTP server in a non-standard configuration"
+  - "man semanage-fcontext(8) (examples), man restorecon(8), man httpd_selinux(8)"

@@ -1,0 +1,50 @@
+title: Restrict a service to one source with firewalld
+primary: rhcsa.networking.firewall-restrict
+objectives: [rhcsa.networking.firewall-restrict, rhcsa.security.firewall]
+facets:
+  - rhcsa.networking.firewall-restrict:firewall-rich-rule
+  - rhcsa.security.firewall:firewall-service
+difficulty: hard
+difficulty_reason: >
+  A source-specific rule (rich rule or a source-bound zone) that allows one host while others are
+  rejected; testing requires checking from two different machines.
+estimated_minutes: 10
+node: node2
+exclusive: [httpd-node2, firewall-http-node2]
+params:
+  token: {token: 10}
+
+prompt: |
+  node2 runs a web server on port 80 (already working locally). Configure node2's firewall so that:
+
+  - **only node1** (`{{lab.node1.ip}}`) can reach the web server
+  - every other host (for example the utility server) must **not** be able to reach it
+  - SSH must keep working from everywhere
+
+  The configuration must persist across reboots.
+
+requirements:
+  R1: "node1 can load http://{{lab.node2.ip}}/"
+  R2: "other hosts cannot"
+  R3: "ssh still allowed from everywhere"
+
+checks:
+  - id: node1-allowed
+    covers: [R1]
+    on: node1
+    desc: node1 gets the page
+    run: curl -fsS --max-time 5 http://{{lab.node2.ip}}/ | grep -q "AR-{{token}}"
+  - id: others-blocked
+    covers: [R2]
+    on: utility
+    desc: utility is blocked
+    run: "! curl -fsS --max-time 5 http://{{lab.node2.ip}}/ >/dev/null 2>&1"
+  - id: ssh
+    covers: [R3]
+    on: utility
+    desc: ssh port still open from utility
+    run: timeout 5 bash -c 'exec 3<>/dev/tcp/{{lab.node2.ip}}/22' 2>/dev/null
+
+references:
+  - "RHEL 10: Configuring firewalls and packet filters > Using rich rules / Zone-based traffic management by source"
+  - "man firewalld.richlanguage(5), man firewall-cmd(1)"

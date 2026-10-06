@@ -1,0 +1,38 @@
+title: Automount an NFS share with a direct map
+primary: rhcsa.filesystems.autofs
+objectives: [rhcsa.filesystems.autofs]
+facets: [rhcsa.filesystems.autofs:autofs-direct]
+difficulty: medium
+difficulty_reason: Direct maps use the special /- master entry and absolute keys.
+estimated_minutes: 6
+node: node2
+exclusive: [autofs-direct-node2]
+params:
+  dir: {choice: [/srv/reports, /opt/shared-docs, /data/library]}
+
+prompt: |
+  On node2, configure autofs with a **direct map** so that the directory `{{dir}}` automatically
+  mounts `{{lab.nfs_server}}:/exports/direct` when accessed. It must work after reboots.
+
+requirements:
+  R1: "{{dir}} mounts the export on access (direct map)"
+  R2: "autofs is enabled"
+
+checks:
+  - id: direct
+    covers: [R1]
+    on: node2
+    desc: "{{dir}} is an automounted NFS share from a /- map"
+    run: |
+      grep -q 'direct share' {{dir}}/README.txt
+      findmnt -no FSTYPE {{dir}} | grep -q '^nfs'
+      (cat /etc/auto.master /etc/auto.master.d/*.autofs 2>/dev/null) | grep -Eq '^/-[[:space:]]'
+  - id: enabled
+    covers: [R2]
+    on: node2
+    desc: autofs enabled
+    run: systemctl is-enabled -q autofs && systemctl is-active -q autofs
+
+references:
+  - "RHEL 10: Configuring and using network file services > autofs (direct maps)"
+  - "man auto.master(5) (direct maps /-)"

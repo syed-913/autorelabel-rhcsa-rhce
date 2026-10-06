@@ -1,0 +1,50 @@
+title: Schedule a one-time job with at
+primary: rhcsa.deploy.scheduling
+objectives: [rhcsa.deploy.scheduling, rhcsa.software.rpm-packages, rhcsa.deploy.services]
+facets:
+  - rhcsa.deploy.scheduling:at-job
+  - rhcsa.software.rpm-packages:rpm-install
+  - rhcsa.deploy.services:service-enable
+difficulty: easy
+difficulty_reason: Install at, enable atd, queue one job; the trap is atd not being enabled at boot.
+estimated_minutes: 5
+node: node2
+params:
+  word: {pool: words}
+  date: {choice: ["2027-01-15 09:30", "2027-02-20 17:45", "2027-04-01 06:15"]}
+
+prompt: |
+  On node2, schedule a **one-time** job with `at` that runs, as root, on **{{date}}**:
+
+      /usr/bin/logger -t {{word}} "one-time job"
+
+  The job must still be scheduled (and the scheduler running) after node2 reboots.
+  The `at` software may need to be installed.
+
+requirements:
+  R1: "an at job for {{date}} runs the command"
+  R2: "the atd service is enabled and running"
+
+checks:
+  - id: queued
+    covers: [R1]
+    on: node2
+    desc: "an at job is queued for {{date}} running logger -t {{word}}"
+    run: |
+      command -v atq >/dev/null
+      want="$(date -d '{{date}}' '+%a %b %e %H:%M:00 %Y' | tr -s ' ')"
+      found=0
+      while read -r id rest; do
+        when="$(echo "$rest" | awk '{print $1, $2, $3, $4, $5}' | tr -s ' ')"
+        if [ "$when" = "$want" ] && at -c "$id" | grep -q 'logger -t {{word}}'; then found=1; fi
+      done < <(atq)
+      test "$found" = 1
+  - id: atd
+    covers: [R2]
+    on: node2
+    desc: atd is enabled and running
+    run: systemctl is-enabled -q atd && systemctl is-active -q atd
+
+references:
+  - "RHEL 10: Configuring basic system settings > Scheduling one-time jobs with at"
+  - "man at(1), man atd(8)"

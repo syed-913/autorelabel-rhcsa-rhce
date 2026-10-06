@@ -1,0 +1,46 @@
+title: Find messages in the logs
+primary: rhcsa.operate.logs
+objectives: [rhcsa.operate.logs, rhcsa.tools.redirection]
+facets:
+  - rhcsa.operate.logs:journal-query
+  - rhcsa.operate.logs:log-files
+  - rhcsa.tools.redirection:redirect-stdout
+difficulty: medium
+difficulty_reason: >
+  Requires filtering the journal by unit and priority and locating the same events in the
+  classic log files; output must be exact.
+estimated_minutes: 7
+node: node1
+params:
+  word: {pool: words}
+
+prompt: |
+  On node1, the service `{{word}}-batch.service` runs at every boot and logs several messages,
+  some of them with priority **err** (error).
+
+  1. Save the text of every message from that service with priority **err or higher**, from the
+     **current boot**, into `/root/{{word}}-errors.txt` (only the message text, one per line, in
+     the order they were logged).
+  2. The same service also writes to the classic syslog files. Write the **full path** of the log
+     file under `/var/log` that receives its messages into `/root/{{word}}-logfile.txt`.
+
+requirements:
+  R1: "/root/{{word}}-errors.txt lists exactly the err+ messages of the current boot, in order"
+  R2: "/root/{{word}}-logfile.txt names the syslog file that contains the messages"
+
+checks:
+  - id: errors
+    covers: [R1]
+    desc: the error messages match journalctl -u {{word}}-batch -p err -b
+    run: |
+      want="$(journalctl -b -u {{word}}-batch.service -p err -o cat --no-pager)"
+      test -n "$want"
+      diff <(echo "$want") <(grep -v '^[[:space:]]*$' /root/{{word}}-errors.txt) >/dev/null
+  - id: logfile
+    covers: [R2]
+    desc: the syslog file is /var/log/messages
+    run: test "$(tr -d '[:space:]' < /root/{{word}}-logfile.txt)" = /var/log/messages
+
+references:
+  - "RHEL 10: Configuring basic system settings > Troubleshooting problems by using log files (journalctl filtering)"
+  - "man journalctl(1) (-u, -p, -b, -o cat), man rsyslog.conf(5)"

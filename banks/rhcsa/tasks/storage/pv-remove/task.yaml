@@ -1,0 +1,53 @@
+title: Remove a physical volume from a volume group
+primary: rhcsa.storage.pv
+objectives: [rhcsa.storage.pv, rhcsa.storage.vg]
+facets:
+  - rhcsa.storage.pv:pv-remove
+  - rhcsa.storage.vg:vg-extend
+difficulty: medium
+difficulty_reason: >
+  Safely shrinking a VG: confirm the PV is unused (or move extents), vgreduce, then pvremove,
+  without touching the LV that stays.
+estimated_minutes: 6
+node: node1
+exclusive: [node1-disk2-vg]
+resources:
+  disk: {node1.disk2: 1100}
+params:
+  vg: {choice: [archvg, backupvg, mediavg]}
+
+prompt: |
+  On node1, the volume group `{{vg}}` consists of two physical volumes on `{{lab.node1.disk2}}`.
+  The second one (the higher-numbered partition) will be reused for something else:
+
+  - remove it from `{{vg}}`
+  - remove its LVM physical-volume label
+
+  The logical volume in `{{vg}}` and its data (mounted at `/srv/{{vg}}`) must stay intact and mounted.
+
+requirements:
+  R1: "{{vg}} has one PV left"
+  R2: "the removed partition carries no PV label"
+  R3: "the LV is still mounted with its data"
+
+checks:
+  - id: one-pv
+    covers: [R1]
+    desc: "{{vg}} has exactly one PV"
+    run: test "$(vgs --noheadings -o pv_count {{vg}} | tr -d ' ')" = 1
+  - id: no-label
+    covers: [R2]
+    desc: the second partition is not a PV
+    run: |
+      p2="$(cat /etc/autorelabel/{{vg}}-pv2)"
+      ! pvs --noheadings -o pv_name 2>/dev/null | grep -qw "$p2"
+  - id: intact
+    covers: [R3]
+    desc: LV mounted, data intact
+    run: |
+      findmnt -n /srv/{{vg}} >/dev/null
+      cd /srv/{{vg}} && sha256sum -c --quiet /etc/autorelabel/{{vg}}-data.sha256
+
+references:
+  - "RHEL 10: Configuring and managing logical volumes > Removing physical volumes from a volume group (vgreduce, pvmove, pvremove)"
+  - "man vgreduce(8), man pvremove(8), man pvmove(8)"

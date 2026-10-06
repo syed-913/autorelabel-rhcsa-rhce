@@ -1,0 +1,55 @@
+title: Manage groups and memberships
+primary: rhcsa.users.groups
+objectives: [rhcsa.users.groups]
+facets:
+  - rhcsa.users.groups:group-create
+  - rhcsa.users.groups:group-membership
+  - rhcsa.users.groups:group-delete
+difficulty: easy
+difficulty_reason: groupadd/groupmod/gpasswd/groupdel with exact values.
+estimated_minutes: 5
+node: node1
+params:
+  newgroup: {pool: groupnames}
+  gid: {range: [6100, 6199]}
+  oldgroup: {pool: groupnames}
+  renamed: {pool: groupnames}
+  u1: {pool: usernames}
+  u2: {pool: usernames}
+
+prompt: |
+  On node1 (users `{{u1}}` and `{{u2}}` exist; groups `{{oldgroup}}` and `legacy-{{renamed}}` exist):
+
+  1. Create the group `{{newgroup}}` with GID **{{gid}}** and make `{{u1}}` and `{{u2}}` members of it.
+  2. Remove `{{u2}}` from the group `{{oldgroup}}` (keep the group itself).
+  3. Rename the group `legacy-{{renamed}}` to `{{renamed}}` (keep its GID).
+
+requirements:
+  R1: "{{newgroup}} exists with GID {{gid}} and has {{u1}} and {{u2}} as members"
+  R2: "{{u2}} is no longer in {{oldgroup}}; {{oldgroup}} still exists"
+  R3: "legacy-{{renamed}} is now {{renamed}} with the same GID"
+
+checks:
+  - id: new
+    covers: [R1]
+    desc: new group, GID, members
+    run: |
+      test "$(getent group {{newgroup}} | cut -d: -f3)" = "{{gid}}"
+      for u in {{u1}} {{u2}}; do id -nG "$u" | tr ' ' '\n' | grep -qx {{newgroup}}; done
+  - id: removed
+    covers: [R2]
+    desc: "{{u2}} left {{oldgroup}}"
+    run: |
+      getent group {{oldgroup}} >/dev/null
+      ! id -nG {{u2}} | tr ' ' '\n' | grep -qx {{oldgroup}}
+      id -nG {{u1}} | tr ' ' '\n' | grep -qx {{oldgroup}}
+  - id: renamed
+    covers: [R3]
+    desc: group renamed, same GID
+    run: |
+      ! getent group legacy-{{renamed}} >/dev/null
+      test "$(getent group {{renamed}} | cut -d: -f3)" = "$(cat /etc/autorelabel/{{renamed}}-gid)"
+
+references:
+  - "RHEL 10: Managing users and groups"
+  - "man groupadd(8), man gpasswd(1), man groupmod(8)"

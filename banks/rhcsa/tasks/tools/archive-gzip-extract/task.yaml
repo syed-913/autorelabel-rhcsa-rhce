@@ -1,0 +1,42 @@
+title: Extract an archive and create a gzip archive
+primary: rhcsa.tools.archive
+objectives: [rhcsa.tools.archive]
+facets:
+  - rhcsa.tools.archive:tar-extract
+  - rhcsa.tools.archive:tar-gzip
+difficulty: easy
+difficulty_reason: Two tar operations with -C and -z.
+estimated_minutes: 4
+node: node2
+params:
+  word: {pool: words}
+
+prompt: |
+  On node2:
+  1. Extract the archive `/root/{{word}}-bundle.tar` into the directory `/srv/{{word}}-restore/`
+     (create it), so that, for example, `/srv/{{word}}-restore/cfg/index.txt` exists.
+  2. Create a **gzip**-compressed tar archive `/root/{{word}}-restore.tar.gz` of the directory
+     `/srv/{{word}}-restore`.
+
+requirements:
+  R1: "the bundle is extracted under /srv/{{word}}-restore"
+  R2: "/root/{{word}}-restore.tar.gz is a gzip tar archive of that directory"
+
+checks:
+  - id: extracted
+    covers: [R1]
+    on: node2
+    desc: extracted tree matches the archive
+    run: |
+      test -f /srv/{{word}}-restore/cfg/index.txt
+      cmp -s <(tar -xOf /root/{{word}}-bundle.tar cfg/notes.md) /srv/{{word}}-restore/cfg/notes.md
+  - id: gzip
+    covers: [R2]
+    on: node2
+    desc: gzip archive contains the restore tree
+    run: |
+      file -b /root/{{word}}-restore.tar.gz | grep -qi gzip
+      tar -tzf /root/{{word}}-restore.tar.gz | grep -q 'srv/{{word}}-restore/cfg/sub/a.txt'
+
+references:
+  - "man tar(1) (-x, -C, -z)"

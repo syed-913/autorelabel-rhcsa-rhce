@@ -1,0 +1,36 @@
+title: Boot node2 with SELinux in permissive mode
+primary: rhcsa.security.selinux-modes
+objectives: [rhcsa.security.selinux-modes]
+facets: [rhcsa.security.selinux-modes:selinux-permissive]
+difficulty: easy
+difficulty_reason: One file and one command; the traps are runtime-only changes and choosing "disabled" instead of "permissive".
+estimated_minutes: 3
+node: node2
+exclusive: [selinux-mode-node2, selinux-node2-enforcing]
+
+prompt: |
+  For troubleshooting, node2 must run SELinux in **permissive** mode, both now and after reboots.
+  SELinux must stay enabled with the targeted policy (do not disable it).
+
+requirements:
+  R1: "SELinux runs in permissive mode after a reboot"
+  R2: "SELinux remains enabled with the targeted policy"
+
+checks:
+  - id: running
+    covers: [R1]
+    on: node2
+    desc: getenforce reports Permissive
+    run: test "$(getenforce)" = Permissive
+  - id: config
+    covers: [R1, R2]
+    on: node2
+    desc: /etc/selinux/config has SELINUX=permissive and SELINUXTYPE=targeted
+    run: |
+      grep -Eq '^[[:space:]]*SELINUX[[:space:]]*=[[:space:]]*permissive[[:space:]]*$' /etc/selinux/config
+      grep -Eq '^[[:space:]]*SELINUXTYPE[[:space:]]*=[[:space:]]*targeted[[:space:]]*$' /etc/selinux/config
+      ! grep -qw 'selinux=0' /proc/cmdline
+
+references:
+  - "RHEL 10: Using SELinux > Changing SELinux states and modes > Changing to permissive mode"
+  - "man selinux_config(5)"

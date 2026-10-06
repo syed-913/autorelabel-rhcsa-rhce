@@ -1,0 +1,49 @@
+title: Create XFS and ext4 file systems
+primary: rhcsa.filesystems.create-mount
+objectives: [rhcsa.filesystems.create-mount, rhcsa.storage.partitions]
+facets:
+  - rhcsa.filesystems.create-mount:fs-xfs
+  - rhcsa.filesystems.create-mount:fs-ext4
+  - rhcsa.storage.partitions:gpt-create
+difficulty: medium
+difficulty_reason: >
+  Two partitions and two file system types mounted persistently; on RHEL 10 an XFS file system
+  must be at least 300 MB, which rules out a common "too small" mistake.
+estimated_minutes: 7
+node: node2
+resources:
+  disk: {node2.disk1: 760}
+params:
+  word: {pool: words}
+
+prompt: |
+  On node2, on `{{lab.node2.disk1}}`:
+  - create a **400 MiB** partition with an **XFS** file system mounted at `/srv/{{word}}-xfs`
+  - create a **300 MiB** partition with an **ext4** file system mounted at `/srv/{{word}}-ext4`
+
+  Both must be mounted automatically at boot.
+
+requirements:
+  R1: "an XFS file system is mounted at /srv/{{word}}-xfs after reboot"
+  R2: "an ext4 file system is mounted at /srv/{{word}}-ext4 after reboot"
+
+checks:
+  - id: xfs
+    covers: [R1]
+    on: node2
+    desc: "XFS at /srv/{{word}}-xfs from {{lab.node2.disk1}}"
+    run: |
+      test "$(findmnt -no FSTYPE /srv/{{word}}-xfs)" = xfs
+      findmnt -no SOURCE /srv/{{word}}-xfs | grep -q '^{{lab.node2.disk1}}'
+  - id: ext4
+    covers: [R2]
+    on: node2
+    desc: "ext4 at /srv/{{word}}-ext4 from {{lab.node2.disk1}}"
+    run: |
+      test "$(findmnt -no FSTYPE /srv/{{word}}-ext4)" = ext4
+      findmnt -no SOURCE /srv/{{word}}-ext4 | grep -q '^{{lab.node2.disk1}}'
+
+references:
+  - "RHEL 10: Managing file systems > Creating an XFS file system / Creating an ext4 file system"
+  - "RHEL 10: Considerations in adopting RHEL 10 (mkfs.xfs minimum size 300 MB)"
+  - "man mkfs.xfs(8), man mkfs.ext4(8), man fstab(5)"

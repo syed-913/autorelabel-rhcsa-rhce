@@ -1,0 +1,34 @@
+title: Build a report from command output
+primary: rhcsa.scripts.command-output
+objectives: [rhcsa.scripts.command-output]
+facets: [rhcsa.scripts.command-output:command-substitution]
+difficulty: easy
+difficulty_reason: Command substitution and exact formatting, no control flow.
+estimated_minutes: 5
+node: node2
+
+prompt: |
+  On node2, create the executable script `/usr/local/bin/sysreport` that prints exactly these four
+  lines, using the output of commands (not hard-coded values):
+
+      hostname=<the system's hostname>
+      kernel=<the running kernel release, as printed by uname -r>
+      selinux=<the current SELinux mode, as printed by getenforce>
+      users=<the number of lines in /etc/passwd>
+
+requirements:
+  R1: "the four lines are printed in order with live values"
+
+checks:
+  - id: report
+    covers: [R1]
+    on: node2
+    desc: output equals the live values
+    run: |
+      test -x /usr/local/bin/sysreport
+      want="$(printf 'hostname=%s\nkernel=%s\nselinux=%s\nusers=%s' "$(hostname)" "$(uname -r)" "$(getenforce)" "$(wc -l < /etc/passwd)")"
+      test "$(/usr/local/bin/sysreport)" = "$want"
+
+references:
+  - "man bash(1) (Command Substitution), man uname(1), man getenforce(8), man wc(1)"
+mistakes_na: "A hard-coded value would pass a single run; the check compares live values computed at grading time instead."

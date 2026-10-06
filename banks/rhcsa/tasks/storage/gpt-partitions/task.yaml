@@ -1,0 +1,59 @@
+title: Manage GPT partitions without touching existing data
+primary: rhcsa.storage.partitions
+objectives: [rhcsa.storage.partitions, rhcsa.storage.non-destructive]
+facets:
+  - rhcsa.storage.partitions:gpt-create
+  - rhcsa.storage.partitions:gpt-delete
+  - rhcsa.storage.non-destructive:add-partition
+difficulty: medium
+difficulty_reason: >
+  Deleting one partition and creating two of exact sizes on a disk that also holds live data,
+  then making the kernel see the new table; any slip destroys the data.
+estimated_minutes: 8
+node: node2
+resources:
+  disk: {node2.disk1: 1600}
+params:
+  word: {pool: words}
+  size1: {choice: [600, 700]}
+  size2: {choice: [300, 400]}
+
+prompt: |
+  node2's second disk `{{lab.node2.disk1}}` (GPT) holds two partitions:
+  - one is mounted at `/mnt/keep-{{word}}` and contains data that must **not** be lost or modified
+  - one of **256 MiB** is obsolete
+
+  1. Delete the obsolete 256 MiB partition.
+  2. Create two new partitions on the same disk: one of **{{size1}} MiB** and one of **{{size2}} MiB**.
+     (No file systems needed.)
+
+requirements:
+  R1: "the 256 MiB partition is gone"
+  R2: "partitions of {{size1}} MiB and {{size2}} MiB exist on {{lab.node2.disk1}}"
+  R3: "the data partition is still mounted and its data intact"
+
+checks:
+  - id: deleted
+    covers: [R1]
+    on: node2
+    desc: no 256 MiB partition remains
+    run: "! lsblk -nbro SIZE,TYPE {{lab.node2.disk1}} | awk '$2==\"part\" {print int($1/1048576)}' | grep -qx 256"
+  - id: created
+    covers: [R2]
+    on: node2
+    desc: "partitions of about {{size1}} and {{size2}} MiB exist"
+    run: |
+      sizes="$(lsblk -nbro SIZE,TYPE {{lab.node2.disk1}} | awk '$2=="part" {print int($1/1048576)}')"
+      echo "$sizes" | awk -v a={{size1}} 'BEGIN{f=0} {if ($1>=a-8 && $1<=a+8) f=1} END{exit !f}'
+      echo "$sizes" | awk -v a={{size2}} 'BEGIN{f=0} {if ($1>=a-8 && $1<=a+8) f=1} END{exit !f}'
+  - id: data
+    covers: [R3]
+    on: node2
+    desc: data partition mounted and unchanged
+    run: |
+      findmnt -n /mnt/keep-{{word}} >/dev/null
+      cd /mnt/keep-{{word}} && sha256sum -c --quiet /etc/autorelabel/{{word}}-data.sha256
+
+references:
+  - "RHEL 10: Managing storage devices > Disk partitions (parted, fdisk)"
+  - "man parted(8), man fdisk(8), man partprobe(8)"

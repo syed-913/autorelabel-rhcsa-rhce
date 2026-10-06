@@ -1,0 +1,32 @@
+title: Install a package from a local file
+primary: rhcsa.deploy.packages-sources
+objectives: [rhcsa.deploy.packages-sources, rhcsa.software.rpm-packages]
+facets:
+  - rhcsa.deploy.packages-sources:pkg-local-file
+  - rhcsa.software.rpm-packages:rpm-install
+difficulty: easy
+difficulty_reason: Download one file and install it with dnf or rpm.
+estimated_minutes: 3
+node: node1
+exclusive: [labtools-node1]
+
+prompt: |
+  The package file `labtools-1.0-1.el10.noarch.rpm` is published at
+  `http://{{lab.utility_fqdn}}/rpms/`. Download it to node1 and install it **from the local
+  file** (do not configure a repository for it).
+
+requirements:
+  R1: "labtools 1.0 is installed from the downloaded file"
+
+checks:
+  - id: installed
+    covers: [R1]
+    desc: labtools-1.0 installed, not from a repository
+    run: |
+      test "$(rpm -q --qf '%{VERSION}' labtools)" = 1.0
+      from="$(dnf -q repoquery --installed --qf '%{from_repo}' labtools 2>/dev/null | tail -1)"
+      case "$from" in @commandline|commandline|@System|System|"") ;; *) exit 1 ;; esac
+
+references:
+  - "RHEL 10: Managing software with the DNF tool > Installing packages (local RPM files)"
+  - "man dnf(8) (install ./file.rpm), man rpm(8)"

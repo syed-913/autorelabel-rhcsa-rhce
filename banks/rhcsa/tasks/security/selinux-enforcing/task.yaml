@@ -1,0 +1,31 @@
+title: Put SELinux back into enforcing mode
+primary: rhcsa.security.selinux-modes
+objectives: [rhcsa.security.selinux-modes]
+facets: [rhcsa.security.selinux-modes:selinux-enforcing]
+difficulty: easy
+difficulty_reason: One subsystem and two well-known steps (runtime and persistent); the trap is doing only one.
+estimated_minutes: 3
+node: node1
+exclusive: [selinux-mode-node1]
+
+prompt: |
+  SELinux on node1 is currently running in permissive mode. Configure node1 so that SELinux is in
+  **enforcing** mode now and after every reboot.
+
+requirements:
+  R1: "SELinux is enforcing after a reboot"
+  R2: "the persistent configuration says enforcing"
+
+checks:
+  - id: running
+    covers: [R1]
+    desc: getenforce reports Enforcing
+    run: test "$(getenforce)" = Enforcing
+  - id: config
+    covers: [R2]
+    desc: /etc/selinux/config sets SELINUX=enforcing
+    run: grep -Eq '^[[:space:]]*SELINUX[[:space:]]*=[[:space:]]*enforcing[[:space:]]*$' /etc/selinux/config
+
+references:
+  - "RHEL 10: Using SELinux > Changing SELinux states and modes > Changing to enforcing mode"
+  - "man selinux_config(5), man setenforce(8), man getenforce(8)"

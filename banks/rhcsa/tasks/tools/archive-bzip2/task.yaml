@@ -1,0 +1,37 @@
+title: Create a bzip2-compressed archive
+primary: rhcsa.tools.archive
+objectives: [rhcsa.tools.archive]
+facets: [rhcsa.tools.archive:tar-bzip2]
+difficulty: easy
+difficulty_reason: One tar command with the right compression flag.
+estimated_minutes: 3
+node: node1
+params:
+  dir: {choice: [/etc/ssh, /etc/sysconfig, /etc/security, /etc/pam.d]}
+  name: {pool: words}
+
+prompt: |
+  On node1, create a **bzip2**-compressed tar archive `/root/{{name}}-backup.tar.bz2` that contains
+  the directory `{{dir}}` and everything in it.
+
+requirements:
+  R1: "the archive is a bzip2-compressed tar file"
+  R2: "it contains {{dir}} and its contents"
+
+checks:
+  - id: type
+    covers: [R1]
+    desc: the file is bzip2-compressed tar
+    run: |
+      file -b /root/{{name}}-backup.tar.bz2 | grep -qi bzip2
+      tar -tjf /root/{{name}}-backup.tar.bz2 >/dev/null
+  - id: content
+    covers: [R2]
+    desc: "all of {{dir}} is inside"
+    run: |
+      want="$(cd / && find "{{dir}}" -type f | sed 's|^/||' | sort)"
+      got="$(tar -tjf /root/{{name}}-backup.tar.bz2 | sed 's|^/||' | grep -v '/$' | sort)"
+      test -n "$want" && test "$want" = "$got"
+
+references:
+  - "man tar(1) (-j, --bzip2), man bzip2(1)"

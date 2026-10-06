@@ -1,0 +1,48 @@
+title: Repair a system that boots into emergency mode
+primary: rhcsa.operate.boot-target-manual
+objectives: [rhcsa.operate.boot-target-manual, rhcsa.storage.mount-uuid-label, rhcsa.operate.boot-reboot]
+facets:
+  - rhcsa.operate.boot-target-manual:boot-rescue-emergency
+  - rhcsa.storage.mount-uuid-label:mount-uuid
+  - rhcsa.operate.boot-reboot:reboot-normally
+difficulty: hard
+difficulty_reason: >
+  Recovery of an unbootable system from the console: get a root shell in emergency mode, find the
+  faulty /etc/fstab entry, correct it (not just delete it), and boot normally.
+estimated_minutes: 10
+node: node1
+breaks_boot: true
+console_only: true
+exclusive: [node1-boot-broken]
+resources:
+  disk: {node1.disk1: 320}
+params:
+  mnt: {choice: [appdata, records, vault]}
+
+prompt: |
+  node1 no longer boots normally: it stops in **emergency mode**. Use its console
+  (`./autorelabel console node1`, root password from the instructions) to repair it.
+
+  The cause is the entry for the file system that should be mounted at `/{{mnt}}`. That file system
+  (on `{{lab.node1.disk1}}`) **must still be mounted at `/{{mnt}}` at boot** after your fix. Do not
+  remove it from the boot configuration.
+
+requirements:
+  R1: "node1 boots normally (multi-user, reachable)"
+  R2: "/{{mnt}} is mounted at boot from {{lab.node1.disk1}}"
+
+checks:
+  - id: booted
+    covers: [R1]
+    desc: node1 reached a normal boot
+    run: systemctl is-system-running | grep -Eq 'running|degraded' && ! systemctl is-active -q emergency.target
+  - id: mounted
+    covers: [R2]
+    desc: "/{{mnt}} mounted from {{lab.node1.disk1}} via fstab"
+    run: |
+      findmnt -no SOURCE /{{mnt}} | grep -q '^{{lab.node1.disk1}}'
+      grep -Eq '^[^#]*[[:space:]]/{{mnt}}[[:space:]]' /etc/fstab
+
+references:
+  - "RHEL 10: Managing, monitoring, and updating the kernel > Booting to rescue or emergency mode"
+  - "man systemd.special(7) (emergency.target, rescue.target), man fstab(5), man blkid(8)"

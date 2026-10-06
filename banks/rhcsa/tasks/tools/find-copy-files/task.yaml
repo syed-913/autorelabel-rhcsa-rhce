@@ -1,0 +1,48 @@
+title: Find files and copy them preserving attributes
+primary: rhcsa.tools.file-management
+objectives: [rhcsa.tools.file-management, rhcsa.tools.shell]
+facets:
+  - rhcsa.tools.file-management:find-files
+  - rhcsa.tools.file-management:copy-preserve
+  - rhcsa.tools.file-management:create-dirs
+  - rhcsa.tools.shell:command-syntax
+difficulty: easy
+difficulty_reason: One find command with -user and -exec (or a loop), plus cp -p.
+estimated_minutes: 5
+node: node1
+params:
+  user: {pool: usernames}
+
+prompt: |
+  On node1, find every **regular file** on the system owned by the user `{{user}}` and copy them all
+  into the directory `/root/{{user}}-files/` (create it). Keep each file's ownership, permissions and
+  timestamps. Do not copy anything else, and leave the original files where they are.
+
+requirements:
+  R1: "/root/{{user}}-files contains a copy of every regular file owned by {{user}}"
+  R2: "ownership, permissions and timestamps are preserved"
+  R3: "nothing else is in the directory and the originals are untouched"
+
+checks:
+  - id: complete
+    covers: [R1, R3]
+    desc: "exactly the user's regular files are in /root/{{user}}-files, originals still in place"
+    run: |
+      find / -user {{user}} -type f -not -path '/proc/*' -not -path '/sys/*' \
+           -not -path '/root/{{user}}-files/*' 2>/dev/null | sort > /tmp/.ar-src
+      test -s /tmp/.ar-src
+      test "$(xargs -d '\n' -n1 basename < /tmp/.ar-src | sort)" = \
+           "$(find /root/{{user}}-files -type f -printf '%f\n' | sort)"
+      grep -q '/srv/{{user}}-report-3.txt' /tmp/.ar-src
+  - id: attributes
+    covers: [R2]
+    desc: owner, mode and mtime match the originals
+    run: |
+      find / -user {{user}} -type f -not -path '/proc/*' -not -path '/sys/*' \
+           -not -path '/root/{{user}}-files/*' 2>/dev/null | while read -r p; do
+        c="/root/{{user}}-files/$(basename "$p")"
+        test "$(stat -c '%U %a %Y' "$p")" = "$(stat -c '%U %a %Y' "$c")" || { echo "differs: $p"; exit 1; }
+      done
+
+references:
+  - "man find(1) (-user, -type, -exec), man cp(1) (-p, -a)"

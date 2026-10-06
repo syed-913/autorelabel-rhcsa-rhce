@@ -97,6 +97,8 @@ class Task:
     difficulty_reason: str = ""
     mistakes_na: str = ""
     notes: str = ""
+    breaks_boot: bool = False        # the setup leaves the node unbootable until the candidate fixes it
+    console_only: bool = False       # the node has no lab network at the start (use the console)
 
     # scripts discovered on disk: node name -> path
     def scripts(self, stem: str) -> dict[str, Path]:
@@ -119,6 +121,15 @@ class Task:
     def tests(self, kind: str) -> list[Path]:
         d = self.path / "tests"
         return sorted(d.glob(f"{kind}-*.sh")) if d.exists() else []
+
+    def test_groups(self, kind: str) -> list[tuple[str, dict[str, Path]]]:
+        """Tests of one kind grouped by name: `alt-x.sh` (task node) and `alt-x@node2.sh`
+        belong to the same test and run together."""
+        groups: dict[str, dict[str, Path]] = {}
+        for p in self.tests(kind):
+            stem, _, node = p.stem.partition("@")
+            groups.setdefault(stem, {})[node or self.node] = p
+        return sorted(groups.items())
 
     @property
     def solution_md(self) -> Path:

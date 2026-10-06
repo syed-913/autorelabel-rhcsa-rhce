@@ -1,0 +1,36 @@
+title: Key-based SSH login between two systems
+primary: rhcsa.security.ssh-keys
+objectives: [rhcsa.security.ssh-keys, rhcsa.tools.ssh]
+facets:
+  - rhcsa.security.ssh-keys:ssh-keygen-copy
+  - rhcsa.tools.ssh:ssh-login
+difficulty: medium
+difficulty_reason: >
+  Two systems and two accounts: generate a key as the right user, install the public key for the
+  right remote user, and keep file permissions/labels correct so sshd accepts it.
+estimated_minutes: 6
+node: node1
+exclusive: [ssh-keys]
+params:
+  user: {pool: usernames}
+  password: {choice: [Secret-Key-42, Lab-Login-77, Key-Auth-31]}
+
+prompt: |
+  The user `{{user}}` exists on node1 and on node2 (password `{{password}}` on both).
+  Configure SSH so that `{{user}}` on node1 can log in to node2 as `{{user}}`
+  **without being asked for a password or a passphrase**.
+
+requirements:
+  R1: "{{user}} on node1 logs in to node2 as {{user}} with a key, without any prompt"
+
+checks:
+  - id: key-login
+    covers: [R1]
+    desc: "ssh from node1 ({{user}}) to node2 ({{user}}) succeeds in batch mode (no password)"
+    run: |
+      sudo -u {{user}} ssh -o BatchMode=yes -o PasswordAuthentication=no -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null -o ConnectTimeout=8 {{user}}@{{lab.node2.ip}} true
+
+references:
+  - "RHEL 10: Securing networks > Using secure communications between two systems with OpenSSH > Generating SSH key pairs"
+  - "man ssh-keygen(1), man ssh-copy-id(1), man sshd(8) (AUTHORIZED_KEYS)"

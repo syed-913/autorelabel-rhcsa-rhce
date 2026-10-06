@@ -1,0 +1,54 @@
+title: Default file permissions for all users
+primary: rhcsa.security.umask
+objectives: [rhcsa.security.umask]
+facets: [rhcsa.security.umask:umask-system]
+difficulty: medium
+difficulty_reason: >
+  Must find the system-wide mechanism that applies to every user's login shell (current and
+  future) without being overridden; a per-user file does not satisfy it.
+estimated_minutes: 6
+node: node2
+exclusive: [umask-node2]
+params:
+  user1: {pool: usernames}
+  user2: {pool: usernames}
+
+prompt: |
+  On node2, every regular user's login shell must use the default umask **0027**, for existing
+  users and for users created later. Do not change root's umask (it stays 0022).
+
+requirements:
+  R1: "existing users' login shells use umask 0027"
+  R2: "a user created later also gets umask 0027"
+  R3: "root keeps umask 0022"
+
+checks:
+  - id: existing
+    covers: [R1]
+    on: node2
+    desc: "{{user1}} and {{user2}} get umask 0027"
+    run: |
+      test "$(su - {{user1}} -c umask 2>/dev/null | tail -1)" = 0027
+      test "$(su - {{user2}} -c umask 2>/dev/null | tail -1)" = 0027
+  - id: new-user
+    covers: [R2]
+    on: node2
+    desc: a brand-new user would get umask 0027 (default files under /etc/skel and system-wide settings)
+    run: |
+      tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+      # Simulate a new regular user's login shell (fresh /etc/skel files, unprivileged UID)
+      # without creating an account.
+      cp -a /etc/skel/. "$tmp/"; chmod -R a+rX "$tmp"
+      result="$(runuser -u nobody -- env -i HOME="$tmp" USER=nobody LOGNAME=nobody PATH=/usr/bin:/bin \
+                bash -l -c umask 2>/dev/null </dev/null | tail -1)"
+      login_defs="$(awk '$1=="UMASK"{print $2}' /etc/login.defs)"
+      test "$result" = 0027 || test "$login_defs" = 027 -o "$login_defs" = 0027
+  - id: root
+    covers: [R3]
+    on: node2
+    desc: root keeps umask 0022
+    run: test "$(su - root -c umask 2>/dev/null | tail -1)" = 0022
+
+references:
+  - "RHEL 10: Managing file systems > Managing file permissions > Changing the default umask for the non-login shell / login shell"
+  - "man login.defs(5) (UMASK), man pam_umask(8), man bash(1)"

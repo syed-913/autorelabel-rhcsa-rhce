@@ -1,0 +1,57 @@
+title: Diagnose and fix a broken home directory
+primary: rhcsa.filesystems.permissions
+objectives: [rhcsa.filesystems.permissions, rhcsa.security.selinux-restore]
+facets:
+  - rhcsa.filesystems.permissions:fix-ownership
+  - rhcsa.security.selinux-restore:restorecon
+difficulty: hard
+difficulty_reason: >
+  Diagnosis across three layers: ownership, permission bits and SELinux context are all wrong;
+  fixing only the visible one leaves the user still unable to log in properly.
+estimated_minutes: 8
+node: node2
+params:
+  user: {pool: usernames}
+  password: {choice: [Fix-Home-11, Fix-Home-22]}
+
+prompt: |
+  On node2, the user `{{user}}` (password `{{password}}`) complains that they cannot create files
+  in their home directory and that their shell settings are ignored at login.
+
+  Find and fix every problem with `/home/{{user}}` so that it is a normal, private home
+  directory again (owned by the user, accessible only by them, with its default SELinux context).
+
+requirements:
+  R1: "/home/{{user}} and its files are owned by {{user}}"
+  R2: "only {{user}} can access it (mode 700)"
+  R3: "the default SELinux context is restored"
+  R4: "{{user}} can create files in the home directory"
+
+checks:
+  - id: owner
+    covers: [R1]
+    on: node2
+    desc: ownership restored (recursively)
+    run: test -z "$(find /home/{{user}} ! -user {{user}} 2>/dev/null)"
+  - id: mode
+    covers: [R2]
+    on: node2
+    desc: home directory is 700
+    run: test "$(stat -c %a /home/{{user}})" = 700
+  - id: context
+    covers: [R3]
+    on: node2
+    desc: matchpathcon verifies the home and its dotfiles
+    run: |
+      matchpathcon -V /home/{{user}} | grep -q verified
+      matchpathcon -V /home/{{user}}/.bashrc | grep -q verified
+  - id: writable
+    covers: [R4]
+    on: node2
+    desc: the user can write there
+    run: sudo -u {{user}} test -w /home/{{user}}
+
+references:
+  - "RHEL 10: Managing file systems > Managing file permissions"
+  - "RHEL 10: Using SELinux > Restoring default file contexts (restorecon)"
+  - "man chown(1), man chmod(1), man restorecon(8)"

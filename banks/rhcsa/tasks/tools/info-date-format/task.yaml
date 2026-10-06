@@ -1,0 +1,45 @@
+title: Use documentation to write a small script
+primary: rhcsa.tools.docs
+objectives: [rhcsa.tools.docs, rhcsa.tools.edit-files]
+facets:
+  - rhcsa.tools.docs:info-page
+  - rhcsa.tools.docs:usr-share-doc
+  - rhcsa.tools.edit-files:edit-file
+difficulty: easy
+difficulty_reason: Requires finding a format specifier in the documentation (info or man) and a one-line script.
+estimated_minutes: 5
+node: node2
+
+prompt: |
+  On node2:
+  1. Using the documentation of the `date` command (the GNU coreutils **info** manual has the most
+     complete list), create an executable script `/usr/local/bin/isoweek` that prints **only** the
+     ISO 8601 **week number** of the current date (for example `07`).
+  2. The `rsync` package ships documentation under `/usr/share/doc`. Write the full path of its
+     **NEWS** file into `/root/rsync-news.txt`.
+
+  (The `info` reader may need to be installed.)
+
+requirements:
+  R1: "isoweek prints the ISO week number"
+  R2: "/root/rsync-news.txt contains the path of rsync's NEWS file"
+
+checks:
+  - id: script
+    covers: [R1]
+    on: node2
+    desc: isoweek output equals date +%V
+    run: |
+      test -x /usr/local/bin/isoweek
+      test "$(/usr/local/bin/isoweek | tr -d '[:space:]')" = "$(date +%V)"
+  - id: news
+    covers: [R2]
+    on: node2
+    desc: the path points to rsync's NEWS file
+    run: |
+      p="$(tr -d '[:space:]' < /root/rsync-news.txt)"
+      case "$p" in /usr/share/doc/rsync*/NEWS*) test -f "$p" ;; *) exit 1 ;; esac
+
+references:
+  - "info coreutils 'date invocation' (Date conversion specifiers), man date(1)"
+  - "/usr/share/doc/<package>/ (rpm -qd lists a package's documentation files)"

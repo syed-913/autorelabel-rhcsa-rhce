@@ -164,6 +164,8 @@ def cmd_lab_destroy(args: argparse.Namespace) -> int:
 
 
 def register(sub: argparse._SubParsersAction) -> None:
+    register_exam(sub)
+    register_selftest(sub)
     lab = sub.add_parser("lab", help="bring the lab VMs up, inspect or destroy them")
     lsub = lab.add_subparsers(dest="lab_cmd", required=True)
     lu = lsub.add_parser("up", help="create and provision the lab (no exam tasks)")
@@ -203,3 +205,264 @@ def register(sub: argparse._SubParsersAction) -> None:
     ks.add_argument("--seed", type=int, default=1)
     ks.add_argument("--json", action="store_true")
     ks.set_defaults(func=cmd_bank_sample)
+
+
+# --- exam flow -----------------------------------------------------------------------------------
+
+def _engine():
+    from .engine import Engine
+
+    return Engine()
+
+
+def _current():
+    from . import session as S
+
+    sess = S.current()
+    if sess is None:
+        raise SystemExit("error: no exam in progress (start one with: ./autorelabel exam start rhcsa)")
+    return sess
+
+
+def _fmt_time(seconds: float) -> str:
+    seconds = int(max(0, seconds))
+    return f"{seconds // 3600}:{seconds % 3600 // 60:02d}:{seconds % 60:02d}"
+
+
+def cmd_exam_start(args: argparse.Namespace) -> int:
+    from .engine import EngineError
+    from .lab import LabError
+
+    eng = _engine()
+    try:
+        sess = eng.create(args.exam, mode="exam", seed=args.seed)
+        print(f"Session {sess.id} (seed {sess.seed}): preparing the lab...")
+        eng.prepare(sess, on_step=lambda s: print(f"==> {s}", flush=True),
+                    on_line=(lambda s: print(f"    {s}", flush=True)) if args.verbose else None)
+    except (EngineError, LabError) as exc:
+        return _err(str(exc), getattr(exc, "hint", ""))
+    if args.no_start:
+        print("Lab ready. Start the timer with: ./autorelabel exam begin")
+        return 0
+    eng.start(sess)
+    print(f"Exam started: {sess.duration_s // 60} minutes. Tasks: ./autorelabel exam tasks")
+    return 0
+
+
+def cmd_exam_begin(_args: argparse.Namespace) -> int:
+    eng = _engine()
+    sess = _current()
+    eng.start(sess)
+    print(f"Exam started: {sess.duration_s // 60} minutes.")
+    return 0
+
+
+def cmd_exam_tasks(args: argparse.Namespace) -> int:
+    eng = _engine()
+    sess = _current()
+    info = eng.candidate_info(sess)
+    print(f"{sess.exam.upper()} exam · session {sess.id} · state {sess.state}")
+    for n in info["nodes"]:
+        pw = n["root_password"] or "(unknown: see the tasks)"
+        print(f"  {n['name']:7} {n['fqdn']:24} {n['ip']:15} root password: {pw}")
+    for t in eng.rendered(sess):
+        diff = f" [{t['difficulty']}]" if sess.show_difficulty else ""
+        print(f"\nTask {t['number']} ({t['points']} pts){diff}: {t['title']}")
+        print("  " + t["prompt"].replace("\n", "\n  "))
+    return 0
+
+
+def cmd_exam_status(_args: argparse.Namespace) -> int:
+    eng = _engine()
+    sess = _current()
+    note = eng.recover(sess)
+    if note:
+        print(note)
+    print(f"session {sess.id}  exam {sess.exam}  state {sess.state}")
+    if sess.duration_s:
+        print(f"time remaining {_fmt_time(sess.remaining())} of {_fmt_time(sess.duration_s)}"
+              f"  proctor {'running' if eng.proctor_alive(sess) else 'not running'}")
+    return 0
+
+
+def cmd_exam_submit(_args: argparse.Namespace) -> int:
+    eng = _engine()
+    sess = _current()
+    eng.submit(sess)
+    if not eng.proctor_alive(sess):
+        return cmd_exam_grade(_args)
+    print("Exam locked; the proctor is grading it. Watch: ./autorelabel exam status")
+    return 0
+
+
+def cmd_exam_grade(_args: argparse.Namespace) -> int:
+    from . import session as S
+
+    eng = _engine()
+    sess = _current()
+    if sess.state in (S.IN_PROGRESS, S.INTERRUPTED):
+        eng.lock(sess, reason="manual")
+
+    def ev(kind: str, data: dict) -> None:
+        if kind == "phase":
+            print(f"==> {data['label']}", flush=True)
+        elif kind == "reboot":
+            print(f"    {data['node']}: {data['stage']} {data.get('message', '')}", flush=True)
+
+    results = eng.grade(sess, ev)
+    print(sess.report_file.read_text())
+    return 0 if results["passed"] else 3
+
+
+def cmd_exam_results(args: argparse.Namespace) -> int:
+    from . import session as S
+
+    sess = S.load(args.session) if args.session else _current()
+    if not sess.report_file.exists():
+        return _err("this session has not been graded yet")
+    print(sess.report_file.read_text())
+    if args.solutions:
+        for number, md in _engine().solutions(sess).items():
+            print(f"\n---\n## Solution {number}\n\n{md}")
+    return 0
+
+
+def cmd_exam_retake(_args: argparse.Namespace) -> int:
+    eng = _engine()
+    new = eng.retake(_current())
+    print(f"Retake ready: session {new.id}. Start with: ./autorelabel exam begin")
+    return 0
+
+
+def cmd_exam_resume(_args: argparse.Namespace) -> int:
+    eng = _engine()
+    sess = _current()
+    eng.resume(sess)
+    print("Resumed.")
+    return 0
+
+
+def cmd_exam_abandon(_args: argparse.Namespace) -> int:
+    _engine().abandon(_current())
+    print("Session abandoned.")
+    return 0
+
+
+def _lab_ip(node: str) -> tuple[str, str]:
+    sess = _current()
+    eng = _engine()
+    lab = eng.lab(sess.exam)
+    v = lab.vm(node)
+    return v.lab_ip, v.domain
+
+
+def cmd_ssh(args: argparse.Namespace) -> int:
+    import os
+
+    from . import session as S
+
+    sess = _current()
+    if sess.state in (S.LOCKED, S.GRADING):
+        return _err("the exam is locked: time is up")
+    ip, _dom = _lab_ip(args.node)
+    cmd = ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "LogLevel=ERROR",
+           f"{args.user}@{ip}"]
+    os.execvp("ssh", cmd)
+    return 0
+
+
+def cmd_console(args: argparse.Namespace) -> int:
+    import os
+
+    from . import session as S
+    from .providers import libvirt as lv
+
+    sess = _current()
+    if sess.state in (S.LOCKED, S.GRADING):
+        return _err("the exam is locked: time is up")
+    _ip, dom = _lab_ip(args.node)
+    print(f"Serial console of {args.node}. Press Enter for a prompt; Ctrl+] to leave.", flush=True)
+    cmd = lv.console_command(dom)
+    os.execvp(cmd[0], cmd)
+    return 0
+
+
+def cmd_node(args: argparse.Namespace) -> int:
+    eng = _engine()
+    sess = _current()
+    {"power-on": eng.power_on, "reset": eng.reset, "reset-to-start": eng.reset_to_start}[args.action](sess, args.node)
+    print(f"{args.node}: {args.action} done")
+    return 0
+
+
+def cmd_proctor(args: argparse.Namespace) -> int:
+    from . import proctor
+
+    return proctor.run(args.session)
+
+
+def register_exam(sub: argparse._SubParsersAction) -> None:
+    e = sub.add_parser("exam", help="timed exams: start, tasks, submit, results, retake")
+    esub = e.add_subparsers(dest="exam_cmd", required=True)
+    es = esub.add_parser("start", help="generate a new exam, prepare the lab and start the timer")
+    es.add_argument("exam", choices=("rhcsa", "rhce"))
+    es.add_argument("--seed", type=int)
+    es.add_argument("--no-start", action="store_true", help="prepare only; start the timer later")
+    es.add_argument("-v", "--verbose", action="store_true")
+    es.set_defaults(func=cmd_exam_start)
+    for name, fn, hlp in (("begin", cmd_exam_begin, "start the timer of a prepared exam"),
+                          ("tasks", cmd_exam_tasks, "show the task sheet"),
+                          ("status", cmd_exam_status, "time remaining and state"),
+                          ("submit", cmd_exam_submit, "end the exam now and grade it"),
+                          ("grade", cmd_exam_grade, "grade now (normally the proctor does this)"),
+                          ("retake", cmd_exam_retake, "same exam again from its starting point"),
+                          ("resume", cmd_exam_resume, "resume after the host restarted"),
+                          ("abandon", cmd_exam_abandon, "give up this session")):
+        p = esub.add_parser(name, help=hlp)
+        p.set_defaults(func=fn)
+    er = esub.add_parser("results", help="show the graded report")
+    er.add_argument("session", nargs="?")
+    er.add_argument("--solutions", action="store_true")
+    er.set_defaults(func=cmd_exam_results)
+
+    s = sub.add_parser("ssh", help="ssh to a lab node as root (or --user)")
+    s.add_argument("node")
+    s.add_argument("--user", default="root")
+    s.set_defaults(func=cmd_ssh)
+    c = sub.add_parser("console", help="attach to a node's serial console (Ctrl+] to leave)")
+    c.add_argument("node")
+    c.set_defaults(func=cmd_console)
+    n = sub.add_parser("node", help="power controls for a lab node")
+    n.add_argument("action", choices=("power-on", "reset", "reset-to-start"))
+    n.add_argument("node")
+    n.set_defaults(func=cmd_node)
+    pr = sub.add_parser("proctor")   # internal: started by the engine
+    pr.add_argument("session")
+    pr.set_defaults(func=cmd_proctor)
+
+
+def cmd_selftest(args: argparse.Namespace) -> int:
+    from .selftest import SelfTest
+
+    st = SelfTest(_engine(), args.exam, on_line=lambda s: print(s, flush=True))
+    ids = None
+    if args.tasks:
+        ids = []
+        for t in args.tasks:
+            full = t if t.startswith(f"{args.exam}.") else f"{args.exam}.{t}"
+            matches = [x for x in st.bank.tasks if x == full or x.startswith(full + ".") or x.startswith(full)]
+            if not matches:
+                return _err(f"no task matches {t!r}")
+            ids.extend(matches)
+    res = st.run(ids, only_changed=args.changed)
+    failed = [k for k, v in res.items() if v["status"] != "pass" and (ids is None or k in ids)]
+    print(f"\n{len(failed)} task(s) failing self-test" if failed else "\nall selected tasks pass self-test")
+    return 1 if failed else 0
+
+
+def register_selftest(sub: argparse._SubParsersAction) -> None:
+    s = sub.add_parser("selftest", help="verify tasks on real VMs (setup, solutions, mistakes)")
+    s.add_argument("tasks", nargs="*", help="task ids or prefixes (e.g. security.selinux-port); default: all")
+    s.add_argument("--exam", choices=("rhcsa", "rhce"), default="rhcsa")
+    s.add_argument("--changed", action="store_true", help="only tasks not yet verified in their current form")
+    s.set_defaults(func=cmd_selftest)

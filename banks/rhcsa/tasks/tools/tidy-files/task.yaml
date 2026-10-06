@@ -1,0 +1,50 @@
+title: Move, copy and delete files
+primary: rhcsa.tools.file-management
+objectives: [rhcsa.tools.file-management]
+facets:
+  - rhcsa.tools.file-management:move-files
+  - rhcsa.tools.file-management:delete-files
+  - rhcsa.tools.file-management:create-dirs
+difficulty: easy
+difficulty_reason: Globbing with mv/rm/mkdir -p.
+estimated_minutes: 4
+node: node2
+params:
+  word: {pool: words}
+
+prompt: |
+  On node2, tidy up `/srv/{{word}}-inbox/`:
+  1. **Move** every `*.csv` file into the new directory `/srv/{{word}}-archive/2026/q3/`.
+  2. **Delete** every `*.tmp` file.
+  3. **Remove** the empty directory `/srv/{{word}}-inbox/old/`.
+
+  Leave all other files in `/srv/{{word}}-inbox/` untouched.
+
+requirements:
+  R1: "all CSV files are in the archive directory and none remain in the inbox"
+  R2: "no .tmp files remain"
+  R3: "old/ is gone and other files are untouched"
+
+checks:
+  - id: moved
+    covers: [R1]
+    on: node2
+    desc: CSVs moved
+    run: |
+      test "$(ls /srv/{{word}}-archive/2026/q3/*.csv 2>/dev/null | wc -l)" = 5
+      test "$(ls /srv/{{word}}-inbox/*.csv 2>/dev/null | wc -l)" = 0
+  - id: deleted
+    covers: [R2]
+    on: node2
+    desc: no .tmp files
+    run: test "$(ls /srv/{{word}}-inbox/*.tmp 2>/dev/null | wc -l)" = 0
+  - id: rest
+    covers: [R3]
+    on: node2
+    desc: old/ removed, README and notes.txt untouched
+    run: |
+      test ! -e /srv/{{word}}-inbox/old
+      test -f /srv/{{word}}-inbox/README && test -f /srv/{{word}}-inbox/notes.txt
+
+references:
+  - "man mv(1), man rm(1), man mkdir(1) (-p), man rmdir(1)"

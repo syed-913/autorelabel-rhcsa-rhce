@@ -1,0 +1,42 @@
+title: Create and mount a VFAT file system
+primary: rhcsa.filesystems.create-mount
+objectives: [rhcsa.filesystems.create-mount, rhcsa.storage.mount-uuid-label, rhcsa.software.rpm-packages]
+facets:
+  - rhcsa.filesystems.create-mount:fs-vfat
+  - rhcsa.storage.mount-uuid-label:mount-uuid
+  - rhcsa.software.rpm-packages:rpm-install
+difficulty: medium
+difficulty_reason: Requires installing the mkfs tool, partitioning, and a persistent UUID mount for a non-default file system type.
+estimated_minutes: 6
+node: node1
+resources:
+  disk: {node1.disk1: 330}
+params:
+  dir: {choice: [usbshare, exchange, transfer]}
+
+prompt: |
+  On node1, create a new **300 MiB** partition on `{{lab.node1.disk1}}`, format it with a **VFAT**
+  file system, and mount it persistently at `/mnt/{{dir}}`, referencing it **by UUID**.
+  (The tools to create VFAT file systems may need to be installed.)
+
+requirements:
+  R1: "a VFAT file system on {{lab.node1.disk1}} is mounted at /mnt/{{dir}} after reboot"
+  R2: "fstab references it by UUID"
+
+checks:
+  - id: mounted
+    covers: [R1]
+    desc: "vfat mounted at /mnt/{{dir}} from {{lab.node1.disk1}}"
+    run: |
+      test "$(findmnt -no FSTYPE /mnt/{{dir}})" = vfat
+      findmnt -no SOURCE /mnt/{{dir}} | grep -q '^{{lab.node1.disk1}}'
+  - id: uuid
+    covers: [R2]
+    desc: fstab uses UUID=
+    run: |
+      uuid="$(blkid -s UUID -o value "$(findmnt -no SOURCE /mnt/{{dir}})")"
+      grep -Eq "^[[:space:]]*UUID=\"?$uuid\"?[[:space:]]+/mnt/{{dir}}[[:space:]]+vfat" /etc/fstab
+
+references:
+  - "RHEL 10: Managing file systems > Mounting file systems persistently"
+  - "man mkfs.fat(8) (dosfstools), man fstab(5)"

@@ -1,0 +1,38 @@
+title: Persistently change SELinux booleans
+primary: rhcsa.security.selinux-booleans
+objectives: [rhcsa.security.selinux-booleans]
+facets: [rhcsa.security.selinux-booleans:boolean-persistent]
+difficulty: easy
+difficulty_reason: One subsystem; the trap is changing booleans without making them persistent.
+estimated_minutes: 4
+node: node1
+params:
+  pair:
+    choice:
+      - "httpd_can_network_connect httpd_can_sendmail"
+      - "httpd_enable_homedirs httpd_use_nfs"
+      - "ftpd_full_access httpd_can_network_connect_db"
+      - "use_nfs_home_dirs httpd_enable_cgi"
+
+prompt: |
+  On node1, applications need these SELinux booleans **enabled**, now and after every reboot:
+
+  `{{pair}}`
+
+  (Some of them may already be on; all of them must end up on persistently.)
+
+requirements:
+  R1: "every listed boolean is on after a reboot"
+
+checks:
+  - id: booleans
+    covers: [R1]
+    desc: "each of {{pair}} reports on"
+    run: |
+      for b in {{pair}}; do
+        getsebool "$b" | grep -q -- '--> on$' || { echo "$b is off"; exit 1; }
+      done
+
+references:
+  - "RHEL 10: Using SELinux > Configuring SELinux for applications and services with non-standard configurations > Adjusting the policy using booleans"
+  - "man setsebool(8), man getsebool(8), man semanage-boolean(8)"

@@ -1,0 +1,75 @@
+title: Create users and a group
+primary: rhcsa.users.accounts
+objectives: [rhcsa.users.accounts, rhcsa.users.groups, rhcsa.users.passwords]
+facets:
+  - rhcsa.users.accounts:user-create
+  - rhcsa.users.groups:group-create
+  - rhcsa.users.groups:group-membership
+  - rhcsa.users.passwords:set-password
+difficulty: easy
+difficulty_reason: Standard useradd/groupadd options; several small requirements but one subsystem.
+estimated_minutes: 6
+node: node1
+params:
+  group: {pool: groupnames}
+  gid: {range: [3100, 3199]}
+  user1: {pool: usernames}
+  user2: {pool: usernames}
+  user3: {pool: usernames}
+  uid3: {range: [4100, 4199]}
+  password: {choice: [Lab-Pass-1, Rhcsa-2026, Exam-Ready-9]}
+
+prompt: |
+  On node1, create:
+
+  - a group `{{group}}` with GID **{{gid}}**
+  - users `{{user1}}` and `{{user2}}`, both with `{{group}}` as a **supplementary** group
+  - user `{{user3}}` with UID **{{uid3}}**, who must **not** have an interactive shell
+    and must not be a member of `{{group}}`
+
+  All three users have the password `{{password}}`.
+
+requirements:
+  R1: "group {{group}} exists with GID {{gid}}"
+  R2: "{{user1}} and {{user2}} have {{group}} as a supplementary group"
+  R3: "{{user3}} has UID {{uid3}}, a non-interactive shell and is not in {{group}}"
+  R4: "all three users have the password {{password}}"
+
+checks:
+  - id: group
+    covers: [R1]
+    desc: "{{group}} has GID {{gid}}"
+    run: |
+      test "$(getent group {{group}} | cut -d: -f3)" = "{{gid}}"
+  - id: members
+    covers: [R2]
+    desc: "{{user1}} and {{user2}} are supplementary members of {{group}}"
+    run: |
+      for u in {{user1}} {{user2}}; do
+        id -nG "$u" | tr ' ' '\n' | grep -qx {{group}}
+        test "$(id -gn "$u")" != {{group}}
+      done
+  - id: user3
+    covers: [R3]
+    desc: "{{user3}}: UID {{uid3}}, no interactive shell, not in {{group}}"
+    run: |
+      test "$(id -u {{user3}})" = "{{uid3}}"
+      sh="$(getent passwd {{user3}} | cut -d: -f7)"
+      case "$sh" in /sbin/nologin|/usr/sbin/nologin|/bin/false|/usr/bin/false) ;; *) exit 1 ;; esac
+      ! id -nG {{user3}} | tr ' ' '\n' | grep -qx {{group}}
+  - id: passwords
+    covers: [R4]
+    desc: "passwords are {{password}}"
+    run: |
+      python3 -W ignore - <<'PY'
+      import crypt, subprocess, sys
+      for user in ("{{user1}}", "{{user2}}", "{{user3}}"):
+          entry = subprocess.run(["getent", "shadow", user], capture_output=True, text=True).stdout
+          stored = entry.split(":")[1] if entry.count(":") > 2 else ""
+          if not stored or crypt.crypt("{{password}}", stored) != stored:
+              print(f"{user}: wrong password"); sys.exit(1)
+      PY
+
+references:
+  - "RHEL 10: Configuring basic system settings > Managing users and groups (useradd, groupadd, usermod)"
+  - "man useradd(8), man groupadd(8), man passwd(1), man chpasswd(8)"

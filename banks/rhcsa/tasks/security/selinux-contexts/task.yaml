@@ -1,0 +1,47 @@
+title: Identify SELinux contexts
+primary: rhcsa.security.selinux-contexts
+objectives: [rhcsa.security.selinux-contexts]
+facets:
+  - rhcsa.security.selinux-contexts:file-context
+  - rhcsa.security.selinux-contexts:process-context
+difficulty: easy
+difficulty_reason: Reading contexts with -Z options and writing two values to a file; no configuration change.
+estimated_minutes: 3
+node: node2
+params:
+  process: {choice: [chronyd, sshd, crond, rsyslogd, NetworkManager]}
+  path: {choice: [/etc/shadow, /var/log/messages, /etc/ssh/sshd_config, /usr/sbin/sshd, /etc/hosts]}
+
+prompt: |
+  On node2, create the file `/root/selinux-report.txt` with exactly two lines:
+
+  1. the SELinux **type** of the running `{{process}}` process
+  2. the SELinux **type** of the file `{{path}}`
+
+  Write only the type names (for example `httpd_t`), one per line.
+
+requirements:
+  R1: "line 1 is the type of the {{process}} process"
+  R2: "line 2 is the type of {{path}}"
+
+checks:
+  - id: process-type
+    covers: [R1]
+    on: node2
+    desc: "line 1 is the SELinux type of {{process}}"
+    run: |
+      want="$(ps -C {{process}} -o label= | head -1 | cut -d: -f3)"
+      got="$(sed -n 1p /root/selinux-report.txt | tr -d '[:space:]')"
+      test -n "$want" && test "$got" = "$want"
+  - id: file-type
+    covers: [R2]
+    on: node2
+    desc: "line 2 is the SELinux type of {{path}}"
+    run: |
+      want="$(stat -c %C {{path}} | cut -d: -f3)"
+      got="$(sed -n 2p /root/selinux-report.txt | tr -d '[:space:]')"
+      test -n "$want" && test "$got" = "$want"
+
+references:
+  - "RHEL 10: Using SELinux > Getting started with SELinux > SELinux architecture and packages (contexts)"
+  - "man ps(1) (-Z), man ls(1) (-Z), man stat(1) (%C)"

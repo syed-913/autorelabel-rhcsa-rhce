@@ -1,0 +1,56 @@
+title: Serve a web site on a non-standard port
+primary: rhcsa.security.selinux-ports
+objectives: [rhcsa.security.selinux-ports, rhcsa.security.firewall, rhcsa.deploy.services]
+facets:
+  - rhcsa.security.selinux-ports:selinux-port
+  - rhcsa.security.firewall:firewall-port
+  - rhcsa.deploy.services:service-enable
+difficulty: hard
+difficulty_reason: >
+  Three subsystems that must all be right: SELinux port labeling (httpd cannot bind the port),
+  the firewall (remote access) and the service (start at boot). Each half-fix looks like it works
+  from node2 itself.
+estimated_minutes: 12
+node: node2
+exclusive: [httpd-node2, selinux-node2-enforcing]
+params:
+  port: {choice: [82, 83, 8090, 8909, 9091]}
+  token: {token: 10}
+
+prompt: |
+  Apache on node2 is configured to listen on TCP port **{{port}}** and to serve the existing page in
+  `/var/www/html`, but the service fails to start.
+
+  Make it work:
+  - the page must be reachable **from other systems** at `http://{{lab.node2.fqdn}}:{{port}}/`
+  - the web server must start automatically at boot
+  - SELinux must remain enforcing; do not change the port or the content
+
+requirements:
+  R1: "the page is served on port {{port}} to other hosts"
+  R2: "httpd starts at boot"
+  R3: "port {{port}} is labelled for web servers persistently, with SELinux enforcing"
+
+checks:
+  - id: remote
+    covers: [R1]
+    on: utility
+    desc: "the utility server gets the page from {{lab.node2.ip}}:{{port}}"
+    run: curl -fsS --max-time 5 http://{{lab.node2.ip}}:{{port}}/ | grep -q "AR-{{token}}"
+  - id: enabled
+    covers: [R2]
+    on: node2
+    desc: httpd is enabled and running
+    run: systemctl is-enabled -q httpd && systemctl is-active -q httpd
+  - id: port-label
+    covers: [R3]
+    on: node2
+    desc: "tcp/{{port}} is http_port_t (local policy) and SELinux is enforcing"
+    run: |
+      test "$(getenforce)" = Enforcing
+      semanage port -l -C | grep -E '^http_port_t[[:space:]]+tcp[[:space:]]' | grep -Eq '(^|[^0-9]){{port}}([^0-9]|$)'
+
+references:
+  - "RHEL 10: Using SELinux > Configuring SELinux for applications and services with non-standard configurations"
+  - "RHEL 10: Configuring firewalls and packet filters > Controlling ports using firewalld"
+  - "man semanage-port(8), man firewall-cmd(1), man httpd_selinux(8)"

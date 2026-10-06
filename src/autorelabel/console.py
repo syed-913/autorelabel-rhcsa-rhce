@@ -75,7 +75,7 @@ class Diagnosis:
 
 
 _PATTERNS = [
-    ("relabel", re.compile(r"relabel", re.I),
+    ("relabel", re.compile(r"policy relabel is required|Relabeling could take|Relabeling /", re.I),
      "SELinux is relabelling the file system (normal after a root password reset)."),
     ("emergency", re.compile(r"emergency mode|Give root password for maintenance|Press Enter for maintenance",
                              re.I),
@@ -92,7 +92,78 @@ _PATTERNS = [
 
 
 def diagnose(text: str) -> Diagnosis:
+    """Judge the *current* screen: only the last part of the captured output counts,
+    so messages from earlier in the boot don't mislead the diagnosis."""
+    lines = [line for line in text.splitlines() if line.strip()]
+    tail = "\n".join(lines[-25:])
     for kind, rx, msg in _PATTERNS:
-        if rx.search(text):
+        if rx.search(tail):
             return Diagnosis(kind, msg)
     return Diagnosis("unknown", "no recognisable console output.")
+
+
+class ConsoleError(RuntimeError):
+    pass
+
+
+def run_commands(domain: str, root_password: str, text: str, *, timeout: float = 240) -> str:
+    """Log in on the serial console (emergency-mode maintenance prompt or a normal login
+    prompt) as root and type `text` line by line, like a candidate would. Used by
+    self-tests for tasks that leave a node unbootable. Returns the captured output."""
+    master, slave = pty.openpty()
+    p = subprocess.Popen(lv.console_command(domain), stdin=slave, stdout=slave, stderr=slave,
+                         start_new_session=True, close_fds=True)
+    os.close(slave)
+    buf = bytearray()
+
+    def read_until(patterns: list[str], limit: float) -> str:
+        deadline = time.monotonic() + limit
+        while time.monotonic() < deadline:
+            r, _, _ = select.select([master], [], [], 0.3)
+            if r:
+                try:
+                    chunk = os.read(master, 65536)
+                except OSError:
+                    break
+                buf.extend(chunk)
+                text_now = _ANSI.sub("", buf.decode("utf-8", "replace"))
+                for pat in patterns:
+                    if re.search(pat, text_now[-600:], re.I | re.M):
+                        return pat
+        raise ConsoleError(f"console: none of {patterns} seen within {limit:.0f}s")
+
+    def send(s: str) -> None:
+        os.write(master, s.encode())
+
+    try:
+        time.sleep(1.0)
+        send("\r")
+        hit = read_until([r"Give root password", r"Press Enter for maintenance", r"login:\s*$",
+                          r"#\s*$"], timeout / 2)
+        if hit.startswith("Give root") or hit.startswith("Press Enter"):
+            send(root_password + "\r")
+            read_until([r"#\s*$"], 30)
+        elif hit.startswith("login"):
+            send("root\r")
+            read_until([r"[Pp]assword:\s*$"], 20)
+            send(root_password + "\r")
+            read_until([r"#\s*$"], 30)
+        for line in text.splitlines():
+            send(line + "\r")
+            time.sleep(0.15)
+        send("echo __AR_DONE__$((40+2))\r")
+        read_until([r"__AR_DONE__42"], timeout / 2)
+        return _ANSI.sub("", buf.decode("utf-8", "replace"))
+    finally:
+        try:
+            os.write(master, DETACH)
+        except OSError:
+            pass
+        time.sleep(0.3)
+        if p.poll() is None:
+            p.terminate()
+            try:
+                p.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                p.kill()
+        os.close(master)

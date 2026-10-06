@@ -1,0 +1,48 @@
+title: Securely transfer files between systems
+primary: rhcsa.operate.file-transfer
+objectives: [rhcsa.operate.file-transfer, rhcsa.tools.ssh]
+facets:
+  - rhcsa.operate.file-transfer:scp-sftp
+  - rhcsa.operate.file-transfer:rsync-ssh
+  - rhcsa.tools.ssh:ssh-remote-command
+difficulty: easy
+difficulty_reason: scp/rsync/ssh with the right paths and options.
+estimated_minutes: 5
+node: node1
+params:
+  word: {pool: words}
+
+prompt: |
+  1. Copy the file `/root/{{word}}-config.tar` from **node2** to `/srv/incoming/` on **node1**
+     (create the directory if needed).
+  2. Synchronize the directory `/opt/{{word}}-docs/` from node1 to `/opt/{{word}}-docs/` on node2
+     so that node2 has an identical copy, preserving permissions and timestamps.
+  3. On node1, save the output of the command `hostname` **as run on node2** into
+     `/root/node2-hostname.txt` (use SSH).
+
+requirements:
+  R1: "node1:/srv/incoming/{{word}}-config.tar is identical to the file on node2"
+  R2: "node2:/opt/{{word}}-docs is an identical copy (content, modes, mtimes)"
+  R3: "/root/node2-hostname.txt on node1 contains node2's hostname"
+
+checks:
+  - id: copied
+    covers: [R1]
+    desc: the archive on node1 matches the setup checksum
+    run: |
+      test "$(sha256sum /srv/incoming/{{word}}-config.tar | cut -d' ' -f1)" = "$(cat /etc/autorelabel/{{word}}-config.sha256)"
+  - id: synced
+    covers: [R2]
+    on: node2
+    desc: node2's copy matches (content, modes, mtimes)
+    run: |
+      got="$(cd /opt/{{word}}-docs && (find . -type f -printf '%P %m %T@\n' | sort && find . -type f -exec sha256sum {} + | sort) | sha256sum | cut -d' ' -f1)"
+      test "$got" = "$(cat /etc/autorelabel/{{word}}-docs.digest)"
+  - id: hostname
+    covers: [R3]
+    desc: node1 holds node2's hostname
+    run: test "$(tr -d '[:space:]' < /root/node2-hostname.txt)" = "{{lab.node2.fqdn}}"
+
+references:
+  - "RHEL 10: Securing networks > Using secure communications between two systems with OpenSSH (scp, sftp)"
+  - "man scp(1), man rsync(1) (-a), man ssh(1)"

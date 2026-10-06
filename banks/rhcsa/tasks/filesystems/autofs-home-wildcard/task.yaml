@@ -1,0 +1,53 @@
+title: Automount network home directories
+primary: rhcsa.filesystems.autofs
+objectives: [rhcsa.filesystems.autofs, rhcsa.users.accounts]
+facets:
+  - rhcsa.filesystems.autofs:autofs-wildcard
+difficulty: hard
+difficulty_reason: >
+  Combines user accounts with an NFS wildcard map: the user's home must appear on login, for any
+  user under the base directory, and survive reboots. Wrong map syntax only shows when a user logs in.
+estimated_minutes: 10
+node: node1
+exclusive: [autofs-netdir-node1]
+params:
+  user1: {pool: usernames}
+  user2: {pool: usernames}
+  base: {choice: [netdir, rhome, nethome]}
+
+prompt: |
+  The users `{{user1}}` and `{{user2}}` exist on node1 with home directories `/{{base}}/{{user1}}` and
+  `/{{base}}/{{user2}}`, which are stored on the utility server under
+  `{{lab.nfs_server}}:/exports/{{base}}/<username>`.
+
+  Configure autofs on node1 so that **any** user's home directory under `/{{base}}` is mounted
+  automatically from that export when accessed (use a single wildcard entry, not one line per
+  user). It must work after reboots.
+
+requirements:
+  R1: "{{user1}} can log in and use their home directory"
+  R2: "{{user2}}'s home is mounted on access too"
+  R3: "a single wildcard map entry is used and autofs is enabled"
+
+checks:
+  - id: user1
+    covers: [R1]
+    desc: "{{user1}}'s home has their files"
+    run: su - {{user1}} -c 'cat ~/welcome.txt' 2>/dev/null | grep -q '{{user1}}'
+  - id: user2
+    covers: [R2]
+    desc: "/{{base}}/{{user2}} mounts on access"
+    run: |
+      grep -q '{{user2}}' /{{base}}/{{user2}}/welcome.txt
+      findmnt -no FSTYPE /{{base}}/{{user2}} | grep -q '^nfs'
+  - id: wildcard
+    covers: [R3]
+    desc: wildcard map in use, autofs enabled
+    run: |
+      systemctl is-enabled -q autofs
+      map="$( (cat /etc/auto.master /etc/auto.master.d/*.autofs 2>/dev/null) | awk '$1=="/{{base}}"{print $2}' | head -1)"
+      test -n "$map" && grep -Eq '^\*[[:space:]].*/exports/{{base}}/&' "$map"
+
+references:
+  - "RHEL 10: Configuring and using network file services > Mounting file systems on demand (autofs wildcard maps)"
+  - "man auto.master(5), man autofs(5) (wildcard key * and &)"

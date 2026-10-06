@@ -1,0 +1,49 @@
+title: Find and stop a CPU-hungry process for good
+primary: rhcsa.operate.processes
+objectives: [rhcsa.operate.processes, rhcsa.deploy.services]
+facets:
+  - rhcsa.operate.processes:identify-hog
+  - rhcsa.operate.processes:kill-process
+  - rhcsa.deploy.services:service-disable
+difficulty: medium
+difficulty_reason: >
+  Identify the process with top/ps, then trace it to the unit that starts it; killing the PID
+  alone is not enough (systemd restarts it, and it comes back at boot).
+estimated_minutes: 7
+node: node2
+params:
+  word: {pool: words}
+
+prompt: |
+  node2 is slow: a process keeps one CPU busy.
+
+  1. Identify the process using the most CPU and write its **command name** (as shown by `ps -o comm`)
+     into `/root/cpu-hog.txt`.
+  2. Stop it, and make sure it does **not** come back, also after reboots. Do not remove any
+     packages or files.
+
+requirements:
+  R1: "/root/cpu-hog.txt names the CPU-hungry command"
+  R2: "the process is not running after a reboot"
+  R3: "nothing was deleted (its unit file still exists)"
+
+checks:
+  - id: named
+    covers: [R1]
+    on: node2
+    desc: /root/cpu-hog.txt contains the command name
+    run: test "$(tr -d '[:space:]' < /root/cpu-hog.txt)" = "{{word}}d"
+  - id: gone
+    covers: [R2]
+    on: node2
+    desc: "no {{word}}d process after reboot"
+    run: "! pgrep -x {{word}}d >/dev/null"
+  - id: kept
+    covers: [R3]
+    on: node2
+    desc: the unit file and program still exist
+    run: test -f /etc/systemd/system/{{word}}-worker.service && test -x /usr/local/bin/{{word}}d
+
+references:
+  - "RHEL 10: Monitoring and managing system status and performance (top, ps)"
+  - "man ps(1), man top(1), man systemctl(1) (status shows the unit of a PID)"

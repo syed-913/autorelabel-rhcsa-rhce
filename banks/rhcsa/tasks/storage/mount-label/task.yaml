@@ -1,0 +1,43 @@
+title: Mount a file system by label
+primary: rhcsa.storage.mount-uuid-label
+objectives: [rhcsa.storage.mount-uuid-label, rhcsa.filesystems.create-mount, rhcsa.storage.non-destructive]
+facets:
+  - rhcsa.storage.mount-uuid-label:mount-label
+  - rhcsa.filesystems.create-mount:fs-ext4
+  - rhcsa.storage.non-destructive:add-partition
+difficulty: medium
+difficulty_reason: Partition, ext4 with a label, persistent mount by LABEL.
+estimated_minutes: 6
+node: node1
+resources:
+  disk: {node1.disk1: 560}
+params:
+  label: {choice: [ARCHIVE, MEDIA, BACKUPS, PROJECTS]}
+
+prompt: |
+  On node1, create a new **500 MiB** partition on `{{lab.node1.disk1}}` with an **ext4** file
+  system labelled `{{label}}`. Mount it persistently at `/mnt/{{label}}`, referencing it **by
+  its label** in `/etc/fstab`.
+
+requirements:
+  R1: "an ext4 file system with label {{label}} exists on {{lab.node1.disk1}}"
+  R2: "it is mounted at /mnt/{{label}} after reboot, via LABEL= in fstab"
+
+checks:
+  - id: fs
+    covers: [R1]
+    desc: "ext4 labelled {{label}} on {{lab.node1.disk1}}"
+    run: |
+      dev="$(blkid -L {{label}})"
+      case "$dev" in {{lab.node1.disk1}}*) ;; *) exit 1 ;; esac
+      test "$(blkid -s TYPE -o value "$dev")" = ext4
+  - id: mount
+    covers: [R2]
+    desc: mounted by LABEL
+    run: |
+      test "$(findmnt -no SOURCE /mnt/{{label}})" = "$(blkid -L {{label}})"
+      grep -Eq '^[[:space:]]*LABEL="?{{label}}"?[[:space:]]+/mnt/{{label}}[[:space:]]+ext4' /etc/fstab
+
+references:
+  - "RHEL 10: Managing file systems > Mounting file systems persistently (file system labels)"
+  - "man mkfs.ext4(8) (-L), man e2label(8), man fstab(5)"

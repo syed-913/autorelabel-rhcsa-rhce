@@ -1,0 +1,41 @@
+title: Create hard and symbolic links
+primary: rhcsa.tools.links
+objectives: [rhcsa.tools.links]
+facets:
+  - rhcsa.tools.links:hard-link
+  - rhcsa.tools.links:soft-link
+difficulty: easy
+difficulty_reason: Two ln commands; the trap is mixing up hard and symbolic links or argument order.
+estimated_minutes: 3
+node: node2
+params:
+  word: {pool: words}
+
+prompt: |
+  On node2:
+  1. Create a **hard link** `/srv/{{word}}/current.dat` to the existing file `/data/{{word}}/2026.dat`.
+  2. Create a **symbolic link** `/usr/local/bin/{{word}}` that points to `/opt/{{word}}/bin/{{word}}-cli`.
+
+requirements:
+  R1: "current.dat is a hard link to 2026.dat"
+  R2: "/usr/local/bin/{{word}} is a symlink to /opt/{{word}}/bin/{{word}}-cli"
+
+checks:
+  - id: hard
+    covers: [R1]
+    on: node2
+    desc: same inode, not a symlink
+    run: |
+      test ! -L /srv/{{word}}/current.dat
+      test "$(stat -c %i /srv/{{word}}/current.dat)" = "$(stat -c %i /data/{{word}}/2026.dat)"
+  - id: soft
+    covers: [R2]
+    on: node2
+    desc: symlink to the CLI that resolves
+    run: |
+      test -L /usr/local/bin/{{word}}
+      test "$(readlink -f /usr/local/bin/{{word}})" = /opt/{{word}}/bin/{{word}}-cli
+      /usr/local/bin/{{word}} | grep -q ok
+
+references:
+  - "man ln(1)"

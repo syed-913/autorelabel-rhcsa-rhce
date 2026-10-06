@@ -1,0 +1,38 @@
+title: Adjust process scheduling priority
+primary: rhcsa.operate.scheduling
+objectives: [rhcsa.operate.scheduling]
+facets: [rhcsa.operate.scheduling:nice-renice]
+difficulty: medium
+difficulty_reason: >
+  Changing a running process (renice) is easy but temporary; making the priority permanent for a
+  service needs a systemd drop-in.
+estimated_minutes: 6
+node: node1
+params:
+  word: {pool: words}
+  nice: {choice: [5, 10, 15, 19]}
+
+prompt: |
+  On node1, the service `{{word}}-indexer.service` (a background job) must always run with a
+  **nice value of {{nice}}**, including after reboots and service restarts. Do not edit the unit
+  file shipped in `/usr/lib/systemd/system/`.
+
+requirements:
+  R1: "the running {{word}}-indexer process has nice {{nice}}"
+  R2: "the setting is persistent (systemd configuration), not just a renice"
+
+checks:
+  - id: running
+    covers: [R1]
+    desc: "the service's main process has NI={{nice}}"
+    run: |
+      pid="$(systemctl show -p MainPID --value {{word}}-indexer.service)"
+      test "$pid" -gt 0 && test "$(ps -o ni= -p "$pid" | tr -d ' ')" = "{{nice}}"
+  - id: persistent
+    covers: [R2]
+    desc: "systemd will start it with Nice={{nice}}"
+    run: test "$(systemctl show -p Nice --value {{word}}-indexer.service)" = "{{nice}}"
+
+references:
+  - "RHEL 10: Monitoring and managing system status and performance > Tuning scheduling policy / process priority (nice, renice)"
+  - "man nice(1), man renice(1), man systemd.exec(5) (Nice=), man systemctl(1) (edit)"

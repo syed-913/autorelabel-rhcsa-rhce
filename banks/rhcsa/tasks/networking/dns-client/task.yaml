@@ -1,0 +1,46 @@
+title: Configure DNS and the search domain
+primary: rhcsa.networking.name-resolution
+objectives: [rhcsa.networking.name-resolution]
+facets:
+  - rhcsa.networking.name-resolution:dns-client
+  - rhcsa.networking.name-resolution:hostname
+difficulty: medium
+difficulty_reason: >
+  DNS settings belong in the NetworkManager connection; editing /etc/resolv.conf directly works
+  until NetworkManager rewrites it at the next boot.
+estimated_minutes: 6
+node: node2
+exclusive: [node2-lab-connection, node2-hostname]
+params:
+  short: {choice: [web02, app02, db02, srv02]}
+
+prompt: |
+  On node2:
+  - use `{{lab.dns}}` as DNS server and `lab.example.com` as the DNS **search domain**, so that short
+    names such as `utility` resolve
+  - change the static hostname to `{{short}}.lab.example.com`
+
+  Everything must persist across reboots.
+
+requirements:
+  R1: "the DNS server is {{lab.dns}} with search domain lab.example.com, persistently"
+  R2: "the static hostname is {{short}}.lab.example.com"
+
+checks:
+  - id: dns
+    covers: [R1]
+    on: node2
+    desc: resolv.conf after reboot; short name resolves
+    run: |
+      grep -Eq '^nameserver[[:space:]]+{{lab.dns}}' /etc/resolv.conf
+      grep -Eq '^search[[:space:]].*lab\.example\.com' /etc/resolv.conf
+      getent hosts utility >/dev/null
+  - id: hostname
+    covers: [R2]
+    on: node2
+    desc: static hostname
+    run: test "$(tr -d '[:space:]' < /etc/hostname)" = "{{short}}.lab.example.com"
+
+references:
+  - "RHEL 10: Configuring and managing networking > Configuring the order of DNS servers / Manually configuring /etc/resolv.conf"
+  - "man nmcli(1) (ipv4.dns, ipv4.dns-search), man hostnamectl(1)"
