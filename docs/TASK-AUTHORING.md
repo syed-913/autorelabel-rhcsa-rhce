@@ -159,6 +159,8 @@ kept in the session directory under `.workspace/sessions/`.
 - [ ] The task works on RHEL 10 as shipped on the DVD (RHEL 10 differs from 9: yescrypt hashes,
       volatile journal, no `rsync` NEWS file, `atd` enabled by preset, ...).
 - [ ] `./autorelabel bank lint <exam>` is clean.
+- [ ] RHCE: `scripts/dev/check-rhce-playbooks.py` passes (every playbook your scripts write gets an
+      `ansible-playbook --syntax-check` with the lab's ansible-core 2.16; see the script's header).
 - [ ] `./autorelabel selftest --exam <exam> <task id>` passes, including at least one mistake test.
 - [ ] `solution.md` explains the *why* and the classic mistake, with references to official
       documentation or man pages.

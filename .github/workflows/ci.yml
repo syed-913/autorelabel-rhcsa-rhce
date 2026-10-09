@@ -40,6 +40,16 @@ jobs:
         env:
           PYTHONPATH: src
 
+      - name: RHCE playbooks pass a syntax check (ansible-core 2.16, as in the lab)
+        run: |
+          python -m venv /tmp/ansible216
+          /tmp/ansible216/bin/pip install "ansible-core==2.16.14"
+          /tmp/ansible216/bin/ansible-galaxy collection install -p /tmp/collections \
+            ansible.posix:==2.2.2 community.general:==11.4.9
+          PATH=/tmp/ansible216/bin:$PATH python scripts/dev/check-rhce-playbooks.py --collections /tmp/collections
+        env:
+          PYTHONPATH: src
+
       - name: Coverage reports are up to date
         run: |
           python -m autorelabel bank coverage rhcsa --check
