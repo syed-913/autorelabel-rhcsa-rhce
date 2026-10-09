@@ -6,7 +6,7 @@ facets:
   - rhcsa.software.rpm-packages:rpm-install
   - rhcsa.deploy.services:service-enable
 difficulty: easy
-difficulty_reason: Install at, enable atd, queue one job; the trap is atd not being enabled at boot.
+difficulty_reason: "Install at and queue one job for an exact date; the trap is `at HH:MM` alone, which means the next occurrence of that time."
 estimated_minutes: 5
 node: node2
 params:

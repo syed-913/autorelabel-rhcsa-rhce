@@ -9,7 +9,10 @@ at> <Ctrl+D>
 atq                             # list; at -c <id> shows the job
 ```
 
-**Classic mistake:** `systemctl start atd` without `enable`. After a reboot the job is still in
-the queue but nothing runs it.
+**Classic mistake:** `at 09:30` without the date. That means the *next* 09:30 (today or
+tomorrow), not the requested day. Always give both: `at '09:30 2027-01-15'`, then check `atq`.
+
+On RHEL, installing `at` enables `atd` through the systemd preset, but verify it anyway with
+`systemctl is-enabled atd`.
 
 References: RHEL 10 *Scheduling one-time jobs with at*; `man at`.
