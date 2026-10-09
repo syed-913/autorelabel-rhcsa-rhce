@@ -154,6 +154,9 @@ class Blueprint:
     require: list[list[str]]                 # each group: objective-id prefixes, ≥1 task must match
     anchors: list[str]
     coverage_gate: str = "none"              # none | wave1 | full
+    # Anchors that everything else depends on (RHCE: Ansible configuration, SSH access). In
+    # practice sessions that don't include them, their reference solution is applied for you.
+    practice_prereqs: list[str] = field(default_factory=list)
 
     def points_for(self, difficulty: str) -> int:
         return self.points[difficulty]

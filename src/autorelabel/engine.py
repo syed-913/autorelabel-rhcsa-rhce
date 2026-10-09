@@ -20,7 +20,6 @@ from .bank.select import SelectedTask, generate, practice
 from .config import Settings
 from .grader import Grader, objective_recency, write_report
 from .lab import Lab, LabError
-from .providers import libvirt as lv
 
 _log = log.get("engine")
 StepFn = Callable[[str], None]
@@ -142,7 +141,7 @@ class Engine:
             other_lab.destroy()
         fresh = (not lab.exists() or st.get("phase") not in ("baseline", "ready")
                  or st.get("profile") != self.settings.profile
-                 or not all(BASELINE in lv.snapshots(v.domain) for v in lab.vms))
+                 or not all(BASELINE in lab.hv.snapshots(v.domain) for v in lab.vms))
         if fresh:
             if lab.exists():
                 step("Rebuilding the lab")
@@ -156,20 +155,28 @@ class Engine:
     def _apply_setups(self, sess: S.Session, bank: Bank, lab: Lab, step: StepFn, line: LineFn | None) -> None:
         facts = lab.facts()
         lib = self._setup_lib()
-        repo = (f"[setup-BaseOS]\nname=setup\nbaseurl={facts['repo_baseos']}\ngpgcheck=1\n"
+        # By IP address: a task may break name resolution (DNS drills) before a later setup,
+        # or a practice drill, needs packages.
+        base = f"http://{facts['utility']['ip']}/rhel10"
+        repo = (f"[setup-BaseOS]\nname=setup\nbaseurl={base}/BaseOS\ngpgcheck=1\n"
                 f"gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release\n"
-                f"[setup-AppStream]\nname=setup\nbaseurl={facts['repo_appstream']}\ngpgcheck=1\n"
+                f"[setup-AppStream]\nname=setup\nbaseurl={base}/AppStream\ngpgcheck=1\n"
                 f"gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release\n")
         exam_nodes = [v.name for v in lab.vms if v.spec.role != "utility"]
-        # Prelude: passwords, a reminder banner, temporary setup repository.
+        if sess.exam == "rhce":
+            sess.accounts = lab.accounts()
+            sess.save()
+        # Prelude: passwords, a reminder banner, temporary setup repository (the RHCE control
+        # node keeps the lab.repo it was built with).
         for n in exam_nodes:
             script = (
                 f"echo 'root:{sess.passwords[n]}' | chpasswd\n"
                 f"cat > /etc/motd <<'EOF'\n"
                 f"autorelabel {sess.exam.upper()} lab node. Do not modify the 'mgmt0' interface or the\n"
                 f"'vagrant' account: they are how your work gets graded.\nEOF\n"
-                f"cat > {SETUP_REPO} <<'EOF'\n{repo}EOF\n"
             )
+            if lab.vm(n).spec.role != "control":
+                script += f"cat > {SETUP_REPO} <<'EOF'\n{repo}EOF\n"
             res = remote.run_script(lab.target(n), script, timeout=60)
             if not res.ok:
                 raise EngineError(f"could not prepare {n}: {res.tail(3)}")
@@ -177,7 +184,8 @@ class Engine:
         entries = sorted(sess.tasks, key=lambda e: (bool(bank.tasks[e["task"]].anchor), e["number"]))
         for e in entries:
             task = bank.tasks[e["task"]]
-            for node, script in task.setup_scripts.items():
+            for node, script in [(n, sc) for target, sc in task.setup_scripts.items()
+                                 for n in labfacts.script_nodes(target, facts)]:
                 step(f"Task {e['number']}: preparing {node}")
                 env = {**render.env_for(e["params"], facts), "AR_NODE": node, "AR_TASK": task.id}
                 res = remote.run_script(lab.target(node), lib + "\n" + script.read_text(), env=env, timeout=900)
@@ -186,11 +194,31 @@ class Engine:
                         line(f"[{node}] {out_line}")
                 if not res.ok:
                     raise EngineError(f"setup of task {e['number']} ({task.id}) failed on {node}", res.tail(5))
+        # Practice: prerequisites the drill doesn't include are solved for you (RHCE: Ansible
+        # configuration and SSH access), so one task can be practised on its own.
+        if sess.mode != "exam":
+            present = {bank.tasks[e["task"]].anchor for e in sess.tasks}
+            for anchor in bank.blueprint.practice_prereqs:
+                task = next((t for t in bank.tasks.values() if t.anchor == anchor), None)
+                if anchor in present or task is None:
+                    continue
+                step(f"Setting up the prerequisite: {task.title}")
+                params = practice(bank, [task.id], sess.seed)[0].params
+                for node, script in [(n, sc) for target, sc in task.solution_scripts.items()
+                                     for n in labfacts.script_nodes(target, facts)]:
+                    env = {**render.env_for(params, facts), "AR_NODE": node, "AR_TASK": task.id,
+                           **{f"AR_{u.upper()}_PASSWORD": pw for u, pw in sess.accounts.items()}}
+                    res = remote.run_script(lab.target(node), lib + "\n" + script.read_text(), env=env,
+                                            timeout=900)
+                    if not res.ok:
+                        raise EngineError(f"prerequisite {task.id} failed on {node}", res.tail(5))
         # Exams always include the "configure repositories" anchor, so nodes start without any.
         # Practice sessions that don't include it keep working repositories, so a single-task
         # drill is never blocked by an unrelated objective.
         has_repo_anchor = any(bank.tasks[e["task"]].anchor == "repos" for e in sess.tasks)
         for n in exam_nodes:
+            if lab.vm(n).spec.role == "control":
+                continue
             if has_repo_anchor or sess.mode == "exam":
                 cmd = f"rm -f {SETUP_REPO}"
             else:
@@ -337,7 +365,8 @@ class Engine:
         sess.event("power_on", node=node)
 
     def reset(self, sess: S.Session, node: str) -> None:
-        lv.reset(self.lab(sess.exam).vm(node).domain)
+        lab = self.lab(sess.exam)
+        lab.hv.reset(lab.vm(node).domain)
         sess.event("reset", node=node)
 
     def reset_to_start(self, sess: S.Session, node: str) -> None:
@@ -375,9 +404,19 @@ class Engine:
             nodes.append({"name": v.name, "fqdn": v.spec.fqdn, "ip": v.lab_ip,
                           "root_password": sess.given.get(v.name), "domain": v.domain,
                           "nic": facts[v.name].get("nic", "")})
-        return {"nodes": nodes, "domain": labfacts.DOMAIN, "utility": facts["utility_fqdn"],
-                "repo_baseos": facts["repo_baseos"], "repo_appstream": facts["repo_appstream"],
-                "network": facts["network"], "gateway": facts["gateway"], "dns": facts["dns"]}
+        info: dict[str, Any] = {
+            "exam": sess.exam, "nodes": nodes, "domain": labfacts.DOMAIN, "utility": facts["utility_fqdn"],
+            "repo_baseos": facts["repo_baseos"], "repo_appstream": facts["repo_appstream"],
+            "network": facts["network"], "gateway": facts["gateway"], "dns": facts["dns"]}
+        if sess.exam == "rhce":
+            ctl = lab.vm("control")
+            info["accounts"] = dict(sess.accounts)
+            info["control"] = {"fqdn": ctl.spec.fqdn, "ip": ctl.lab_ip, "user": labfacts.CONTROL_USER,
+                               "project_dir": facts["project_dir"]}
+            info["inventory_md"] = facts["inventory_md"]
+            info["git_url"] = facts["git_url"]
+            info["code_server"] = f"http://{ctl.lab_ip}:8080" if self.settings.code_server else ""
+        return info
 
     def solutions(self, sess: S.Session) -> dict[int, str]:
         out = {}

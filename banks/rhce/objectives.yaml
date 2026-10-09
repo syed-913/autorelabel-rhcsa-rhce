@@ -10,24 +10,31 @@ domains:
     title: Be able to perform all tasks expected of a Red Hat Certified System Administrator
     objectives:
       - id: rhce.rhcsa.essential-tools
+        implicit: true
         text: Understand and use essential tools
         facets: [{id: tools, desc: "essential tools on managed nodes"}]
       - id: rhce.rhcsa.operate
+        implicit: true
         text: Operate running systems
         facets: [{id: operate, desc: "operate running systems"}]
       - id: rhce.rhcsa.storage
+        implicit: true
         text: Configure local storage
         facets: [{id: storage, desc: "local storage"}]
       - id: rhce.rhcsa.filesystems
+        implicit: true
         text: Create and configure file systems
         facets: [{id: filesystems, desc: "file systems"}]
       - id: rhce.rhcsa.deploy
+        implicit: true
         text: Deploy, configure, and maintain systems
         facets: [{id: deploy, desc: "deploy, configure and maintain"}]
       - id: rhce.rhcsa.users
+        implicit: true
         text: Manage users and groups
         facets: [{id: users, desc: "users and groups"}]
       - id: rhce.rhcsa.security
+        implicit: true
         text: Manage security
         facets: [{id: security, desc: "security"}]
       - id: rhce.rhcsa.analyze-scripts
@@ -39,8 +46,8 @@ domains:
   - id: core
     title: Understand core components of Ansible
     objectives:
-      - {id: rhce.core.inventories, text: Inventories, facets: [{id: inventory, desc: "inventory structure and host selection"}]}
-      - {id: rhce.core.modules, text: Modules, facets: [{id: modules, desc: "use modules with correct arguments (FQCN)"}]}
+      - {id: rhce.core.inventories, implicit: true, text: Inventories, facets: [{id: inventory, desc: "inventory structure and host selection"}]}
+      - {id: rhce.core.modules, implicit: true, text: Modules, facets: [{id: modules, desc: "use modules with correct arguments (FQCN)"}]}
       - id: rhce.core.variables
         text: Variables
         facets:
@@ -59,8 +66,8 @@ domains:
         facets:
           - {id: block-rescue, desc: "block/rescue/always"}
           - {id: failed-changed-when, desc: "failed_when / changed_when / ignore_errors"}
-      - {id: rhce.core.playbooks, text: Playbooks, facets: [{id: playbook, desc: "write and run playbooks"}]}
-      - {id: rhce.core.config-files, text: Configuration files, facets: [{id: config-precedence, desc: "ansible.cfg location and settings"}]}
+      - {id: rhce.core.playbooks, implicit: true, text: Playbooks, facets: [{id: playbook, desc: "write and run playbooks"}]}
+      - {id: rhce.core.config-files, implicit: true, text: Configuration files, facets: [{id: config-precedence, desc: "ansible.cfg location and settings"}]}
       - {id: rhce.core.roles, text: Roles, facets: [{id: role-structure, desc: "role structure and use"}]}
       - id: rhce.core.docs
         text: Use provided documentation to look up specific information about Ansible modules and commands
@@ -71,13 +78,13 @@ domains:
     objectives:
       - {id: rhce.configure.ansible-cfg, text: Create and modify ansible.cfg, facets: [{id: ansible-cfg, desc: "ansible.cfg with inventory, remote_user, become, roles_path"}]}
       - {id: rhce.configure.navigator-yml, text: Modify ansible-navigator.yml, facets: [{id: navigator-yml, desc: "ansible-navigator.yml image, pull policy, mode"}]}
-      - {id: rhce.configure.static-inventory, text: Create a static host inventory file, facets: [{id: static-inventory, desc: "static inventory file"}]}
+      - {id: rhce.configure.static-inventory, implicit: true, text: Create a static host inventory file, facets: [{id: static-inventory, desc: "static inventory file"}]}
       - {id: rhce.configure.inventory-groups, text: Create and use static inventories to define groups of hosts, facets: [{id: inventory-groups, desc: "groups and children groups"}]}
 
   - id: nodes
     title: Configure Ansible managed nodes
     objectives:
-      - {id: rhce.nodes.configure, text: Configure Ansible managed nodes, facets: [{id: managed-node, desc: "prepare managed nodes"}]}
+      - {id: rhce.nodes.configure, implicit: true, text: Configure Ansible managed nodes, facets: [{id: managed-node, desc: "prepare managed nodes"}]}
       - {id: rhce.nodes.ssh-keys, text: Create and distribute SSH keys to managed nodes, facets: [{id: ssh-keys, desc: "generate and distribute SSH keys"}]}
       - {id: rhce.nodes.privilege, text: Configure privilege escalation on managed nodes, facets: [{id: become, desc: "sudo/become on managed nodes"}]}
       - {id: rhce.nodes.deploy-files, text: Deploy files to managed nodes, facets: [{id: copy-files, desc: "deploy files to managed nodes"}]}
@@ -105,11 +112,11 @@ domains:
   - id: playbooks
     title: Create Ansible plays and playbooks
     objectives:
-      - {id: rhce.playbooks.common-modules, text: Know how to work with commonly used Ansible modules, facets: [{id: common-modules, desc: "builtin/posix/general modules"}]}
+      - {id: rhce.playbooks.common-modules, implicit: true, text: Know how to work with commonly used Ansible modules, facets: [{id: common-modules, desc: "builtin/posix/general modules"}]}
       - {id: rhce.playbooks.register, text: Use variables to retrieve the results of running a command, facets: [{id: register, desc: "register command results"}]}
       - {id: rhce.playbooks.conditionals, text: Use conditionals to control play execution, facets: [{id: conditional-play, desc: "conditionals controlling execution"}]}
       - {id: rhce.playbooks.error-handling, text: Configure error handling, facets: [{id: error-handling, desc: "error handling in plays"}]}
-      - {id: rhce.playbooks.desired-state, text: Create playbooks to configure systems to a specified state, facets: [{id: desired-state, desc: "idempotent desired-state playbooks"}]}
+      - {id: rhce.playbooks.desired-state, implicit: true, text: Create playbooks to configure systems to a specified state, facets: [{id: desired-state, desc: "idempotent desired-state playbooks"}]}
 
   - id: roles
     title: Use roles and Ansible Content Collections

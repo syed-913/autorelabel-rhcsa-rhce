@@ -1,0 +1,32 @@
+---
+- name: Install HAProxy
+  ansible.builtin.dnf:
+    name: haproxy
+    state: present
+
+- name: Let HAProxy connect to the back ends
+  ansible.posix.seboolean:
+    name: haproxy_connect_any
+    state: true
+    persistent: true
+
+- name: Configure HAProxy
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    mode: "0644"
+    validate: haproxy -c -f %s
+  notify: Restart haproxy
+
+- name: Start and enable HAProxy
+  ansible.builtin.service:
+    name: haproxy
+    state: started
+    enabled: true
+
+- name: Allow HTTP through the firewall
+  ansible.posix.firewalld:
+    port: "{{ balancer_port }}/tcp"
+    permanent: true
+    immediate: true
+    state: enabled

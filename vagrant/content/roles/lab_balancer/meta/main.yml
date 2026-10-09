@@ -1,0 +1,7 @@
+---
+galaxy_info:
+  author: autorelabel lab
+  description: HAProxy round-robin load balancer in front of a group of web servers (requires ansible.posix)
+  license: MIT
+  min_ansible_version: "2.16"
+dependencies: []

@@ -1,0 +1,25 @@
+# Managed by Ansible (lab_balancer role)
+global
+    log         /dev/log local0
+    maxconn     1000
+    user        haproxy
+    group       haproxy
+    daemon
+
+defaults
+    mode        http
+    log         global
+    option      httplog
+    timeout connect 5s
+    timeout client  30s
+    timeout server  30s
+
+frontend web
+    bind *:{{ balancer_port }}
+    default_backend servers
+
+backend servers
+    balance roundrobin
+{% for host in groups[balancer_backend_group] | default([]) %}
+    server {{ hostvars[host]['ansible_facts']['hostname'] | default(host) }} {{ host }}:{{ balancer_backend_port }} check
+{% endfor %}

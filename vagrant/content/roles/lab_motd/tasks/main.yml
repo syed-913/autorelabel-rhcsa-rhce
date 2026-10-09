@@ -1,0 +1,8 @@
+---
+- name: Deploy the message of the day
+  ansible.builtin.template:
+    src: motd.j2
+    dest: "{{ motd_path }}"
+    owner: root
+    group: root
+    mode: "0644"

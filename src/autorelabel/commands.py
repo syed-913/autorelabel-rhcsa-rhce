@@ -166,6 +166,7 @@ def cmd_lab_destroy(args: argparse.Namespace) -> int:
 def register(sub: argparse._SubParsersAction) -> None:
     register_exam(sub)
     register_selftest(sub)
+    register_content(sub)
     lab = sub.add_parser("lab", help="bring the lab VMs up, inspect or destroy them")
     lsub = lab.add_subparsers(dest="lab_cmd", required=True)
     lu = lsub.add_parser("up", help="create and provision the lab (no exam tasks)")
@@ -365,8 +366,9 @@ def cmd_ssh(args: argparse.Namespace) -> int:
     if sess.state in (S.LOCKED, S.GRADING):
         return _err("the exam is locked: time is up")
     ip, _dom = _lab_ip(args.node)
+    user = args.user or ("student" if sess.exam == "rhce" and args.node == "control" else "root")
     cmd = ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "LogLevel=ERROR",
-           f"{args.user}@{ip}"]
+           f"{user}@{ip}"]
     os.execvp("ssh", cmd)
     return 0
 
@@ -375,14 +377,13 @@ def cmd_console(args: argparse.Namespace) -> int:
     import os
 
     from . import session as S
-    from .providers import libvirt as lv
 
     sess = _current()
     if sess.state in (S.LOCKED, S.GRADING):
         return _err("the exam is locked: time is up")
     _ip, dom = _lab_ip(args.node)
     print(f"Serial console of {args.node}. Press Enter for a prompt; Ctrl+] to leave.", flush=True)
-    cmd = lv.console_command(dom)
+    cmd = _engine().lab(sess.exam).hv.console_command(dom)
     os.execvp(cmd[0], cmd)
     return 0
 
@@ -427,7 +428,7 @@ def register_exam(sub: argparse._SubParsersAction) -> None:
 
     s = sub.add_parser("ssh", help="ssh to a lab node as root (or --user)")
     s.add_argument("node")
-    s.add_argument("--user", default="root")
+    s.add_argument("--user", default=None, help="default: student on the RHCE control node, else root")
     s.set_defaults(func=cmd_ssh)
     c = sub.add_parser("console", help="attach to a node's serial console (Ctrl+] to leave)")
     c.add_argument("node")
@@ -466,3 +467,26 @@ def register_selftest(sub: argparse._SubParsersAction) -> None:
     s.add_argument("--exam", choices=("rhcsa", "rhce"), default="rhcsa")
     s.add_argument("--changed", action="store_true", help="only tasks not yet verified in their current form")
     s.set_defaults(func=cmd_selftest)
+
+
+def cmd_content_download(args: argparse.Namespace) -> int:
+    from . import content
+
+    st = config.load()
+    try:
+        root = content.download(st, on_line=(lambda s: print(f"    {s}", flush=True)) if args.verbose else None,
+                                on_step=lambda s: print(f"==> {s}", flush=True),
+                                with_code_server=st.code_server and not args.no_code_server)
+    except content.ContentError as exc:
+        return _err(str(exc), exc.hint)
+    print(f"RHCE content ready in {root}")
+    return 0
+
+
+def register_content(sub: argparse._SubParsersAction) -> None:
+    c = sub.add_parser("content", help="one-time download of RHCE lab content (needs internet)")
+    csub = c.add_subparsers(dest="content_cmd", required=True)
+    d = csub.add_parser("download", help="download ansible-navigator, collections, code-server")
+    d.add_argument("-v", "--verbose", action="store_true")
+    d.add_argument("--no-code-server", action="store_true")
+    d.set_defaults(func=cmd_content_download)

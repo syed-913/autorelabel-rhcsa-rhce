@@ -12,10 +12,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from . import box, labfacts, labspec, ledger, log, paths, remote, vagrant
+from . import box, labfacts, labspec, ledger, log, paths, providers, remote, vagrant
 from .config import Settings
 from .fsutil import atomic_write_json, read_json
+from .providers import conflict
 from .providers import libvirt as lv
+from .providers import virtualbox as vb
 
 _log = log.get("lab")
 EXAM_IDS = {"rhcsa": 1, "rhce": 2}
@@ -78,6 +80,7 @@ class Lab:
                 domain=f"{self.prefix}{vm.name}",
             ))
         self.ipv6_prefix = facts["ipv6_prefix"]
+        self.hv = providers.get(self.provider)
 
     # --- helpers --------------------------------------------------------------------------
     def vm(self, name: str) -> LabVM:
@@ -97,6 +100,18 @@ class Lab:
         key = self.dotfile / "machines" / name / self.provider / "private_key"
         if not key.exists():
             key = Path.home() / ".vagrant.d" / "insecure_private_keys" / "vagrant.key.ed25519"
+        if self.provider == "virtualbox":
+            # VirtualBox reaches the guest through a NAT port forward on 127.0.0.1.
+            ssh = (self.state().get("ssh") or {}).get(name)
+            if not ssh:
+                cfg = vagrant.ssh_config(name, self.settings.storage_dir, self.env_extra())
+                if cfg.get("Port"):
+                    ssh = {"host": cfg.get("HostName", "127.0.0.1"), "port": int(cfg["Port"])}
+                    st = self.state()
+                    st.setdefault("ssh", {})[name] = ssh
+                    atomic_write_json(STATE_FILE, st)
+            if ssh:
+                return remote.Target(name=f"{self.exam}-{name}", host=ssh["host"], key=key, port=int(ssh["port"]))
         return remote.Target(name=f"{self.exam}-{name}", host=self.vm(name).mgmt_ip, key=key)
 
     def state(self) -> dict[str, Any]:
@@ -110,9 +125,13 @@ class Lab:
     # --- host prerequisites -------------------------------------------------------------
     def prepare_host(self) -> None:
         layout = box.ensure_storage(self.settings)
-        if self.provider != "libvirt":
-            raise LabError("VirtualBox labs arrive in a later milestone; use the libvirt provider for now.")
         sd = self.settings.storage_dir
+        if self.provider == "virtualbox":
+            vb.ensure_profile(layout["vbox_home"], layout["vbox_vms"])
+            for v in self.vms:
+                ledger.record("vbox-vm", v.domain, self.exam, storage_dir=sd)
+            layout["vbox_disks"].mkdir(parents=True, exist_ok=True)
+            return
         lv.ensure_pool(POOL, layout["pool"], sd)
         lv.ensure_network(MGMT_NETWORK, lv.network_xml(
             MGMT_NETWORK, "arbr-mgmt", self.settings.mgmt_subnet,
@@ -131,8 +150,6 @@ class Lab:
         return out
 
     def write_env(self) -> None:
-        console_dir = paths.WORKSPACE / "consoles"
-        console_dir.mkdir(parents=True, exist_ok=True)
         atomic_write_json(self.env_file, {
             "box": vagrant.BOX_NAME,
             "exam": self.exam,
@@ -143,7 +160,8 @@ class Lab:
             "mgmt_subnet": self.settings.mgmt_subnet,
             "lab_network": LAB_NETWORK,
             "iso_path": str(Path(self.settings.iso_path).expanduser().resolve()),
-            "console_dir": str(console_dir),
+            "console_dir": str(vb.console_socket("x").parent),
+            "vbox_disk_dir": str(box.storage_layout(self.settings)["vbox_disks"]),
             "vbox_hostonly": "",
             "vms": [{
                 "name": v.name, "cpus": v.spec.cpus, "memory": v.spec.memory_mb,
@@ -159,16 +177,27 @@ class Lab:
         return vagrant.run_stream(args, self.settings.storage_dir, self.env_extra(), on_line=on_line,
                                   log_file=log_file, cancel=cancel, timeout=timeout)
 
+    def guard_hypervisors(self) -> None:
+        """Refuse to start VMs while the other hypervisor runs some (see providers.conflict)."""
+        clash = conflict.check(self.provider)
+        if clash:
+            raise LabError(*clash)
+
     def _vagrant_up(self, names: list[str], step: StepFn, line: LineFn | None, log_file: Path,
                     cancel: threading.Event | None) -> None:
+        self.guard_hypervisors()
+        kind = "libvirt-domain" if self.provider == "libvirt" else "vbox-vm"
         for name in names:
-            ledger.record("libvirt-domain", self.vm(name).domain, self.exam, storage_dir=self.settings.storage_dir)
+            ledger.record(kind, self.vm(name).domain, self.exam, storage_dir=self.settings.storage_dir)
+        before_hostonly = vb.hostonly_interfaces() if self.provider == "virtualbox" else set()
         for attempt in (1, 2):
             res = self.vagrant(["up", "--no-provision", f"--provider={self.provider}", *names],
                                on_line=line, log_file=log_file, cancel=cancel)
             if res.cancelled:
                 raise LabError("cancelled", log_file=log_file)
             if res.ok:
+                if self.provider == "virtualbox":
+                    self._vbox_after_up(names, before_hostonly, step)
                 return
             if "locked" in res.out.lower() and attempt == 1:
                 step("Vagrant reported a lock; retrying")
@@ -177,6 +206,29 @@ class Lab:
             raise LabError(f"vagrant up failed for {', '.join(names)}",
                            "Open the log for details. Common causes: low memory, the box missing, "
                            "or a leftover VM from an interrupted run (Lab → Destroy, then retry).", log_file)
+
+    def _vbox_after_up(self, names: list[str], before: set[str], step: StepFn) -> None:
+        """Ledger host-only interfaces Vagrant created and refresh SSH ports. VMs are created in
+        the private profile's machine folder (lab storage); one found elsewhere is moved there."""
+        for ifname in sorted(vb.hostonly_interfaces() - before):
+            ledger.record("vbox-hostonly", ifname, "created by Vagrant", storage_dir=self.settings.storage_dir)
+        folder = box.storage_layout(self.settings)["vbox_vms"]
+        st = self.state()
+        st.pop("ssh", None)
+        atomic_write_json(STATE_FILE, st)
+        for name in names:
+            dom = self.vm(name).domain
+            cfg_path = vb._info(dom).get("CfgFile", "")
+            if cfg_path and not cfg_path.startswith(str(folder)):
+                step(f"Moving {name} into the lab storage folder")
+                remote.close_master(self.target(name))
+                vb.shutdown(dom, wait=120) or vb.destroy(dom)
+                res = vb.move(dom, folder)
+                if not res.ok:
+                    _log.warning("movevm %s failed: %s", dom, res.tail(3))
+                vb.start(dom)
+        for name in names:
+            remote.wait_reachable(self.target(name), timeout=300)
 
     # --- provisioning ----------------------------------------------------------------------
     def _script(self, name: str) -> str:
@@ -194,6 +246,9 @@ class Lab:
             "AR_LAB_PREFIX": str(facts["prefix"]), "AR_GATEWAY": facts["gateway"], "AR_DNS": facts["dns"],
             "AR_DOMAIN": facts["domain"], "AR_IPV6": v.lab_ip6, "AR_LAB_NETWORK": facts["network"],
             "AR_HOSTS": hosts, "AR_ROOT_PASSWORD": root_password,
+            "AR_STUDENT_PASSWORD": self.accounts().get("student", ""),
+            "AR_ANSIBLE_PASSWORD": self.accounts().get("ansible", ""),
+            "AR_CODE_SERVER": "yes" if self.settings.code_server else "no",
         }
 
     def provision(self, name: str, script: str, *, root_password: str = "", line: LineFn | None = None,
@@ -226,6 +281,29 @@ class Lab:
         for n in pending:
             problems[n] = "did not come back after reboot"
         return problems
+
+    def accounts(self) -> dict[str, str]:
+        """Lab-wide RHCE accounts (student on control, ansible on managed nodes), created
+        once per lab build and shown to the candidate."""
+        st = self.state()
+        acc = st.get("accounts") or {}
+        if self.exam == "rhce" and not acc:
+            from . import secrets_util
+
+            acc = {"student": secrets_util.password(), "ansible": secrets_util.password()}
+            self.save_state(accounts=acc)
+        return acc
+
+    def _rhce_content(self) -> dict[str, Path]:
+        from . import content
+
+        root = content.content_dir(self.settings)
+        ok, msg = content.status(self.settings)
+        if not ok:
+            raise LabError(f"RHCE content is missing: {msg}",
+                           "Run once (needs internet): ./autorelabel content download")
+        return {"wheels": root / "wheels", "collections": root / "collections",
+                "code-server": root / "code-server", "roles": paths.VAGRANT_DIR / "content" / "roles"}
 
     def discovered_facts(self) -> dict[str, dict[str, str]]:
         out: dict[str, dict[str, str]] = {}
@@ -284,6 +362,13 @@ class Lab:
         self._vagrant_up(["utility"], step, on_line, log_file, cancel)
         step("Configuring the utility server (repositories, DNS, NTP, NFS, Flatpak)")
         self.provision("utility", "utility.sh", line=on_line, log_file=log_file)
+        if self.exam == "rhce":
+            items = self._rhce_content()
+            step("Publishing Git, collections and roles on the utility server")
+            res = remote.upload(self.target("utility"), {"collections": items["collections"], "roles": items["roles"]})
+            if not res.ok:
+                raise LabError("could not copy content to the utility server", res.tail(3), log_file)
+            self.provision("utility", "utility-rhce.sh", line=on_line, log_file=log_file)
 
         others = [v.name for v in self.vms if v.spec.role != "utility"]
         step(f"Starting {', '.join(others)}")
@@ -292,8 +377,16 @@ class Lab:
         errors: list[str] = []
 
         def prov(n: str) -> None:
+            role = self.vm(n).spec.role
+            script = {"exam": "node.sh", "managed": "managed.sh", "control": "control.sh"}[role]
             try:
-                self.provision(n, "node.sh", root_password=root_passwords.get(n, ""), line=on_line,
+                if role == "control":
+                    items = self._rhce_content()
+                    res = remote.upload(self.target(n), {k: items[k] for k in ("wheels", "collections",
+                                                                               "code-server")})
+                    if not res.ok:
+                        raise LabError(f"could not copy content to {n}", res.tail(3), log_file)
+                self.provision(n, script, root_password=root_passwords.get(n, ""), line=on_line,
                                log_file=log_file)
             except LabError as exc:
                 errors.append(f"{n}: {exc} {exc.hint}")
@@ -317,34 +410,37 @@ class Lab:
 
     # --- power, snapshots, teardown -------------------------------------------------------
     def power_states(self) -> dict[str, tuple[str, str]]:
-        return {v.name: lv.state(v.domain) for v in self.vms}
+        return {v.name: self.hv.state(v.domain) for v in self.vms}
 
     def exists(self) -> bool:
-        return any(lv.domain_exists(v.domain) for v in self.vms)
+        return any(self.hv.domain_exists(v.domain) for v in self.vms)
 
     def snapshot_all(self, name: str, description: str = "") -> None:
         """Offline (disk-only) snapshot of every VM: shut down, snapshot, leave off."""
         for v in self.vms:
             remote.close_master(self.target(v.name))
-            if lv.state(v.domain)[0] != "shut off" and not lv.shutdown(v.domain, wait=180):
-                lv.destroy(v.domain)
+            if self.hv.state(v.domain)[0] != "shut off" and not self.hv.shutdown(v.domain, wait=180):
+                self.hv.destroy(v.domain)
         for v in self.vms:
-            if name in lv.snapshots(v.domain):
-                lv.snapshot_delete(v.domain, name)
-            res = lv.snapshot_create(v.domain, name, description)
+            if name in self.hv.snapshots(v.domain):
+                self.hv.snapshot_delete(v.domain, name)
+            res = self.hv.snapshot_create(v.domain, name, description)
             if not res.ok:
                 raise LabError(f"snapshot of {v.name} failed: {res.tail(3)}")
 
     def start_all(self, names: list[str] | None = None) -> None:
-        for net in (MGMT_NETWORK, LAB_NETWORK):
-            if not lv.network_active(net):
-                lv.virsh("net-start", net)
+        if any(self.hv.state(self.vm(n).domain)[0] in ("shut off", "crashed", "paused") for n in names or self.names()):
+            self.guard_hypervisors()
+        if self.provider == "libvirt":
+            for net in (MGMT_NETWORK, LAB_NETWORK):
+                if not lv.network_active(net):
+                    lv.virsh("net-start", net)
         for n in names or self.names():
             v = self.vm(n)
-            if lv.state(v.domain)[0] in ("shut off", "crashed"):
-                lv.start(v.domain)
-            elif lv.state(v.domain)[0] == "paused":
-                lv.resume(v.domain)
+            if self.hv.state(v.domain)[0] in ("shut off", "crashed"):
+                self.hv.start(v.domain)
+            elif self.hv.state(v.domain)[0] == "paused":
+                self.hv.resume(v.domain)
 
     def wait_all(self, names: list[str] | None = None, timeout: float = 600) -> list[str]:
         missing = []
@@ -357,32 +453,35 @@ class Lab:
         for n in names or self.names():
             v = self.vm(n)
             remote.close_master(self.target(n))
-            lv.destroy(v.domain)
-            res = lv.snapshot_revert(v.domain, snapshot)
+            self.hv.destroy(v.domain)
+            res = self.hv.snapshot_revert(v.domain, snapshot)
             if not res.ok:
                 raise LabError(f"could not revert {n} to {snapshot}: {res.tail(3)}")
 
     def pause_all(self) -> None:
         for v in self.vms:
-            if lv.state(v.domain)[0] == "running":
-                lv.suspend(v.domain)
+            if self.hv.state(v.domain)[0] == "running":
+                self.hv.suspend(v.domain)
 
     def resume_all(self) -> None:
         for v in self.vms:
-            if lv.state(v.domain)[0] == "paused":
-                lv.resume(v.domain)
-                lv.time_sync(v.domain)
+            if self.hv.state(v.domain)[0] == "paused":
+                self.hv.resume(v.domain)
+                self.hv.time_sync(v.domain)
 
     def destroy(self, *, on_line: LineFn | None = None) -> None:
         log_file = log.operation_log(f"lab-destroy-{self.exam}")
         for v in self.vms:
             remote.close_master(self.target(v.name))
-            for s in lv.snapshots(v.domain):
-                lv.snapshot_delete(v.domain, s)
+            for s in self.hv.snapshots(v.domain):
+                self.hv.snapshot_delete(v.domain, s)
         if self.env_file.exists():
             self.vagrant(["destroy", "-f"], on_line=on_line, log_file=log_file, timeout=900)
         for v in self.vms:  # anything Vagrant didn't manage to remove
-            if lv.domain_exists(v.domain):
-                lv.destroy(v.domain)
-                lv.virsh("undefine", v.domain, "--remove-all-storage", "--snapshots-metadata", timeout=120)
+            if self.hv.domain_exists(v.domain):
+                self.hv.destroy(v.domain)
+                if self.provider == "libvirt":
+                    lv.virsh("undefine", v.domain, "--remove-all-storage", "--snapshots-metadata", timeout=120)
+                else:
+                    vb.vbm("unregistervm", v.domain, "--delete", timeout=300)
         STATE_FILE.unlink(missing_ok=True)

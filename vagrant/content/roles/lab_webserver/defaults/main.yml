@@ -1,0 +1,3 @@
+---
+webserver_port: 80
+webserver_content: "Welcome to {{ ansible_facts['hostname'] }}"

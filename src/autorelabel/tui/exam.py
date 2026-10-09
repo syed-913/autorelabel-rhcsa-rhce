@@ -29,7 +29,6 @@ from textual.widgets.option_list import Option
 from .. import session as S
 from ..engine import Engine
 from ..fsutil import read_json
-from ..providers import libvirt as lv
 from .common import Confirm, Message
 
 BADGE = {"easy": ("easy", "green"), "medium": ("medium", "yellow"), "hard": ("hard", "red")}
@@ -72,15 +71,40 @@ class InstructionsScreen(Screen[bool]):
         for n in info["nodes"]:
             pw = f"`{n['root_password']}`" if n["root_password"] else "**unknown: see the tasks**"
             lines.append(f"| {n['name']} | {n['fqdn']} | {n['ip']} | {pw} |")
+        if info["exam"] == "rhce":
+            acc, ctl = info["accounts"], info["control"]
+            lines += [
+                "",
+                f"Network {info['network']} · DNS {info['dns']} · utility server `{info['utility']}` "
+                "(repositories, Git, Ansible content).",
+                "",
+                "## Accounts",
+                "",
+                f"- **Work on `control` as `{ctl['user']}`** (password `{acc.get('student', '?')}`), in "
+                f"`{ctl['project_dir']}`. `{ctl['user']}` may use sudo.",
+                f"- Managed nodes have a user **`ansible`** with the password `{acc.get('ansible', '?')}`.",
+                f"- Git repository: `{info['git_url']}` (user `{ctl['user']}`, same password).",
+            ]
+            if info.get("code_server"):
+                lines.append(f"- VS Code in your browser (code-server): **{info['code_server']}** "
+                             f"(password: the `{ctl['user']}` password).")
+            lines += ["", "## Inventory groups", "", info["inventory_md"]]
+            how = (f"- From another terminal: `./autorelabel ssh control` (as {ctl['user']}), "
+                   "`./autorelabel ssh node1` (as root) or `./autorelabel console node1` "
+                   "(serial console; **Ctrl+]** to leave).")
+        else:
+            lines += [
+                "",
+                f"Network {info['network']} · gateway {info['gateway']} · DNS {info['dns']} · "
+                f"utility server `{info['utility']}` (repositories, NTP, NFS, Flatpak).",
+            ]
+            how = ("- From another terminal: `./autorelabel ssh node1` (as root) or `./autorelabel console node1` "
+                   "(serial console: GRUB, emergency mode; **Ctrl+]** to leave).")
         lines += [
-            "",
-            f"Network {info['network']} · gateway {info['gateway']} · DNS {info['dns']} · "
-            f"utility server `{info['utility']}` (repositories, NTP, NFS, Flatpak).",
             "",
             "## How to work",
             "",
-            "- From another terminal: `./autorelabel ssh node1` (as root) or `./autorelabel console node1` "
-            "(serial console: GRUB, emergency mode; **Ctrl+]** to leave).",
+            how,
             "- From this screen: select a node in the bottom bar and press **s** (SSH) or **c** (console); "
             "you return here when you exit.",
             "",
@@ -109,15 +133,15 @@ class InstructionsScreen(Screen[bool]):
 class NodeMenu(ModalScreen[str | None]):
     BINDINGS = [("escape", "cancel", "Cancel")]
 
-    def __init__(self, node: str, state: str):
+    def __init__(self, node: str, state: str, user: str = "root"):
         super().__init__()
-        self.node, self.state = node, state
+        self.node, self.state, self.user = node, state, user
 
     def compose(self) -> ComposeResult:
         with Vertical(id="dialog"):
             yield Label(f"{self.node}: {self.state}", classes="title")
             ol = OptionList(
-                Option("SSH as root (returns here when you exit)", id="ssh"),
+                Option(f"SSH as {self.user} (returns here when you exit)", id="ssh"),
                 Option("Serial console (GRUB, emergency mode; Ctrl+] to leave)", id="console"),
                 Option("Power on", id="power-on"),
                 Option("Reset (hard reboot, like pressing the reset button)", id="reset"),
@@ -236,7 +260,7 @@ class ExamScreen(Screen[None]):
     @work(thread=True, exclusive=True, group="nodes")
     def refresh_nodes(self) -> None:
         lab = self.engine.lab(self.sess.exam)
-        states = {n: lv.state(lab.vm(n).domain)[0] for n in self.node_names}
+        states = {n: lab.hv.state(lab.vm(n).domain)[0] for n in self.node_names}
         health = read_json(self.sess.dir / "health.json", default={}) or {}
         self.app.call_from_thread(self._show_nodes, states, health)
 
@@ -290,7 +314,7 @@ class ExamScreen(Screen[None]):
             return
         node = self.node_names[self.node_index]
         lab = self.engine.lab(self.sess.exam)
-        state = lv.state(lab.vm(node).domain)[0]
+        state = lab.hv.state(lab.vm(node).domain)[0]
 
         def chosen(action: str | None) -> None:
             if not action:
@@ -305,7 +329,10 @@ class ExamScreen(Screen[None]):
             else:
                 self.node_op(action, node)
 
-        self.app.push_screen(NodeMenu(node, state), chosen)
+        self.app.push_screen(NodeMenu(node, state, self.ssh_user(node)), chosen)
+
+    def ssh_user(self, node: str) -> str:
+        return "student" if self.sess.exam == "rhce" and node == "control" else "root"
 
     @work(thread=True, group="node-op")
     def node_op(self, action: str, node: str) -> None:
@@ -320,10 +347,10 @@ class ExamScreen(Screen[None]):
         v = lab.vm(node)
         if kind == "ssh":
             cmd = ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null",
-                   "-o", "LogLevel=ERROR", f"root@{v.lab_ip}"]
-            hint = f"SSH to {node} as root. Type 'exit' to return to autorelabel."
+                   "-o", "LogLevel=ERROR", f"{self.ssh_user(node)}@{v.lab_ip}"]
+            hint = f"SSH to {node} as {self.ssh_user(node)}. Type 'exit' to return to autorelabel."
         else:
-            cmd = lv.console_command(v.domain)
+            cmd = lab.hv.console_command(v.domain)
             hint = f"Serial console of {node}. Press Enter for a prompt; Ctrl+] returns to autorelabel."
         with self.app.suspend():
             print(f"\n\x1b[1;36m{hint}\x1b[0m\n", flush=True)

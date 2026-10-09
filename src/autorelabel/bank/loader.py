@@ -53,6 +53,7 @@ def load_blueprint(exam: str, root: Path | None = None) -> Blueprint:
         require=[list(g) for g in raw.get("require", [])],
         anchors=list(raw.get("anchors", [])),
         coverage_gate=str(raw.get("coverage_gate", "none")),
+        practice_prereqs=list(raw.get("practice_prereqs", [])),
     )
 
 

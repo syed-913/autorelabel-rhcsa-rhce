@@ -78,6 +78,7 @@ class Session:
     tasks: list[dict[str, Any]] = field(default_factory=list)
     passwords: dict[str, str] = field(default_factory=dict)       # actual root passwords per node
     given: dict[str, str] = field(default_factory=dict)           # what the candidate is told
+    accounts: dict[str, str] = field(default_factory=dict)        # RHCE: student / ansible passwords
     marks: dict[str, str] = field(default_factory=dict)           # task number -> done | flag
     started: float | None = None
     ended: float | None = None

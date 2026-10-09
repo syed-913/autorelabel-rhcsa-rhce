@@ -1,0 +1,3 @@
+---
+motd_message: "Managed by Ansible"
+motd_path: /etc/motd

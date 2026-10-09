@@ -1,4 +1,4 @@
-# RHCE exam composition (bank under construction until milestone M7).
+# RHCE exam composition.
 tasks: 20
 duration_minutes: 240
 total_points: 300
@@ -25,6 +25,12 @@ require:
   - [rhce.content.templates]
   - [rhce.roles.]
 
-anchors: []
+# Every RHCE exam starts with these (as the real one does): configure Ansible, prepare the
+# managed nodes, install the content collections, configure the repositories with Ansible.
+anchors: [ansible-setup, managed-access, collections, repos]
+
+# Practice sessions that don't include them get these solved automatically, so any single
+# task can be drilled on its own. (Repositories are handled like RHCSA: lab.repo is provided.)
+practice_prereqs: [ansible-setup, managed-access, collections]
 
 coverage_gate: none
