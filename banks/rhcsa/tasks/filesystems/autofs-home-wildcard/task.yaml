@@ -38,7 +38,8 @@ checks:
     covers: [R2]
     desc: "/{{base}}/{{user2}} mounts on access"
     run: |
-      grep -q '{{user2}}' /{{base}}/{{user2}}/welcome.txt
+      # as the user: root is squashed to nobody on the NFS export and can't read a 0700 home
+      runuser -u {{user2}} -- grep -q '{{user2}}' /{{base}}/{{user2}}/welcome.txt
       findmnt -no FSTYPE /{{base}}/{{user2}} | grep -q '^nfs'
   - id: wildcard
     covers: [R3]
