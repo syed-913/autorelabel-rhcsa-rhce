@@ -34,7 +34,7 @@ checks:
     on: node2
     desc: "{{user}}'s remote {{remote}} → {{lab.flatpak_repo}}"
     run: |
-      sudo -u {{user}} -H flatpak remotes --user --columns=name,url 2>/dev/null | awk '{print $1, $2}' \
+      as_user {{user}} flatpak remotes --user --columns=name,url 2>/dev/null | awk '{print $1, $2}' \
         | grep -E '^{{remote}} ' | grep -q 'utility.lab.example.com/flatpak/repo'
   - id: gpg
     covers: [R2]
