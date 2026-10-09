@@ -1,0 +1,50 @@
+title: Run a playbook with ansible-navigator and with ansible-playbook
+primary: rhce.run.navigator-and-playbook
+objectives: [rhce.run.navigator-and-playbook, rhce.automate.packages, rhce.playbooks.desired-state]
+facets:
+  - rhce.run.navigator-and-playbook:run-both
+  - rhce.automate.packages:packages-repos
+  - rhce.playbooks.desired-state:desired-state
+exclusive: [navigator-settings]
+difficulty: medium
+difficulty_reason: Running inside the execution environment with a named artifact needs the right navigator options (or settings file); the playbook must stay idempotent.
+estimated_minutes: 10
+node: control
+params:
+  pkg: {choice: [tree, lsof, strace, zip]}
+
+prompt: |
+  Create `{{lab.project_dir}}/ee-run.yml` that, on the hosts in the **test** group, installs
+  **`{{pkg}}`** and creates `/etc/ee-run` containing `installed by ansible`.
+
+  1. Run it with **`ansible-navigator`** in the execution environment `{{lab.ee_image}}` (stdout
+     mode), saving the **playbook artifact** as `{{lab.project_dir}}/artifacts/ee-run.json`.
+  2. Run it again with **`ansible-playbook`**; this second run must report no changes.
+
+requirements:
+  R1: "{{pkg}} is installed and /etc/ee-run exists on the test hosts"
+  R2: "artifacts/ee-run.json records a successful run inside the execution environment"
+
+checks:
+  - id: state
+    covers: [R1]
+    on: "@test"
+    desc: "{{pkg}} and /etc/ee-run"
+    run: |
+      rpm -q {{pkg}} >/dev/null
+      test "$(cat /etc/ee-run)" = "installed by ansible"
+  - id: artifact
+    covers: [R2]
+    desc: successful navigator artifact from the execution environment
+    run: |
+      python3 - <<'PY'
+      import json, sys
+      raw = open("/home/student/ansible/artifacts/ee-run.json").read()
+      a = json.loads(raw)
+      ok = a.get("status") == "successful" and "{{lab.ee_image}}" in raw and "ee-run.yml" in raw
+      sys.exit(0 if ok else 1)
+      PY
+
+references:
+  - "ansible-navigator run --help (--eei, --pp, -m, --pas)"
+  - "Ansible docs: ansible-navigator settings (playbook-artifact save-as)"

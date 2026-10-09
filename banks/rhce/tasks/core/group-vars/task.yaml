@@ -1,0 +1,69 @@
+title: Define variables with group_vars and host_vars
+primary: rhce.core.variables
+objectives: [rhce.core.variables, rhce.core.inventories, rhce.automate.file-content]
+facets:
+  - rhce.core.variables:host-group-vars
+  - rhce.core.inventories:inventory
+  - rhce.automate.file-content:file-content
+difficulty: medium
+difficulty_reason: Variable files per group plus a host-level override that must win by precedence.
+estimated_minutes: 8
+node: control
+params:
+  var: {choice: [env_name, deploy_env, site_env]}
+
+prompt: |
+  In `{{lab.project_dir}}`, define the variable **`{{var}}`** using **`group_vars` and
+  `host_vars`** files (not inside a playbook):
+
+  | Hosts | Value |
+  |---|---|
+  | the **dev** group | `development` |
+  | the **test** group | `testing` |
+  | the **prod** group | `production` |
+  | the host **node3** only | `production-primary` |
+
+  Then create `{{lab.project_dir}}/environment.yml` that, on the hosts in **dev**, **test** and
+  **prod**, creates `/etc/lab-environment` containing exactly this one line:
+
+      ENVIRONMENT=<the value of {{var}} for that host>
+
+requirements:
+  R1: "group_vars define {{var}} for dev, test and prod; host_vars override it for node3"
+  R2: "/etc/lab-environment holds the right value on every dev, test and prod host"
+
+checks:
+  - id: vars
+    covers: [R1]
+    desc: "group_vars and host_vars define {{var}}"
+    run: |
+      test -d {{lab.project_dir}}/group_vars
+      test -d {{lab.project_dir}}/host_vars
+      as_student ansible-inventory --list --export | python3 -c '
+      import json, sys
+      inv, var = json.load(sys.stdin), sys.argv[1]
+      gv = lambda g: inv.get(g, {}).get("vars", {}).get(var)
+      hv = {h.split(".")[0]: v.get(var) for h, v in inv.get("_meta", {}).get("hostvars", {}).items()}
+      ok = (gv("dev"), gv("test"), gv("prod"), hv.get("node3")) == ("development", "testing", "production", "production-primary")
+      sys.exit(0 if ok else 1)' {{var}}
+  - id: dev
+    covers: [R2]
+    on: "@dev"
+    desc: ENVIRONMENT=development on dev hosts
+    run: test "$(cat /etc/lab-environment)" = "ENVIRONMENT=development"
+  - id: test
+    covers: [R2]
+    on: "@test"
+    desc: ENVIRONMENT=testing on test hosts
+    run: test "$(cat /etc/lab-environment)" = "ENVIRONMENT=testing"
+  - id: prod
+    covers: [R2]
+    on: "@prod"
+    desc: ENVIRONMENT=production (production-primary on node3)
+    run: |
+      want=production; [ "$AR_NODE" = node3 ] && want=production-primary
+      test "$(cat /etc/lab-environment)" = "ENVIRONMENT=$want"
+
+references:
+  - "Ansible docs: Organizing host and group variables (group_vars, host_vars)"
+  - "Ansible docs: Variable precedence"

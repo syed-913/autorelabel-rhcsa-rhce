@@ -1,0 +1,74 @@
+title: Create a role for an Apache web server
+primary: rhce.roles.create
+objectives: [rhce.roles.create, rhce.content.templates, rhce.automate.services, rhce.automate.firewall, rhce.core.roles]
+facets:
+  - rhce.roles.create:role-create
+  - rhce.content.templates:jinja-template
+  - rhce.automate.services:services
+  - rhce.automate.firewall:firewall
+  - rhce.core.roles:role-structure
+exclusive: [web-content]
+difficulty: hard
+difficulty_reason: A complete role (tasks, template with facts, firewall, services) plus the playbook that applies it; every piece is graded on the nodes.
+estimated_minutes: 15
+node: control
+
+prompt: |
+  Create a role named **`apache`** in `{{lab.project_dir}}/roles` that:
+
+  - installs `httpd` and `firewalld`
+  - starts and enables both services
+  - allows the `http` service in the firewall, permanently and immediately
+  - creates `/var/www/html/index.html` from a **template** `index.html.j2` with exactly this
+    content, using facts:
+
+        Welcome to <fully qualified domain name> on <IPv4 address>
+
+  Then create `{{lab.project_dir}}/apache.yml` that applies the role to the **webservers**
+  group, and run it.
+
+requirements:
+  R1: "roles/apache exists with tasks and the template index.html.j2"
+  R2: "httpd and firewalld are started and enabled on the webservers, http allowed permanently"
+  R3: "the page shows the host's FQDN and IPv4 address"
+  R4: "apache.yml applies the role to webservers"
+
+checks:
+  - id: role
+    covers: [R1]
+    desc: role layout
+    run: |
+      test -s {{lab.project_dir}}/roles/apache/tasks/main.yml
+      test -s {{lab.project_dir}}/roles/apache/templates/index.html.j2
+      grep -q 'ansible_' {{lab.project_dir}}/roles/apache/templates/index.html.j2
+  - id: services
+    covers: [R2]
+    on: "@webservers"
+    desc: httpd and firewalld, http allowed
+    run: |
+      systemctl is-enabled -q httpd
+      systemctl is-active -q httpd
+      systemctl is-enabled -q firewalld
+      systemctl is-active -q firewalld
+      firewall-cmd --permanent --list-services | grep -qw http
+      firewall-cmd --list-services | grep -qw http
+  - id: page
+    covers: [R3]
+    on: "@webservers"
+    desc: page content from facts
+    run: |
+      ip4="$(ip -4 -o route get 192.0.2.1 | sed -n 's/.* src \([0-9.]*\).*/\1/p')"
+      test "$(curl -s http://localhost/)" = "Welcome to $(hostname -f) on $ip4"
+  - id: playbook
+    covers: [R4]
+    desc: apache.yml uses the role on webservers
+    run: |
+      playbook_ok apache.yml
+      python3 -c '
+      import sys, yaml
+      plays = yaml.safe_load(open("/home/student/ansible/apache.yml"))
+      sys.exit(0 if any(p.get("hosts") == "webservers" and "apache" in yaml.safe_dump(p) for p in plays) else 1)'
+
+references:
+  - "ansible-galaxy role init --help; Ansible docs: Roles"
+  - "ansible-doc ansible.builtin.template; ansible-doc ansible.posix.firewalld"

@@ -1,0 +1,58 @@
+title: One playbook, two plays with different hosts and privileges
+primary: rhce.core.plays
+objectives: [rhce.core.plays, rhce.automate.services, rhce.automate.firewall, rhce.playbooks.register]
+facets:
+  - rhce.core.plays:plays
+  - rhce.automate.services:services
+  - rhce.automate.firewall:firewall
+  - rhce.playbooks.register:register
+exclusive: [web-content]
+difficulty: medium
+difficulty_reason: Two plays with different targets and become settings; the second one consumes the first play's result over HTTP.
+estimated_minutes: 12
+node: control
+
+prompt: |
+  Create `{{lab.project_dir}}/web-site.yml` containing **two plays**:
+
+  1. On the **webservers** group:
+     - install `httpd`, start it and enable it at boot
+     - create `/var/www/html/index.html` containing exactly `Served by <the host's short host name>`
+     - allow the `http` service permanently in the firewall (and immediately)
+  2. On the **control node itself** (`localhost`), **without privilege escalation**: request
+     `http://<host>/` from every host in the webservers group and write all the responses, one
+     per line, to `{{lab.project_dir}}/web-check.txt` (the file must belong to `{{lab.control_user}}`).
+
+requirements:
+  R1: "httpd is installed, running and enabled on the webservers with the right page"
+  R2: "http is allowed permanently in the firewall on the webservers"
+  R3: "web-check.txt on control holds one response per webserver and belongs to {{lab.control_user}}"
+
+checks:
+  - id: httpd
+    covers: [R1]
+    on: "@webservers"
+    desc: httpd enabled, running, serving the page
+    run: |
+      systemctl is-enabled -q httpd
+      systemctl is-active -q httpd
+      test "$(curl -s http://localhost/)" = "Served by $(hostname -s)"
+  - id: firewall
+    covers: [R2]
+    on: "@webservers"
+    desc: http allowed (permanent and runtime)
+    run: |
+      firewall-cmd --permanent --list-services | grep -qw http
+      firewall-cmd --list-services | grep -qw http
+  - id: control
+    covers: [R3]
+    desc: web-check.txt on control
+    run: |
+      f={{lab.project_dir}}/web-check.txt
+      test "$(stat -c %U "$f")" = {{lab.control_user}}
+      for h in $LAB_GROUPS_WEBSERVERS; do grep -qx "Served by $h" "$f" || exit 1; done
+      test "$(grep -c . "$f")" -eq "$(wc -w <<<"$LAB_GROUPS_WEBSERVERS")"
+
+references:
+  - "Ansible docs: Intro to playbooks (multiple plays), Understanding privilege escalation (become)"
+  - "ansible-doc ansible.builtin.uri; ansible-doc ansible.posix.firewalld"

@@ -1,0 +1,61 @@
+title: Add a playbook to a Git repository and push it
+primary: rhce.git.add
+objectives: [rhce.git.add, rhce.git.clone, rhce.core.playbooks]
+facets:
+  - rhce.git.add:git-add-push
+  - rhce.git.clone:git-clone
+  - rhce.core.playbooks:playbook
+difficulty: medium
+difficulty_reason: Identity configuration, add, commit with an exact message and push; a commit that is never pushed earns nothing.
+estimated_minutes: 8
+node: control
+params:
+  name: {choice: [ping, uptime, facts]}
+  msg: {choice: ["Add connectivity check", "Add first playbook", "Add lab check playbook"]}
+
+prompt: |
+  As `{{lab.control_user}}` on control:
+
+  1. Clone **`{{lab.git_url}}`** into `/home/{{lab.control_user}}/git/ansible` (user
+     `{{lab.control_user}}`, same password as your account).
+  2. Configure your Git identity: name **`Lab Student`**, email **`student@lab.example.com`**.
+  3. Add a playbook **`playbooks/{{name}}.yml`** to the repository that runs the
+     `ansible.builtin.ping` module against **all** hosts.
+  4. Commit it with the message **`{{msg}}`** and **push** it to the `main` branch.
+
+requirements:
+  R1: "main on the server has playbooks/{{name}}.yml, a valid play against all hosts using ping"
+  R2: "the commit is by Lab Student <student@lab.example.com> with the message '{{msg}}'"
+  R3: "the local clone has nothing left to push"
+
+checks:
+  - id: file
+    covers: [R1]
+    on: utility
+    desc: "playbooks/{{name}}.yml on main"
+    run: |
+      git -c safe.directory='*' --git-dir=/var/lib/git/ansible.git show main:playbooks/{{name}}.yml > /tmp/ar-check-play.yml
+      python3 - <<'PY'
+      import sys, yaml
+      plays = yaml.safe_load(open("/tmp/ar-check-play.yml"))
+      p = plays[0]
+      ok = p.get("hosts") == "all" and any("ansible.builtin.ping" in t or "ping" in t for t in p.get("tasks", []))
+      sys.exit(0 if ok else 1)
+      PY
+  - id: commit
+    covers: [R2]
+    on: utility
+    desc: author and message
+    run: |
+      out="$(git -c safe.directory='*' --git-dir=/var/lib/git/ansible.git log -1 --format='%an|%ae|%s' main -- playbooks/{{name}}.yml)"
+      test "$out" = "Lab Student|student@lab.example.com|{{msg}}"
+  - id: pushed
+    covers: [R3]
+    desc: nothing ahead of origin
+    run: |
+      d=/home/{{lab.control_user}}/git/ansible
+      test -z "$(as_student git -C "$d" log --oneline origin/main..main)"
+      test -z "$(as_student git -C "$d" status --porcelain playbooks)"
+
+references:
+  - "man git-config(1), git-add(1), git-commit(1), git-push(1)"

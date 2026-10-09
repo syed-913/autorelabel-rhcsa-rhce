@@ -1,0 +1,58 @@
+title: Install roles from a requirements file and use them
+primary: rhce.roles.install
+objectives: [rhce.roles.install, rhce.core.plays, rhce.core.roles]
+facets:
+  - rhce.roles.install:role-install
+  - rhce.core.plays:plays
+  - rhce.core.roles:role-structure
+exclusive: [web-content, balancer]
+difficulty: hard
+difficulty_reason: >
+  Roles from URLs under new names, two plays in the right order (the balancer needs the web
+  servers' facts), and an end-to-end result through the load balancer.
+estimated_minutes: 14
+node: control
+
+prompt: |
+  1. Create `{{lab.project_dir}}/roles/requirements.yml` and use it to install these roles into
+     `{{lab.project_dir}}/roles`:
+     - `{{lab.roles_url}}/lab_webserver.tar.gz` as the role **`webserver`**
+     - `{{lab.roles_url}}/lab_balancer.tar.gz` as the role **`balancer`**
+  2. Create `{{lab.project_dir}}/roles.yml` with two plays:
+     - on the **webservers** group, apply `webserver` with its variable `webserver_content` set to
+       `Served by <short host name>` (use a fact)
+     - on the **balancers** group, apply `balancer`
+
+  Afterwards, `http://<balancer>/` must return the pages of the web servers in turn.
+
+requirements:
+  R1: "requirements.yml installs both roles under the names webserver and balancer"
+  R2: "the webservers serve 'Served by <host>'"
+  R3: "the balancers forward http to every web server"
+
+checks:
+  - id: installed
+    covers: [R1]
+    desc: roles installed by name from requirements.yml
+    run: |
+      test -s {{lab.project_dir}}/roles/requirements.yml
+      test -s {{lab.project_dir}}/roles/webserver/tasks/main.yml
+      test -s {{lab.project_dir}}/roles/balancer/tasks/main.yml
+      grep -q 'lab_balancer.tar.gz' {{lab.project_dir}}/roles/requirements.yml
+  - id: web
+    covers: [R2]
+    on: "@webservers"
+    desc: web server pages
+    run: test "$(curl -s http://localhost/)" = "Served by $(hostname -s)"
+  - id: balanced
+    covers: [R3]
+    on: "@balancers"
+    desc: the balancer reaches every web server
+    run: |
+      got="$(for i in 1 2 3 4 5 6; do curl -s --max-time 5 http://localhost/; echo; done | sort -u | sed '/^$/d')"
+      want="$(for h in $LAB_GROUPS_WEBSERVERS; do echo "Served by $h"; done | sort -u)"
+      test "$got" = "$want"
+
+references:
+  - "Ansible docs: Galaxy User Guide > Installing multiple roles from a file (requirements.yml: src, name)"
+  - "ansible-galaxy role install -r roles/requirements.yml -p roles"

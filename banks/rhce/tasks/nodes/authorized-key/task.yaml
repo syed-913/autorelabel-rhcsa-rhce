@@ -1,0 +1,48 @@
+title: Create a user and distribute an SSH key with Ansible
+primary: rhce.nodes.ssh-keys
+objectives: [rhce.nodes.ssh-keys, rhce.automate.users]
+facets:
+  - rhce.nodes.ssh-keys:ssh-keys
+  - rhce.automate.users:users-groups
+difficulty: medium
+difficulty_reason: A dedicated key pair generated on control, then the public key placed for a different user on the managed nodes with the right module.
+estimated_minutes: 9
+node: control
+params:
+  user: {pool: usernames}
+
+prompt: |
+  1. On **control**, create a new SSH key pair for `{{lab.control_user}}` at
+     `~/.ssh/{{user}}_key` (and `~/.ssh/{{user}}_key.pub`), without a passphrase.
+  2. Create `{{lab.project_dir}}/deploy-user.yml` that, on the hosts in **dev** and **test**,
+     creates the user **`{{user}}`** and authorizes that public key for it (use the
+     `ansible.posix.authorized_key` module).
+
+  Afterwards `ssh -i ~/.ssh/{{user}}_key {{user}}@<host>` must work from control without a password.
+
+requirements:
+  R1: "the key pair ~/.ssh/{{user}}_key exists for {{lab.control_user}} on control"
+  R2: "{{user}} exists on the dev and test hosts and logs in with that key"
+
+checks:
+  - id: keypair
+    covers: [R1]
+    desc: "~/.ssh/{{user}}_key and .pub"
+    run: |
+      k=/home/{{lab.control_user}}/.ssh/{{user}}_key
+      test -s "$k" -a -s "$k.pub"
+      test "$(stat -c %U "$k")" = {{lab.control_user}}
+      ssh-keygen -y -P '' -f "$k" >/dev/null
+  - id: login
+    covers: [R2]
+    desc: "key login as {{user}} on every dev and test host"
+    run: |
+      for h in $LAB_GROUPS_DEV $LAB_GROUPS_TEST; do
+        as_student ssh -n -i /home/{{lab.control_user}}/.ssh/{{user}}_key -o BatchMode=yes -o IdentitiesOnly=yes \
+          -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=10 \
+          "{{user}}@$h.{{lab.domain}}" true || exit 1
+      done
+
+references:
+  - "ansible-doc ansible.posix.authorized_key; ansible-doc ansible.builtin.user"
+  - "man ssh-keygen(1)"

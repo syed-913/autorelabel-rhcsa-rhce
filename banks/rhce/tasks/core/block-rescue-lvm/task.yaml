@@ -1,0 +1,69 @@
+title: Create logical volumes with error handling (block / rescue)
+primary: rhce.core.failures
+objectives: [rhce.core.failures, rhce.automate.storage, rhce.playbooks.error-handling, rhce.automate.filesystems]
+facets:
+  - rhce.core.failures:block-rescue
+  - rhce.automate.storage:storage
+  - rhce.playbooks.error-handling:error-handling
+  - rhce.automate.filesystems:filesystems
+exclusive: [disk-node1, disk-node2]
+resources:
+  disk: {node1.disk1: 2048, node2.disk1: 1024}
+difficulty: hard
+difficulty_reason: >
+  Three outcomes on different hosts (enough space, too little space with a fallback size, no
+  volume group) handled in one play without failing it.
+estimated_minutes: 14
+node: control
+params:
+  big: {choice: [1500, 1200]}
+  small: {choice: [800, 600]}
+
+prompt: |
+  Some managed nodes have a volume group called **`research`**. Create
+  `{{lab.project_dir}}/lv.yml` that runs on **all managed nodes** and:
+
+  - creates a logical volume **`data`** of **{{big}} MiB** in the volume group `research`
+  - if there is not enough space for it, prints the message
+    `Could not create a logical volume of that size` and creates it with **{{small}} MiB** instead
+  - if the volume group `research` doesn't exist, prints `Volume group does not exist` and
+    does nothing else on that host
+  - formats the logical volume (where it exists) with **ext4**; do **not** mount it
+
+  The playbook must complete without failed hosts.
+
+requirements:
+  R1: "node1 (enough space): research/data is {{big}} MiB with ext4"
+  R2: "node2 (too little space): research/data is {{small}} MiB with ext4"
+  R3: "lv.yml exists, is valid, and nothing is created where the volume group is missing"
+
+checks:
+  - id: large
+    covers: [R1]
+    on: node1
+    desc: "research/data = {{big}} MiB, ext4"
+    run: |
+      test "$(lvs --noheadings --units m --nosuffix -o lv_size research/data | tr -d ' ')" = "{{big}}.00"
+      test "$(blkid -s TYPE -o value /dev/research/data)" = ext4
+  - id: fallback
+    covers: [R2]
+    on: node2
+    desc: "research/data = {{small}} MiB, ext4"
+    run: |
+      test "$(lvs --noheadings --units m --nosuffix -o lv_size research/data | tr -d ' ')" = "{{small}}.00"
+      test "$(blkid -s TYPE -o value /dev/research/data)" = ext4
+  - id: playbook
+    covers: [R3]
+    desc: lv.yml
+    run: playbook_ok lv.yml
+  - id: no-vg
+    covers: [R3]
+    on: node3
+    desc: nothing created on node3 (no volume group)
+    run: |
+      test -z "$(vgs --noheadings -o vg_name research 2>/dev/null)"
+
+references:
+  - "Ansible docs: Blocks (error handling with rescue and always)"
+  - "ansible-doc community.general.lvol; ansible-doc community.general.filesystem"
+  - "Ansible facts: ansible_facts['lvm']['vgs']"

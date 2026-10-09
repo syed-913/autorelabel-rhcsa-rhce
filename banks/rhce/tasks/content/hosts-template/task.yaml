@@ -1,0 +1,57 @@
+title: Generate a hosts file from facts with a Jinja2 template
+primary: rhce.content.templates
+objectives: [rhce.content.templates, rhce.core.facts, rhce.core.loops]
+facets:
+  - rhce.content.templates:jinja-template
+  - rhce.core.facts:use-facts
+  - rhce.core.loops:loop
+difficulty: hard
+difficulty_reason: >
+  A loop over every host using other hosts' facts (hostvars), which requires facts to be gathered
+  for all hosts even though the file goes to one group only.
+estimated_minutes: 13
+node: control
+
+prompt: |
+  1. Create the template `{{lab.project_dir}}/templates/hosts.j2` that produces one line per
+     **managed node** in the inventory, in this format, using facts:
+
+         <IPv4 address> <fully qualified domain name> <short host name>
+
+  2. Create `{{lab.project_dir}}/hosts.yml` that deploys the result to **`/etc/myhosts`** on the
+     hosts in the **dev** group **only** (owner root, permissions 0644).
+
+requirements:
+  R1: "/etc/myhosts on the dev hosts lists every managed node: IP, FQDN, short name"
+  R2: "only the dev hosts received the file"
+  R3: "the template loops over the hosts and uses hostvars facts"
+
+checks:
+  - id: content
+    covers: [R1]
+    on: "@dev"
+    desc: one line per managed node
+    run: |
+      got="$(grep -Ev '^[[:space:]]*(#|$)' /etc/myhosts | tr -s ' \t' ' ' | sed 's/ $//' | sort)"
+      want="$(for h in $LAB_GROUPS_ALL; do v="LAB_${h^^}_IP"; echo "${!v} $h.{{lab.domain}} $h"; done | sort)"
+      test "$got" = "$want"
+      test "$(stat -c '%U %a' /etc/myhosts)" = "root 644"
+  - id: only-dev
+    covers: [R2]
+    on: "@all"
+    desc: no /etc/myhosts outside dev
+    run: |
+      for h in $LAB_GROUPS_DEV; do [ "$h" = "$AR_NODE" ] && exit 0; done
+      test ! -e /etc/myhosts
+  - id: template
+    covers: [R3]
+    desc: hosts.j2 loops and uses hostvars
+    run: |
+      t={{lab.project_dir}}/templates/hosts.j2
+      grep -q '{%[-[:space:]]*for ' "$t"
+      grep -q 'hostvars' "$t"
+      playbook_ok hosts.yml
+
+references:
+  - "Ansible docs: Templating (Jinja2); Special variables (hostvars, groups)"
+  - "ansible-doc ansible.builtin.template"

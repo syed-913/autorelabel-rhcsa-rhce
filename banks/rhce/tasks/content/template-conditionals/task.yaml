@@ -1,0 +1,53 @@
+title: A template with conditionals and a loop
+primary: rhce.content.templates
+objectives: [rhce.content.templates, rhce.core.variables]
+facets:
+  - rhce.content.templates:jinja-template
+  - rhce.core.variables:play-vars
+difficulty: medium
+difficulty_reason: if / elif / else on group membership plus a loop over a list variable, with exact output.
+estimated_minutes: 10
+node: control
+
+prompt: |
+  Create the template `{{lab.project_dir}}/templates/lab-info.j2` and the playbook
+  `{{lab.project_dir}}/lab-info.yml` that deploys it to `/etc/lab-info` on **all managed nodes**.
+  The playbook defines this variable:
+
+  ```yaml
+  lab_contacts:
+    - ops@lab.example.com
+    - security@lab.example.com
+  ```
+
+  The generated file must contain, line by line:
+
+  1. `Host: <short host name>`
+  2. `Role: development` on hosts in the **dev** group, `Role: production` on hosts in the
+     **prod** group, and `Role: other` on every other host
+  3. one line `Contact: <address>` for each entry of `lab_contacts`, in order
+
+requirements:
+  R1: "the Host and Role lines are right for every node"
+  R2: "one Contact line per address, in order"
+
+checks:
+  - id: role
+    covers: [R1]
+    on: "@all"
+    desc: Host and Role lines
+    run: |
+      role=other
+      for h in $LAB_GROUPS_DEV; do [ "$h" = "$AR_NODE" ] && role=development; done
+      for h in $LAB_GROUPS_PROD; do [ "$h" = "$AR_NODE" ] && role=production; done
+      test "$(sed -n 1p /etc/lab-info)" = "Host: $(hostname -s)"
+      test "$(sed -n 2p /etc/lab-info)" = "Role: $role"
+  - id: contacts
+    covers: [R2]
+    on: "@all"
+    desc: Contact lines
+    run: |
+      test "$(grep '^Contact:' /etc/lab-info)" = "$(printf 'Contact: ops@lab.example.com\nContact: security@lab.example.com')"
+
+references:
+  - "Jinja2 Template Designer Documentation: if, for; Ansible docs: Templating"

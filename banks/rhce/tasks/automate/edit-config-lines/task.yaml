@@ -1,0 +1,62 @@
+title: Edit configuration files with lineinfile and blockinfile
+primary: rhce.automate.file-content
+objectives: [rhce.automate.file-content, rhce.automate.services]
+facets:
+  - rhce.automate.file-content:file-content
+  - rhce.automate.services:services
+difficulty: medium
+difficulty_reason: A regexp-driven line replacement, a managed block and a handler that only runs on change.
+estimated_minutes: 9
+node: control
+params:
+  tries: {choice: [3, 4, 5]}
+  grace: {choice: [30, 45, 60]}
+
+prompt: |
+  Create `{{lab.project_dir}}/sshd-tune.yml` that, on the hosts in the **prod** group, edits
+  `/etc/ssh/sshd_config.d/50-lab.conf` (create it if missing, mode 0600):
+
+  - one line `MaxAuthTries {{tries}}`: if a `MaxAuthTries` line exists it must be **replaced**,
+    never duplicated
+  - a block, marked with Ansible's default markers, containing:
+
+        LoginGraceTime {{grace}}
+        ClientAliveInterval 300
+
+  - **sshd is reloaded only when the file changed** (use a handler)
+
+requirements:
+  R1: "exactly one MaxAuthTries line with {{tries}}"
+  R2: "the managed block holds LoginGraceTime {{grace}} and ClientAliveInterval 300"
+  R3: "sshd's effective configuration uses the new values"
+
+checks:
+  - id: line
+    covers: [R1]
+    on: "@prod"
+    desc: "MaxAuthTries {{tries}} once"
+    run: |
+      f=/etc/ssh/sshd_config.d/50-lab.conf
+      test "$(grep -ci '^MaxAuthTries' "$f")" -eq 1
+      grep -qx 'MaxAuthTries {{tries}}' "$f"
+  - id: block
+    covers: [R2]
+    on: "@prod"
+    desc: managed block
+    run: |
+      f=/etc/ssh/sshd_config.d/50-lab.conf
+      blk="$(sed -n '/^# BEGIN ANSIBLE MANAGED BLOCK/,/^# END ANSIBLE MANAGED BLOCK/p' "$f")"
+      grep -qx 'LoginGraceTime {{grace}}' <<<"$blk"
+      grep -qx 'ClientAliveInterval 300' <<<"$blk"
+  - id: effective
+    covers: [R3]
+    on: "@prod"
+    desc: sshd -T shows the values
+    run: |
+      cfg="$(sshd -T)"
+      grep -qx 'maxauthtries {{tries}}' <<<"$cfg"
+      grep -qx 'logingracetime {{grace}}' <<<"$cfg"
+
+references:
+  - "ansible-doc ansible.builtin.lineinfile (regexp, line, create); ansible-doc ansible.builtin.blockinfile"
+  - "Ansible docs: Handlers"

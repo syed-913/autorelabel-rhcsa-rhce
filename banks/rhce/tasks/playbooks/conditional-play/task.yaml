@@ -1,0 +1,48 @@
+title: Use conditions to control which hosts a play continues on
+primary: rhce.playbooks.conditionals
+objectives: [rhce.playbooks.conditionals, rhce.playbooks.register, rhce.automate.packages]
+facets:
+  - rhce.playbooks.conditionals:conditional-play
+  - rhce.playbooks.register:register
+  - rhce.automate.packages:packages-repos
+difficulty: medium
+difficulty_reason: A per-host decision from a registered stat result that ends the play for that host only.
+estimated_minutes: 9
+node: control
+params:
+  pkg: {choice: [tree, zip, lsof, mtr]}
+
+prompt: |
+  Hosts under maintenance have a file `/etc/lab-maintenance`. Create
+  `{{lab.project_dir}}/maintenance.yml` that runs on **all managed nodes** and:
+
+  1. checks whether `/etc/lab-maintenance` exists
+  2. on hosts where it exists, **ends the play for that host** right there (the play must not
+     fail; other hosts continue)
+  3. on all other hosts installs **`{{pkg}}`** and creates `/etc/lab-maintained` containing `done`
+
+requirements:
+  R1: "hosts without /etc/lab-maintenance have {{pkg}} and /etc/lab-maintained"
+  R2: "hosts in maintenance were left untouched"
+
+checks:
+  - id: done
+    covers: [R1]
+    on: "@all"
+    desc: "{{pkg}} and /etc/lab-maintained where not in maintenance"
+    run: |
+      if [ -e /etc/lab-maintenance ]; then exit 0; fi
+      rpm -q {{pkg}} >/dev/null
+      test "$(cat /etc/lab-maintained)" = done
+  - id: skipped
+    covers: [R2]
+    on: "@all"
+    desc: maintenance hosts untouched
+    run: |
+      if [ ! -e /etc/lab-maintenance ]; then exit 0; fi
+      test ! -e /etc/lab-maintained
+      ! rpm -q {{pkg}} >/dev/null 2>&1 || exit 1
+
+references:
+  - "Ansible docs: Conditionals; meta module (end_host)"
+  - "ansible-doc ansible.builtin.stat; ansible-doc ansible.builtin.meta"

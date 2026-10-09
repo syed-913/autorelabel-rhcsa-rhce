@@ -1,0 +1,47 @@
+title: Decide yourself when a task failed or changed something
+primary: rhce.core.failures
+objectives: [rhce.core.failures, rhce.playbooks.register, rhce.playbooks.error-handling]
+facets:
+  - rhce.core.failures:failed-changed-when
+  - rhce.playbooks.register:register
+  - rhce.playbooks.error-handling:error-handling
+difficulty: medium
+difficulty_reason: The command's exit status is meaningless; failure must come from its output, and the play must go on for failed hosts.
+estimated_minutes: 9
+node: control
+
+prompt: |
+  Every managed node has a health-check command `/usr/local/bin/labcheck`. It always exits
+  with status 0; its **output** tells the state (`STATUS: OK`, `STATUS: WARNING ...` or
+  `STATUS: CRITICAL ...`).
+
+  Create `{{lab.project_dir}}/health.yml` that, on **all managed nodes**:
+
+  - runs `labcheck`; this task must be reported as **failed only when the output contains
+    `CRITICAL`**, and must **never** be reported as **changed**
+  - continues even where it failed, and writes `/etc/labcheck.status` containing `PASS` on hosts
+    where the check did not fail and `FAIL` where it did
+
+requirements:
+  R1: "/etc/labcheck.status is PASS where labcheck reports OK or WARNING, FAIL where CRITICAL"
+  R2: "health.yml uses failed_when and changed_when on the labcheck task"
+
+checks:
+  - id: status
+    covers: [R1]
+    on: "@all"
+    desc: /etc/labcheck.status matches labcheck's output
+    run: |
+      want=PASS; /usr/local/bin/labcheck | grep -q CRITICAL && want=FAIL
+      test "$(cat /etc/labcheck.status)" = "$want"
+  - id: playbook
+    covers: [R2]
+    desc: failed_when and changed_when in health.yml
+    run: |
+      playbook_ok health.yml
+      grep -Eq '^[[:space:]]*failed_when:' {{lab.project_dir}}/health.yml
+      grep -Eq '^[[:space:]]*changed_when:' {{lab.project_dir}}/health.yml
+
+references:
+  - "Ansible docs: Error handling in playbooks (failed_when, changed_when, ignore_errors)"
+  - "Ansible docs: Tests (is failed, is succeeded)"

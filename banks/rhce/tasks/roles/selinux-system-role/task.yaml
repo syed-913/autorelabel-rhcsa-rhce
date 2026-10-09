@@ -1,0 +1,64 @@
+title: Manage SELinux with the selinux system role
+primary: rhce.roles.collection-content
+objectives: [rhce.roles.collection-content, rhce.automate.security, rhce.rhcsa.security]
+facets:
+  - rhce.roles.collection-content:collection-roles
+  - rhce.automate.security:security
+  - rhce.rhcsa.security:security
+exclusive: [selinux-dev]
+difficulty: hard
+difficulty_reason: Four kinds of SELinux settings through one role's variable structures, including restoring contexts.
+estimated_minutes: 14
+node: control
+params:
+  port: {choice: [8082, 8090, 9443]}
+  dir: {choice: [/srv/web, /srv/content, /srv/portal]}
+
+prompt: |
+  Create `{{lab.project_dir}}/selinux.yml` that uses the **`selinux`** RHEL system role on the
+  hosts in the **dev** group to:
+
+  - keep SELinux **enforcing** with the **targeted** policy
+  - enable the boolean **`httpd_can_network_connect`** persistently
+  - add a file-context rule labelling **`{{dir}}(/.*)?`** as **`httpd_sys_content_t`**, and apply
+    it to `{{dir}}` (create the directory, mode 0755, before the role runs)
+  - label TCP port **{{port}}** as **`http_port_t`**
+
+requirements:
+  R1: "SELinux is enforcing (targeted) and httpd_can_network_connect is on persistently"
+  R2: "{{dir}} has a local fcontext rule and is labelled httpd_sys_content_t"
+  R3: "tcp/{{port}} is http_port_t"
+  R4: "selinux.yml uses the selinux system role"
+
+checks:
+  - id: mode-boolean
+    covers: [R1]
+    on: "@dev"
+    desc: enforcing and the boolean
+    run: |
+      test "$(getenforce)" = Enforcing
+      grep -Eq '^SELINUX=enforcing' /etc/selinux/config
+      grep -Eq '^SELINUXTYPE=targeted' /etc/selinux/config
+      semanage boolean -l -C | grep -Eq '^httpd_can_network_connect[[:space:]]+\(on[[:space:]]*,[[:space:]]*on\)'
+  - id: fcontext
+    covers: [R2]
+    on: "@dev"
+    desc: "fcontext rule and label of {{dir}}"
+    run: |
+      semanage fcontext -l -C | grep -F '{{dir}}(/.*)?' | grep -q httpd_sys_content_t
+      test "$(stat -c %C {{dir}} | cut -d: -f3)" = httpd_sys_content_t
+  - id: port
+    covers: [R3]
+    on: "@dev"
+    desc: "tcp/{{port}} is http_port_t"
+    run: semanage port -l -C | grep -E '^http_port_t[[:space:]]+tcp' | grep -qw {{port}}
+  - id: playbook
+    covers: [R4]
+    desc: selinux.yml uses the role
+    run: |
+      playbook_ok selinux.yml
+      grep -Eq 'rhel-system-roles\.selinux|rhel_system_roles\.selinux' {{lab.project_dir}}/selinux.yml
+
+references:
+  - "/usr/share/doc/rhel-system-roles/selinux/README.md"
+  - "RHEL 10: Automating system administration by using RHEL system roles > Configuring SELinux"

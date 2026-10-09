@@ -1,0 +1,50 @@
+title: Find and fix the bugs in a shell script
+primary: rhce.rhcsa.analyze-scripts
+objectives: [rhce.rhcsa.analyze-scripts]
+facets:
+  - rhce.rhcsa.analyze-scripts:fix-script
+difficulty: medium
+difficulty_reason: Three independent bugs (argument check, inverted test, wrong positional parameter) must all be found from the specification.
+estimated_minutes: 8
+node: control
+
+prompt: |
+  On **control**, the script `/home/{{lab.control_user}}/scripts/check-hosts.sh` is supposed to work
+  like this, but it doesn't:
+
+  - run **without an argument**, it prints a usage message to **standard error** and exits with
+    status **2**
+  - run as `check-hosts.sh FILE`, it reads host names from `FILE`, one per line, and for each one
+    prints `<name> up` if the name resolves (`getent hosts`), otherwise `<name> down`, in the
+    order of the file, then exits with status 0
+
+  Fix the script in place (same path, still executable by `{{lab.control_user}}`).
+
+requirements:
+  R1: "without an argument: usage on stderr, exit status 2"
+  R2: "with a file: one correct up/down line per host, in order, exit status 0"
+
+checks:
+  - id: usage
+    covers: [R1]
+    desc: no argument → usage on stderr, exit 2
+    run: |
+      s=/home/{{lab.control_user}}/scripts/check-hosts.sh
+      test -x "$s"
+      rc=0; err="$(as_student "$s" 2>&1 >/dev/null)" || rc=$?
+      test "$rc" -eq 2
+      test -n "$err"
+      test -z "$(as_student "$s" 2>/dev/null || true)"
+  - id: report
+    covers: [R2]
+    desc: correct up/down report
+    run: |
+      s=/home/{{lab.control_user}}/scripts/check-hosts.sh
+      f="$(mktemp /tmp/ar-hosts.XXXXXX)"; trap 'rm -f "$f"' EXIT; chmod 0644 "$f"
+      printf '%s\n' utility.{{lab.domain}} no-such-host.{{lab.domain}} node1.{{lab.domain}} > "$f"
+      out="$(as_student "$s" "$f")"
+      test "$out" = "$(printf 'utility.{{lab.domain}} up\nno-such-host.{{lab.domain}} down\nnode1.{{lab.domain}} up')"
+
+references:
+  - "man bash(1): Special Parameters ($#, $1), CONDITIONAL EXPRESSIONS, REDIRECTION"
+  - "man getent(1)"

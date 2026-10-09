@@ -1,0 +1,74 @@
+title: Loop over lists and dictionaries
+primary: rhce.core.loops
+objectives: [rhce.core.loops, rhce.automate.users, rhce.playbooks.common-modules]
+facets:
+  - rhce.core.loops:loop
+  - rhce.automate.users:users-groups
+  - rhce.playbooks.common-modules:common-modules
+difficulty: medium
+difficulty_reason: A list of dictionaries with optional keys plus a dictionary turned into a list (dict2items).
+estimated_minutes: 10
+node: control
+params:
+  app: {choice: [orders, billing, catalog, reports]}
+  grp: {choice: [appops, webops, dataops]}
+
+prompt: |
+  Create `{{lab.project_dir}}/app-dirs.yml` that, on the hosts in the **prod** group:
+
+  1. creates the group **`{{grp}}`**
+  2. defines this variable in the playbook and uses **one task with a loop** to create the
+     directories, with exactly these owners, groups and permissions:
+
+     ```yaml
+     app_dirs:
+       - { path: /srv/{{app}}, mode: "0755" }
+       - { path: /srv/{{app}}/data, mode: "2770", group: {{grp}} }
+       - { path: /srv/{{app}}/logs, mode: "0750", group: {{grp}} }
+     ```
+
+     (directories without a `group` belong to group `root`; every directory is owned by `root`)
+  3. defines this dictionary and uses **one task with a loop** to create a symbolic link
+     `/srv/{{app}}/<key>` pointing to each value:
+
+     ```yaml
+     app_links:
+       current: /srv/{{app}}/data
+       journal: /srv/{{app}}/logs
+     ```
+
+requirements:
+  R1: "group {{grp}} exists on the prod hosts"
+  R2: "the three directories have the exact owner, group and mode"
+  R3: "the two symbolic links point to the right directories"
+  R4: "app-dirs.yml exists and is valid"
+
+checks:
+  - id: group
+    covers: [R1]
+    on: "@prod"
+    desc: "group {{grp}}"
+    run: getent group {{grp}} >/dev/null
+  - id: dirs
+    covers: [R2]
+    on: "@prod"
+    desc: directories, owners and modes
+    run: |
+      test "$(stat -c '%F %U %G %a' /srv/{{app}})" = "directory root root 755"
+      test "$(stat -c '%F %U %G %a' /srv/{{app}}/data)" = "directory root {{grp}} 2770"
+      test "$(stat -c '%F %U %G %a' /srv/{{app}}/logs)" = "directory root {{grp}} 750"
+  - id: links
+    covers: [R3]
+    on: "@prod"
+    desc: current → data, journal → logs
+    run: |
+      test -L /srv/{{app}}/current -a "$(readlink /srv/{{app}}/current)" = /srv/{{app}}/data
+      test -L /srv/{{app}}/journal -a "$(readlink /srv/{{app}}/journal)" = /srv/{{app}}/logs
+  - id: playbook
+    covers: [R4]
+    desc: app-dirs.yml
+    run: playbook_ok app-dirs.yml
+
+references:
+  - "Ansible docs: Loops (loop, dict2items, loop_control)"
+  - "ansible-doc ansible.builtin.file; ansible-doc ansible.builtin.group"

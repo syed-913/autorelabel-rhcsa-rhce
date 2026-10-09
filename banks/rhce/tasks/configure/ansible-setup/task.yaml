@@ -1,0 +1,96 @@
+title: Install and configure Ansible on the control node
+primary: rhce.configure.inventory-groups
+objectives: [rhce.configure.inventory-groups, rhce.configure.static-inventory, rhce.configure.ansible-cfg,
+             rhce.core.inventories, rhce.core.config-files]
+facets:
+  - rhce.configure.inventory-groups:inventory-groups
+  - rhce.configure.static-inventory:static-inventory
+  - rhce.configure.ansible-cfg:ansible-cfg
+  - rhce.core.inventories:inventory
+  - rhce.core.config-files:config-precedence
+anchor: ansible-setup
+difficulty: medium
+difficulty_reason: >
+  Two files with many exact settings (inventory groups including a child group, remote user,
+  privilege escalation, roles and collections paths); every later task depends on them.
+estimated_minutes: 10
+node: control
+
+prompt: |
+  On **control**, working as `{{lab.control_user}}`, set up Ansible in `{{lab.project_dir}}`
+  (`ansible-core` and `ansible-navigator` are already installed).
+
+  1. Create a static inventory file `{{lab.project_dir}}/inventory` with these groups:
+
+  {{lab.inventory_md}}
+
+  2. Create `{{lab.project_dir}}/ansible.cfg` so that, when Ansible runs from `{{lab.project_dir}}`:
+     - the inventory above is used
+     - Ansible connects to the managed nodes as the user **`ansible`**
+     - privilege escalation to `root` with `sudo` is **enabled by default**
+     - roles are found in `{{lab.project_dir}}/roles` **and** in `/usr/share/ansible/roles`
+       (where the RHEL system roles are installed)
+     - collections are installed into and found in `{{lab.project_dir}}/mycollections`
+     - SSH host keys of the managed nodes are not checked
+
+  Create the `roles` and `mycollections` directories too.
+
+requirements:
+  R1: "the inventory defines dev, test, prod and balancers with the listed hosts"
+  R2: "webservers has prod as a child group"
+  R3: "ansible.cfg uses the inventory, remote user ansible and become (sudo to root) by default"
+  R4: "roles path includes {{lab.project_dir}}/roles and /usr/share/ansible/roles"
+  R5: "collections path is {{lab.project_dir}}/mycollections; host key checking is off"
+
+checks:
+  - id: groups
+    covers: [R1]
+    desc: inventory groups dev, test, prod and balancers
+    run: |
+      test -f {{lab.project_dir}}/inventory
+      same_words "$(inventory_hosts dev)" "{{lab.groups.dev}}"
+      same_words "$(inventory_hosts test)" "{{lab.groups.test}}"
+      same_words "$(inventory_hosts prod)" "{{lab.groups.prod}}"
+      same_words "$(inventory_hosts balancers)" "{{lab.groups.balancers}}"
+  - id: children
+    covers: [R2]
+    desc: webservers contains the prod group
+    run: |
+      as_student ansible-inventory --list | python3 -c '
+      import json, sys
+      inv = json.load(sys.stdin)
+      sys.exit(0 if "prod" in inv.get("webservers", {}).get("children", []) else 1)'
+  - id: cfg-core
+    covers: [R3]
+    desc: ansible.cfg sets the inventory, remote_user ansible and become
+    run: |
+      test -f {{lab.project_dir}}/ansible.cfg
+      cfg="$(as_student ansible-config dump --only-changed)"
+      grep -Eq "^DEFAULT_HOST_LIST\(.*\) = \[.*{{lab.project_dir}}/inventory['\"]?[],]" <<<"$cfg"
+      grep -Eq '^DEFAULT_REMOTE_USER\(.*\) = ansible$' <<<"$cfg"
+      grep -Eq '^DEFAULT_BECOME\(.*\) = True$' <<<"$cfg"
+      method="$(sed -n 's/^DEFAULT_BECOME_METHOD([^)]*) = //p' <<<"$cfg")"
+      test -z "$method" -o "$method" = sudo
+      buser="$(sed -n 's/^DEFAULT_BECOME_USER([^)]*) = //p' <<<"$cfg")"
+      test -z "$buser" -o "$buser" = root
+  - id: roles-path
+    covers: [R4]
+    desc: roles path includes the project roles and the system roles
+    run: |
+      line="$(as_student ansible-config dump --only-changed | grep -E '^DEFAULT_ROLES_PATH\(')"
+      grep -q "{{lab.project_dir}}/roles" <<<"$line"
+      grep -q "/usr/share/ansible/roles" <<<"$line"
+      test -d {{lab.project_dir}}/roles
+  - id: collections-path
+    covers: [R5]
+    desc: collections path and host key checking
+    run: |
+      cfg="$(as_student ansible-config dump --only-changed)"
+      grep -E '^COLLECTIONS_PATHS\(' <<<"$cfg" | grep -q "{{lab.project_dir}}/mycollections"
+      grep -Eq '^HOST_KEY_CHECKING\(.*\) = False$' <<<"$cfg"
+      test -d {{lab.project_dir}}/mycollections
+
+references:
+  - "Ansible docs: How to build your inventory (groups, children)"
+  - "Ansible docs: Ansible Configuration Settings (ansible-config dump / view)"
+  - "RHEL 10: Automating system administration by using RHEL system roles > Preparing a control node"

@@ -1,0 +1,47 @@
+title: Run a playbook in the Ansible development container
+primary: rhce.vscode.devcontainer
+objectives: [rhce.vscode.devcontainer, rhce.run.navigator-and-playbook]
+facets:
+  - rhce.vscode.devcontainer:devcontainer-run
+  - rhce.run.navigator-and-playbook:run-both
+difficulty: hard
+difficulty_reason: >
+  The run must really happen inside the container image (proven by the controller's environment),
+  which means configuring and using the container rather than the local ansible-core.
+estimated_minutes: 10
+node: control
+
+prompt: |
+  The Ansible development container for this lab is the image **`{{lab.ee_image}}`** (podman).
+
+  Create `{{lab.project_dir}}/ee-proof.yml` that, on the hosts in the **dev** group, creates
+  `/etc/ee-proof` containing the value of the environment variable **`container`** as seen by
+  the **controller** (use `lookup('ansible.builtin.env', 'container')`).
+
+  Run it **inside the development container**, from VS Code (Ansible extension or the integrated
+  terminal). The variable is only set inside a container, so a run with the local `ansible-core`
+  leaves the file empty.
+
+requirements:
+  R1: "/etc/ee-proof on the dev hosts holds the container's 'container' variable"
+  R2: "ee-proof.yml exists and is valid"
+
+checks:
+  - id: proof
+    covers: [R1]
+    on: "@dev"
+    desc: /etc/ee-proof written from inside the container
+    run: |
+      v="$(tr -d '[:space:]' < /etc/ee-proof)"
+      test -n "$v"
+      case "$v" in podman|oci|docker) ;; *) exit 1 ;; esac
+  - id: playbook
+    covers: [R2]
+    desc: ee-proof.yml
+    run: |
+      playbook_ok ee-proof.yml
+      grep -q "lookup" {{lab.project_dir}}/ee-proof.yml
+
+references:
+  - "Ansible VS Code extension: execution environment settings"
+  - "ansible-navigator run --eei <image> --pp missing -m stdout"

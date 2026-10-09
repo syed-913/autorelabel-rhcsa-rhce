@@ -1,0 +1,52 @@
+title: Partition, file system and persistent mount with Ansible
+primary: rhce.automate.filesystems
+objectives: [rhce.automate.filesystems, rhce.automate.storage, rhce.rhcsa.filesystems, rhce.rhcsa.storage]
+facets:
+  - rhce.automate.filesystems:filesystems
+  - rhce.automate.storage:storage
+  - rhce.rhcsa.filesystems:filesystems
+  - rhce.rhcsa.storage:storage
+exclusive: [disk-node1]
+resources:
+  disk: {node1.disk1: 1024}
+difficulty: medium
+difficulty_reason: Three modules from two collections in the right order, with exact sizes and a mount that survives the reboot.
+estimated_minutes: 10
+node: control
+params:
+  size: {choice: [512, 768, 1000]}
+  fs: {choice: [xfs, ext4]}
+  mnt: {choice: [/data, /srv/archive, /backup]}
+
+prompt: |
+  Create `{{lab.project_dir}}/partition.yml` that, on the hosts in the **dev** group:
+
+  - creates partition **1** of **{{size}} MiB** on the second disk (`{{lab.node1.disk1}}` on node1)
+  - formats it with **{{fs}}**
+  - mounts it persistently at **`{{mnt}}`**
+
+requirements:
+  R1: "partition 1 of the second disk is about {{size}} MiB and holds {{fs}}"
+  R2: "{{mnt}} is mounted from it after the reboot (fstab entry)"
+
+checks:
+  - id: partition
+    covers: [R1]
+    on: "@dev"
+    desc: "partition 1: {{size}} MiB, {{fs}}"
+    run: |
+      part="$(lsblk -nrpo NAME,TYPE {{lab.node1.disk1}} | awk '$2=="part"{print $1}' | head -1)"
+      test -n "$part"
+      mib=$(( $(blockdev --getsize64 "$part") / 1048576 ))
+      test "$mib" -ge $(( {{size}} - 2 )) -a "$mib" -le $(( {{size}} + 2 ))
+      test "$(blkid -s TYPE -o value "$part")" = {{fs}}
+  - id: mounted
+    covers: [R2]
+    on: "@dev"
+    desc: "{{mnt}} mounted, in fstab"
+    run: |
+      test "$(findmnt -no FSTYPE {{mnt}})" = {{fs}}
+      awk '$2=="{{mnt}}"' /etc/fstab | grep -q .
+
+references:
+  - "ansible-doc community.general.parted; community.general.filesystem; ansible.posix.mount"

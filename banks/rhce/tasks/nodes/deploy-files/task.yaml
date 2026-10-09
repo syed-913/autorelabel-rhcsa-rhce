@@ -1,0 +1,49 @@
+title: Deploy files to managed nodes
+primary: rhce.nodes.deploy-files
+objectives: [rhce.nodes.deploy-files, rhce.automate.file-content, rhce.core.modules]
+facets:
+  - rhce.core.modules:modules
+  - rhce.nodes.deploy-files:copy-files
+  - rhce.automate.file-content:file-content
+difficulty: easy
+difficulty_reason: Two copy tasks with exact ownership and permissions, one from a file and one from inline content.
+estimated_minutes: 6
+node: control
+params:
+  app: {choice: [orders, payroll, catalog, tickets]}
+  grp: {choice: [wheel, adm]}
+
+prompt: |
+  `{{lab.project_dir}}/files/app.conf` already exists on control. Create
+  `{{lab.project_dir}}/deploy-files.yml` that, on the hosts in the **prod** group:
+
+  - copies `files/app.conf` to `/etc/{{app}}/app.conf`, owned by `root`, group **`{{grp}}`**,
+    permissions **0640** (create the directory `/etc/{{app}}` with permissions 0755)
+  - creates `/etc/{{app}}/README` containing exactly the line `Managed by Ansible - do not edit`
+    (owned by root, permissions 0644)
+
+requirements:
+  R1: "/etc/{{app}}/app.conf is an exact copy, root:{{grp}}, 0640"
+  R2: "/etc/{{app}}/README has the required line, root:root, 0644"
+
+checks:
+  - id: conf
+    covers: [R1]
+    on: "@prod"
+    desc: app.conf copied with owner, group and mode
+    run: |
+      f=/etc/{{app}}/app.conf
+      test "$(stat -c '%U %G %a' "$f")" = "root {{grp}} 640"
+      test "$(sha256sum < "$f" | cut -d' ' -f1)" = "$(printf '# {{app}} configuration\nlisten_port = 8080\nlog_level = info\nmax_workers = 4\n' | sha256sum | cut -d' ' -f1)"
+  - id: readme
+    covers: [R2]
+    on: "@prod"
+    desc: README content and mode
+    run: |
+      f=/etc/{{app}}/README
+      test "$(stat -c '%U %G %a' "$f")" = "root root 644"
+      test "$(cat "$f")" = "Managed by Ansible - do not edit"
+
+references:
+  - "ansible-doc ansible.builtin.copy (src, content, owner, group, mode)"
+  - "ansible-doc ansible.builtin.file"

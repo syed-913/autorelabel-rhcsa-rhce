@@ -1,0 +1,56 @@
+title: Install packages and a package group per inventory group
+primary: rhce.automate.packages
+objectives: [rhce.automate.packages, rhce.playbooks.conditionals]
+facets:
+  - rhce.automate.packages:packages-repos
+  - rhce.playbooks.conditionals:conditional-play
+difficulty: easy
+difficulty_reason: The classic packages playbook; group syntax and targeting are the traps.
+estimated_minutes: 7
+node: control
+
+prompt: |
+  Create `{{lab.project_dir}}/packages.yml` that:
+
+  - installs **`php`** and **`mariadb`** on the hosts in the **dev**, **test** and **prod** groups
+  - installs the package group **`RPM Development Tools`** on the hosts in the **dev** group
+  - updates **all packages** to the latest available version on the hosts in the **dev** group
+
+requirements:
+  R1: "php and mariadb are installed on the dev, test and prod hosts"
+  R2: "the RPM Development Tools group is installed on the dev hosts"
+  R3: "packages.yml exists and updates all packages on dev"
+
+checks:
+  - id: dev
+    covers: [R1]
+    on: "@dev"
+    desc: php and mariadb on dev
+    run: rpm -q php mariadb >/dev/null
+  - id: test
+    covers: [R1]
+    on: "@test"
+    desc: php and mariadb on test
+    run: rpm -q php mariadb >/dev/null
+  - id: prod
+    covers: [R1]
+    on: "@prod"
+    desc: php and mariadb on prod
+    run: rpm -q php mariadb >/dev/null
+  - id: group
+    covers: [R2]
+    on: "@dev"
+    desc: RPM Development Tools installed
+    run: |
+      out="$(dnf -q group list --installed 2>/dev/null)"
+      grep -qi 'RPM Development Tools' <<<"$out"
+  - id: playbook
+    covers: [R3]
+    desc: packages.yml with a full update on dev
+    run: |
+      playbook_ok packages.yml
+      grep -Eq "name:[[:space:]]*['\"]?\*['\"]?" {{lab.project_dir}}/packages.yml
+      grep -Eq 'state:[[:space:]]*latest' {{lab.project_dir}}/packages.yml
+
+references:
+  - "ansible-doc ansible.builtin.dnf (name '@group', name '*', state latest)"

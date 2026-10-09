@@ -1,0 +1,66 @@
+title: Inventories and environment configuration for ansible-navigator
+primary: rhce.run.navigator-inventory
+objectives: [rhce.run.navigator-inventory, rhce.configure.static-inventory, rhce.core.inventories, rhce.core.variables]
+facets:
+  - rhce.run.navigator-inventory:navigator-inventory
+  - rhce.configure.static-inventory:static-inventory
+  - rhce.core.inventories:inventory
+  - rhce.core.variables:host-group-vars
+exclusive: [navigator-settings]
+difficulty: medium
+difficulty_reason: A YAML inventory with a group variable, combined with the existing inventory through the navigator settings, then verified with navigator.
+estimated_minutes: 10
+node: control
+params:
+  zone: {choice: [dmz, edge, perimeter]}
+
+prompt: |
+  1. Create a **YAML** inventory `{{lab.project_dir}}/inventory-{{zone}}.yml` with a group
+     **`{{zone}}`** containing the hosts of the **balancers** group, and the group variable
+     **`zone: {{zone}}`**.
+  2. Configure `{{lab.project_dir}}/ansible-navigator.yml` so that `ansible-navigator` uses
+     **both** inventories (`inventory` and `inventory-{{zone}}.yml`) by default, in stdout mode.
+  3. Using `ansible-navigator inventory`, save the **graph** of all groups (including the new one)
+     to `{{lab.project_dir}}/inventory-graph.txt`.
+
+requirements:
+  R1: "inventory-{{zone}}.yml is a YAML inventory: group {{zone}} = balancers hosts, zone = {{zone}}"
+  R2: "ansible-navigator.yml lists both inventories"
+  R3: "inventory-graph.txt shows the {{zone}} group and the original groups"
+
+checks:
+  - id: yaml-inventory
+    covers: [R1]
+    desc: "group {{zone}} with zone={{zone}}"
+    run: |
+      python3 -c 'import yaml; yaml.safe_load(open("/home/student/ansible/inventory-{{zone}}.yml"))'
+      inv="$(as_student ansible-inventory -i inventory-{{zone}}.yml --list --export)"
+      python3 - "$inv" <<'PY'
+      import json, sys
+      inv = json.loads(sys.argv[1])
+      hosts = {h.split(".")[0] for h in inv.get("{{zone}}", {}).get("hosts", [])}
+      ok = hosts == set("{{lab.groups.balancers}}".split()) and inv["{{zone}}"].get("vars", {}).get("zone") == "{{zone}}"
+      sys.exit(0 if ok else 1)
+      PY
+  - id: settings
+    covers: [R2]
+    desc: ansible-navigator.yml inventory entries
+    run: |
+      python3 - <<'PY'
+      import os, sys, yaml
+      d = yaml.safe_load(open("/home/student/ansible/ansible-navigator.yml"))["ansible-navigator"]
+      entries = [os.path.basename(str(e).rstrip("/")) for e in d["ansible"]["inventory"]["entries"]]
+      sys.exit(0 if {"inventory", "inventory-{{zone}}.yml"} <= set(entries) else 1)
+      PY
+  - id: graph
+    covers: [R3]
+    desc: inventory-graph.txt
+    run: |
+      f={{lab.project_dir}}/inventory-graph.txt
+      grep -q '@{{zone}}:' "$f"
+      grep -q '@webservers:' "$f"
+      grep -q '@dev:' "$f"
+
+references:
+  - "ansible-navigator inventory --help (--graph, -i, -m stdout)"
+  - "Ansible docs: How to build your inventory (YAML format); ansible-navigator settings (ansible.inventory.entries)"

@@ -1,0 +1,65 @@
+title: Turn a playbook into a role
+primary: rhce.core.roles
+objectives: [rhce.core.roles, rhce.content.templates, rhce.core.variables]
+facets:
+  - rhce.core.roles:role-structure
+  - rhce.content.templates:jinja-template
+  - rhce.core.variables:play-vars
+difficulty: medium
+difficulty_reason: Splitting tasks, a handler, a default variable and a template into the right role directories, then overriding the default.
+estimated_minutes: 12
+node: control
+params:
+  text: {choice: ["Authorized use only", "Property of the lab team", "Activity is monitored"]}
+
+prompt: |
+  `{{lab.project_dir}}/banner-legacy.yml` (already there) deploys a login banner. Convert it into a
+  **role** named **`lab_banner`** in `{{lab.project_dir}}/roles/lab_banner`:
+
+  - its tasks in `tasks/main.yml`, its handler in `handlers/main.yml`
+  - the variable `banner_text` as a **role default** (`defaults/main.yml`), keeping its value
+  - the template in the role's `templates/` directory
+
+  Then create `{{lab.project_dir}}/banner.yml` that applies the role to the **test** group with
+  `banner_text` set to **`{{text}}`**, and run it. Leave `banner-legacy.yml` as it is.
+
+requirements:
+  R1: "roles/lab_banner has tasks, handlers, defaults (banner_text) and the template"
+  R2: "banner.yml applies the role to test with banner_text = {{text}}"
+  R3: "the test hosts show the new banner and the handler ran"
+
+checks:
+  - id: structure
+    covers: [R1]
+    desc: role layout
+    run: |
+      r={{lab.project_dir}}/roles/lab_banner
+      test -s $r/tasks/main.yml
+      test -s $r/handlers/main.yml
+      ls $r/templates/*.j2 >/dev/null
+      python3 -c '
+      import sys, yaml
+      d = yaml.safe_load(open(sys.argv[1]))
+      sys.exit(0 if d.get("banner_text") == "Managed by the lab automation team" else 1)' $r/defaults/main.yml
+  - id: playbook
+    covers: [R2]
+    desc: banner.yml uses the role on test
+    run: |
+      playbook_ok banner.yml
+      python3 -c '
+      import sys, yaml
+      plays = yaml.safe_load(open("/home/student/ansible/banner.yml"))
+      text = yaml.safe_dump(plays)
+      ok = any(p.get("hosts") == "test" for p in plays) and "lab_banner" in text and sys.argv[1] in text
+      sys.exit(0 if ok else 1)' "{{text}}"
+  - id: applied
+    covers: [R3]
+    on: "@test"
+    desc: banner deployed and the handler ran
+    run: |
+      grep -qx '{{text}}' /etc/issue.d/lab-banner.issue
+      test -f /var/lib/lab-banner/updated
+
+references:
+  - "Ansible docs: Roles (directory structure, defaults vs vars, handlers)"
+  - "ansible-galaxy role init --help"

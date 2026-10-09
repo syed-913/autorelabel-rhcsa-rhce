@@ -1,0 +1,53 @@
+title: Configure ansible-navigator with ansible-navigator.yml
+primary: rhce.configure.navigator-yml
+objectives: [rhce.configure.navigator-yml]
+facets:
+  - rhce.configure.navigator-yml:navigator-yml
+exclusive: [navigator-settings]
+difficulty: easy
+difficulty_reason: Four settings in the navigator settings file; the nesting and key names must be exact.
+estimated_minutes: 6
+node: control
+params:
+  policy: {choice: [missing, never]}
+
+prompt: |
+  Create `{{lab.project_dir}}/ansible-navigator.yml` so that `ansible-navigator`, when run from
+  `{{lab.project_dir}}`:
+
+  - uses the execution environment image **`{{lab.ee_image}}`** (it exists locally only; there is
+    no registry)
+  - uses the image **pull policy `{{policy}}`**
+  - uses **stdout** mode by default (not the interactive text UI)
+  - does **not** create playbook artifact files
+
+requirements:
+  R1: "ansible-navigator.yml sets the image and pull policy {{policy}}"
+  R2: "ansible-navigator.yml sets mode stdout and disables playbook artifacts"
+
+checks:
+  - id: ee
+    covers: [R1]
+    desc: execution environment image and pull policy
+    run: |
+      python3 - <<'PY'
+      import sys, yaml
+      d = yaml.safe_load(open("/home/student/ansible/ansible-navigator.yml"))["ansible-navigator"]
+      ee = d["execution-environment"]
+      ok = ee.get("enabled", True) is True and ee["image"] == "{{lab.ee_image}}" and ee["pull"]["policy"] == "{{policy}}"
+      sys.exit(0 if ok else 1)
+      PY
+  - id: mode
+    covers: [R2]
+    desc: stdout mode, no artifacts
+    run: |
+      python3 - <<'PY'
+      import sys, yaml
+      d = yaml.safe_load(open("/home/student/ansible/ansible-navigator.yml"))["ansible-navigator"]
+      ok = d["mode"] == "stdout" and d["playbook-artifact"]["enable"] is False
+      sys.exit(0 if ok else 1)
+      PY
+
+references:
+  - "ansible-navigator settings --sample (prints a complete commented settings file)"
+  - "Ansible docs: ansible-navigator settings"

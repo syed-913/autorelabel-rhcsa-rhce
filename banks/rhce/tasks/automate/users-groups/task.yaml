@@ -1,0 +1,66 @@
+title: Users and groups with Ansible
+primary: rhce.automate.users
+objectives: [rhce.automate.users, rhce.core.loops, rhce.rhcsa.users]
+facets:
+  - rhce.automate.users:users-groups
+  - rhce.core.loops:loop
+  - rhce.rhcsa.users:users
+difficulty: medium
+difficulty_reason: Exact UIDs, a GID, supplementary groups, shells and a hashed password from a list.
+estimated_minutes: 10
+node: control
+params:
+  grp: {choice: [operators, auditors, webteam]}
+  gid: {range: [4100, 4900]}
+  u1: {pool: usernames}
+  u2: {pool: usernames}
+  pw: {token: 8}
+
+prompt: |
+  Create `{{lab.project_dir}}/users.yml` that, on **all managed nodes**:
+
+  - creates the group **`{{grp}}`** with GID **{{gid}}**
+  - creates these users from **one task with a loop**:
+
+    | User | UID | Supplementary group | Shell |
+    |---|---|---|---|
+    | `{{u1}}` | 3101 | `{{grp}}` | `/bin/bash` |
+    | `{{u2}}` | 3102 | `{{grp}}` | `/sbin/nologin` |
+
+  - sets the password of both users to **`Lab-{{pw}}`**, stored as a SHA-512 hash
+
+requirements:
+  R1: "group {{grp}} has GID {{gid}}"
+  R2: "{{u1}} and {{u2}} have the UIDs, group membership and shells"
+  R3: "both passwords are Lab-{{pw}} (SHA-512)"
+
+checks:
+  - id: group
+    covers: [R1]
+    on: "@all"
+    desc: "{{grp}} GID {{gid}}"
+    run: |
+      test "$(getent group {{grp}} | cut -d: -f3)" = {{gid}}
+  - id: users
+    covers: [R2]
+    on: "@all"
+    desc: UIDs, groups, shells
+    run: |
+      test "$(getent passwd {{u1}} | cut -d: -f3,7)" = "3101:/bin/bash"
+      test "$(getent passwd {{u2}} | cut -d: -f3,7)" = "3102:/sbin/nologin"
+      id -nG {{u1}} | grep -qw {{grp}}
+      id -nG {{u2}} | grep -qw {{grp}}
+  - id: passwords
+    covers: [R3]
+    on: "@all"
+    desc: SHA-512 hashes of Lab-{{pw}}
+    run: |
+      for u in {{u1}} {{u2}}; do
+        h="$(getent shadow "$u" | cut -d: -f2)"
+        case "$h" in '$6$'*) ;; *) exit 1 ;; esac
+        python3 -W ignore -c 'import crypt, sys; sys.exit(0 if crypt.crypt(sys.argv[1], sys.argv[2]) == sys.argv[2] else 1)' "Lab-{{pw}}" "$h" || exit 1
+      done
+
+references:
+  - "ansible-doc ansible.builtin.user (uid, groups, append, shell, password); ansible-doc ansible.builtin.group"
+  - "Ansible docs: password_hash filter"

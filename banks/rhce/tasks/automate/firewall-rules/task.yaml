@@ -1,0 +1,59 @@
+title: Firewall rules with Ansible
+primary: rhce.automate.firewall
+objectives: [rhce.automate.firewall, rhce.rhcsa.security]
+facets:
+  - rhce.automate.firewall:firewall
+  - rhce.rhcsa.security:security
+difficulty: medium
+difficulty_reason: A service, a port and a rich rule, each permanent and immediate.
+estimated_minutes: 8
+node: control
+params:
+  svc: {choice: [https, ftp, nfs]}
+  port: {choice: [8443, 9000, 5000]}
+  rport: {choice: [5432, 3306, 6379]}
+
+prompt: |
+  Create `{{lab.project_dir}}/firewall.yml` that, on the hosts in the **dev** group, makes sure
+  `firewalld` is running and enabled and, **permanently and immediately**, in the default zone:
+
+  - allows the service **`{{svc}}`**
+  - allows port **{{port}}/tcp**
+  - adds a rich rule that accepts connections to port **{{rport}}/tcp** only from the utility
+    server **{{lab.utility.ip}}**
+
+requirements:
+  R1: "{{svc}} and {{port}}/tcp are allowed permanently and at runtime"
+  R2: "the rich rule allows {{rport}}/tcp from {{lab.utility.ip}} only"
+  R3: "firewalld is running and enabled"
+
+checks:
+  - id: open
+    covers: [R1]
+    on: "@dev"
+    desc: "{{svc}} and {{port}}/tcp"
+    run: |
+      for m in --permanent ""; do
+        firewall-cmd $m --list-services | grep -qw {{svc}} || exit 1
+        firewall-cmd $m --list-ports | grep -qw {{port}}/tcp || exit 1
+      done
+  - id: rich
+    covers: [R2]
+    on: "@dev"
+    desc: "rich rule for {{rport}}/tcp from {{lab.utility.ip}}"
+    run: |
+      for m in --permanent ""; do
+        firewall-cmd $m --list-rich-rules | grep -F 'source address="{{lab.utility.ip}}' | grep -F 'port="{{rport}}"' | grep -q accept || exit 1
+      done
+      ! firewall-cmd --permanent --list-ports | grep -qw {{rport}}/tcp || exit 1
+  - id: running
+    covers: [R3]
+    on: "@dev"
+    desc: firewalld running and enabled
+    run: |
+      systemctl is-enabled -q firewalld
+      systemctl is-active -q firewalld
+
+references:
+  - "ansible-doc ansible.posix.firewalld (service, port, rich_rule, permanent, immediate)"
+  - "man firewalld.richlanguage(5)"

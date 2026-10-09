@@ -1,0 +1,52 @@
+title: Use a variables file in a playbook
+primary: rhce.core.variables
+objectives: [rhce.core.variables, rhce.automate.packages, rhce.core.loops]
+facets:
+  - rhce.core.variables:play-vars
+  - rhce.automate.packages:packages-repos
+  - rhce.core.loops:loop
+difficulty: easy
+difficulty_reason: One vars file, vars_files in the play, a package list and a joined file.
+estimated_minutes: 6
+node: control
+params:
+  pkgs: {choice: [[lsof, strace], [tcpdump, zip], [wget, unzip], [tree, mtr]]}
+
+prompt: |
+  1. Create `{{lab.project_dir}}/vars/tools.yml` defining a **list** variable `tools` with the
+     packages **`{{pkgs.0}}`** and **`{{pkgs.1}}`**.
+  2. Create `{{lab.project_dir}}/tools.yml` that loads that file with **`vars_files`** and, on
+     the hosts in the **test** group:
+     - installs every package in `tools`
+     - creates `/etc/tools.list` with one package name per line, in the order of the list
+
+requirements:
+  R1: "vars/tools.yml defines the list tools = [{{pkgs.0}}, {{pkgs.1}}] and tools.yml loads it with vars_files"
+  R2: "the packages are installed on the test hosts"
+  R3: "/etc/tools.list lists them, one per line, in order"
+
+checks:
+  - id: varsfile
+    covers: [R1]
+    desc: vars/tools.yml and vars_files
+    run: |
+      python3 -c '
+      import sys, yaml
+      d = yaml.safe_load(open("/home/student/ansible/vars/tools.yml"))
+      sys.exit(0 if d.get("tools") == sys.argv[1:] else 1)' {{pkgs.0}} {{pkgs.1}}
+      grep -Eq '^[[:space:]]*vars_files:' {{lab.project_dir}}/tools.yml
+      playbook_ok tools.yml
+  - id: installed
+    covers: [R2]
+    on: "@test"
+    desc: "{{pkgs.0}} and {{pkgs.1}} installed"
+    run: rpm -q {{pkgs.0}} {{pkgs.1}} >/dev/null
+  - id: listfile
+    covers: [R3]
+    on: "@test"
+    desc: /etc/tools.list
+    run: test "$(cat /etc/tools.list)" = "$(printf '%s\n%s' {{pkgs.0}} {{pkgs.1}})"
+
+references:
+  - "Ansible docs: Using variables > Defining variables in included files (vars_files)"
+  - "ansible-doc ansible.builtin.dnf; ansible-doc ansible.builtin.copy"

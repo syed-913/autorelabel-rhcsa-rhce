@@ -1,0 +1,96 @@
+title: Create users with passwords from an Ansible Vault
+primary: rhce.content.vault
+objectives: [rhce.content.vault, rhce.automate.users, rhce.core.loops, rhce.core.conditionals]
+facets:
+  - rhce.content.vault:vault
+  - rhce.automate.users:users-groups
+  - rhce.core.loops:loop
+  - rhce.core.conditionals:when
+difficulty: hard
+difficulty_reason: >
+  A vault with a password file, a provided user list filtered by job and by host group, hashed
+  passwords from the vault, and a playbook that runs without prompting.
+estimated_minutes: 16
+node: control
+params:
+  vaultpw: {token: 10}
+  devpw: {token: 8}
+  mgrpw: {token: 8}
+
+prompt: |
+  1. Create the vault password file `{{lab.project_dir}}/secret.txt` containing
+     **`{{vaultpw}}`** (mode 0600).
+  2. Create the **encrypted** vault `{{lab.project_dir}}/lock.yml` (vault password above)
+     defining:
+     - `pw_developer` with the value `Dev-{{devpw}}`
+     - `pw_manager` with the value `Mgr-{{mgrpw}}`
+  3. `{{lab.project_dir}}/user_list.yml` (already there) lists users with a `job`. Create
+     `{{lab.project_dir}}/users-vault.yml` that, reading both files:
+     - on the hosts in **dev** and **test**: creates the users whose job is **developer**, with
+       the supplementary group **`devops`** and the password `pw_developer`
+     - on the hosts in **prod**: creates the users whose job is **manager**, with the
+       supplementary group **`opsmgr`** and the password `pw_manager`
+     - stores the passwords as SHA-512 hashes
+  4. Make the playbook run without asking for the vault password (configure the password file
+     in `ansible.cfg`).
+
+requirements:
+  R1: "secret.txt (0600) and the encrypted lock.yml hold the requested values"
+  R2: "developers exist on dev and test hosts, in devops, with pw_developer"
+  R3: "managers exist on prod hosts, in opsmgr, with pw_manager"
+  R4: "ansible.cfg points to the vault password file"
+
+checks:
+  - id: vault
+    covers: [R1]
+    desc: secret.txt and encrypted lock.yml
+    run: |
+      d={{lab.project_dir}}
+      test "$(stat -c %a $d/secret.txt)" = 600
+      test "$(tr -d '[:space:]' < $d/secret.txt)" = "{{vaultpw}}"
+      head -1 $d/lock.yml | grep -q '^\$ANSIBLE_VAULT;'
+      plain="$(as_student ansible-vault view --vault-password-file secret.txt lock.yml)"
+      python3 - "$plain" <<'PY'
+      import sys, yaml
+      d = yaml.safe_load(sys.argv[1])
+      sys.exit(0 if (d.get("pw_developer"), d.get("pw_manager")) == ("Dev-{{devpw}}", "Mgr-{{mgrpw}}") else 1)
+      PY
+  - id: developers
+    covers: [R2]
+    on: "@dev"
+    desc: developers on dev
+    run: |
+      for u in $(sed -n 's/^AR_DEV=//p' /etc/autorelabel/vault-users); do
+        id -nG "$u" | grep -qw devops || exit 1
+        h="$(getent shadow "$u" | cut -d: -f2)"; case "$h" in '$6$'*) ;; *) exit 1 ;; esac
+        python3 -W ignore -c 'import crypt,sys; sys.exit(0 if crypt.crypt(sys.argv[1], sys.argv[2]) == sys.argv[2] else 1)' "Dev-{{devpw}}" "$h" || exit 1
+      done
+      for u in $(sed -n 's/^AR_MGR=//p' /etc/autorelabel/vault-users); do ! id "$u" >/dev/null 2>&1 || exit 1; done
+  - id: developers-test
+    covers: [R2]
+    on: "@test"
+    desc: developers on test
+    run: |
+      for u in $(sed -n 's/^AR_DEV=//p' /etc/autorelabel/vault-users); do
+        id -nG "$u" | grep -qw devops || exit 1
+      done
+  - id: managers
+    covers: [R3]
+    on: "@prod"
+    desc: managers on prod
+    run: |
+      for u in $(sed -n 's/^AR_MGR=//p' /etc/autorelabel/vault-users); do
+        id -nG "$u" | grep -qw opsmgr || exit 1
+        h="$(getent shadow "$u" | cut -d: -f2)"; case "$h" in '$6$'*) ;; *) exit 1 ;; esac
+        python3 -W ignore -c 'import crypt,sys; sys.exit(0 if crypt.crypt(sys.argv[1], sys.argv[2]) == sys.argv[2] else 1)' "Mgr-{{mgrpw}}" "$h" || exit 1
+      done
+      for u in $(sed -n 's/^AR_DEV=//p' /etc/autorelabel/vault-users); do ! id "$u" >/dev/null 2>&1 || exit 1; done
+  - id: cfg
+    covers: [R4]
+    desc: vault_password_file in ansible.cfg
+    run: |
+      grep -Eq '^DEFAULT_VAULT_PASSWORD_FILE\(.*\) = {{lab.project_dir}}/secret.txt$' <<<"$(as_student ansible-config dump --only-changed)"
+
+references:
+  - "ansible-vault create / encrypt / view --help; Ansible docs: Protecting sensitive data with Ansible vault"
+  - "ansible-doc ansible.builtin.user; Ansible docs: password_hash filter, selectattr"

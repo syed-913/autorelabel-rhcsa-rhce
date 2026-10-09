@@ -1,0 +1,45 @@
+title: File content that depends on the inventory group
+primary: rhce.automate.file-content
+objectives: [rhce.automate.file-content, rhce.playbooks.conditionals]
+facets:
+  - rhce.automate.file-content:file-content
+  - rhce.playbooks.conditionals:conditional-play
+difficulty: easy
+difficulty_reason: Exact content per group with copy and a condition (or a variable per group).
+estimated_minutes: 6
+node: control
+
+prompt: |
+  Create `{{lab.project_dir}}/issue.yml` that replaces the content of `/etc/issue` on the managed
+  nodes with exactly one line:
+
+  | Hosts | `/etc/issue` content |
+  |---|---|
+  | the **dev** group | `Development` |
+  | the **test** group | `Test` |
+  | the **prod** group | `Production` |
+
+requirements:
+  R1: "dev hosts: Development"
+  R2: "test hosts: Test"
+  R3: "prod hosts: Production"
+
+checks:
+  - id: dev
+    covers: [R1]
+    on: "@dev"
+    desc: /etc/issue on dev
+    run: test "$(cat /etc/issue)" = Development
+  - id: test
+    covers: [R2]
+    on: "@test"
+    desc: /etc/issue on test
+    run: test "$(cat /etc/issue)" = Test
+  - id: prod
+    covers: [R3]
+    on: "@prod"
+    desc: /etc/issue on prod
+    run: test "$(cat /etc/issue)" = Production
+
+references:
+  - "ansible-doc ansible.builtin.copy (content); Ansible docs: Conditionals (group_names)"

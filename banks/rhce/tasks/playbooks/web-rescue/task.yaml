@@ -1,0 +1,58 @@
+title: Error handling for a web server deployment
+primary: rhce.playbooks.error-handling
+objectives: [rhce.playbooks.error-handling, rhce.core.failures, rhce.automate.services]
+facets:
+  - rhce.playbooks.error-handling:error-handling
+  - rhce.core.failures:block-rescue
+  - rhce.automate.services:services
+exclusive: [web-content]
+difficulty: hard
+difficulty_reason: One host is broken on purpose; the play must record the failure there, succeed elsewhere and always leave a trace.
+estimated_minutes: 12
+node: control
+
+prompt: |
+  Create `{{lab.project_dir}}/web-deploy.yml` that runs on the **webservers** group:
+
+  - in a block: install `httpd`, create `/var/www/html/index.html` containing
+    `Welcome to <short host name>`, then start and enable `httpd`
+  - if anything in that block fails: create `/root/web-failed.txt` containing the **error
+    message of the failed task** (`ansible_failed_result.msg`), and make sure `httpd` is
+    **stopped and disabled** on that host
+  - in every case: create `/root/web-attempted.txt` containing `attempted`
+
+  One of the web servers has a broken Apache configuration. **Don't fix it**; the playbook must
+  handle it and finish without failed hosts.
+
+requirements:
+  R1: "working web servers serve the page with httpd started and enabled"
+  R2: "on the broken host /root/web-failed.txt holds the error and httpd is stopped and disabled"
+  R3: "/root/web-attempted.txt exists on every web server"
+
+checks:
+  - id: working
+    covers: [R1]
+    on: "@webservers"
+    desc: page served where httpd can start
+    run: |
+      if [ -e /etc/httpd/conf.d/zz-legacy.conf ]; then exit 0; fi
+      systemctl is-enabled -q httpd
+      systemctl is-active -q httpd
+      test "$(curl -s http://localhost/)" = "Welcome to $(hostname -s)"
+  - id: rescued
+    covers: [R2]
+    on: "@webservers"
+    desc: failure recorded on the broken host
+    run: |
+      if [ ! -e /etc/httpd/conf.d/zz-legacy.conf ]; then exit 0; fi
+      test -s /root/web-failed.txt
+      ! systemctl is-active -q httpd || exit 1
+      ! systemctl is-enabled -q httpd || exit 1
+  - id: always
+    covers: [R3]
+    on: "@webservers"
+    desc: /root/web-attempted.txt
+    run: test "$(cat /root/web-attempted.txt)" = attempted
+
+references:
+  - "Ansible docs: Blocks (rescue, always, ansible_failed_result, ansible_failed_task)"

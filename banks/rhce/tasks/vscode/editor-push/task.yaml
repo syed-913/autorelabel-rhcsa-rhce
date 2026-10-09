@@ -1,0 +1,52 @@
+title: Create a playbook in VS Code and push it on a new branch
+primary: rhce.vscode.push
+objectives: [rhce.vscode.push, rhce.git.add, rhce.automate.services]
+facets:
+  - rhce.vscode.push:editor-push
+  - rhce.git.add:git-add-push
+  - rhce.automate.services:services
+difficulty: medium
+difficulty_reason: A branch must be created and published to the server without touching main, all from the editor.
+estimated_minutes: 9
+node: control
+params:
+  svc: {choice: [chronyd, crond, rsyslog]}
+  feat: {choice: [services, baseline, hardening]}
+
+prompt: |
+  In **VS Code** (code-server), work in a clone of **`{{lab.git_url}}`** at
+  `/home/{{lab.control_user}}/git/ansible` (clone it if it isn't there yet; Git identity
+  `Lab Student` / `student@lab.example.com`):
+
+  1. Create a new branch **`feature/{{feat}}`**.
+  2. Add the playbook **`{{feat}}.yml`** that makes sure the service **`{{svc}}`** is started and
+     enabled on **all** hosts.
+  3. Commit it and **publish the branch** to the server. Do **not** change `main`.
+
+requirements:
+  R1: "the server has the branch feature/{{feat}} with {{feat}}.yml managing {{svc}}"
+  R2: "main on the server does not contain {{feat}}.yml"
+
+checks:
+  - id: branch
+    covers: [R1]
+    on: utility
+    desc: "feature/{{feat}} has {{feat}}.yml"
+    run: |
+      git -c safe.directory='*' --git-dir=/var/lib/git/ansible.git show "feature/{{feat}}:{{feat}}.yml" > /tmp/ar-check-feat.yml
+      python3 - <<'PY'
+      import sys, yaml
+      plays = yaml.safe_load(open("/tmp/ar-check-feat.yml"))
+      text = yaml.safe_dump(plays)
+      ok = plays[0].get("hosts") == "all" and "{{svc}}" in text and "started" in text and "enabled" in text
+      sys.exit(0 if ok else 1)
+      PY
+  - id: main-untouched
+    covers: [R2]
+    on: utility
+    desc: "main has no {{feat}}.yml"
+    run: "! git -c safe.directory='*' --git-dir=/var/lib/git/ansible.git cat-file -e 'main:{{feat}}.yml' 2>/dev/null"
+
+references:
+  - "VS Code docs: Using Git source control (branches, publish branch)"
+  - "man git-switch(1), git-push(1) (--set-upstream)"

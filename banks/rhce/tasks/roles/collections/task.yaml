@@ -1,0 +1,41 @@
+title: Install Ansible Content Collections
+primary: rhce.roles.collections
+objectives: [rhce.roles.collections]
+facets:
+  - rhce.roles.collections:collection-install
+anchor: collections
+difficulty: easy
+difficulty_reason: One ansible-galaxy command per collection, but into a specific directory.
+estimated_minutes: 4
+node: control
+
+prompt: |
+  On **control**, as `{{lab.control_user}}`, install these Ansible Content Collections into
+  `{{lab.project_dir}}/mycollections`:
+
+  - `{{lab.collections_url}}/ansible-posix.tar.gz`
+  - `{{lab.collections_url}}/community-general.tar.gz`
+
+  Later tasks use modules from both collections.
+
+requirements:
+  R1: "ansible.posix is installed in {{lab.project_dir}}/mycollections"
+  R2: "community.general is installed in {{lab.project_dir}}/mycollections"
+
+checks:
+  - id: posix
+    covers: [R1]
+    desc: ansible.posix in mycollections
+    run: |
+      m={{lab.project_dir}}/mycollections/ansible_collections/ansible/posix/MANIFEST.json
+      python3 -c 'import json,sys; i=json.load(open(sys.argv[1]))["collection_info"]; sys.exit(0 if (i["namespace"], i["name"]) == ("ansible", "posix") else 1)' "$m"
+  - id: general
+    covers: [R2]
+    desc: community.general in mycollections
+    run: |
+      m={{lab.project_dir}}/mycollections/ansible_collections/community/general/MANIFEST.json
+      python3 -c 'import json,sys; i=json.load(open(sys.argv[1]))["collection_info"]; sys.exit(0 if (i["namespace"], i["name"]) == ("community", "general") else 1)' "$m"
+
+references:
+  - "Ansible docs: Installing collections (ansible-galaxy collection install, -p, requirements.yml)"
+  - "ansible-galaxy collection install --help"

@@ -1,0 +1,31 @@
+title: Work out what a shell script prints
+primary: rhce.rhcsa.analyze-scripts
+objectives: [rhce.rhcsa.analyze-scripts]
+facets:
+  - rhce.rhcsa.analyze-scripts:predict-output
+difficulty: easy
+difficulty_reason: Reading a short loop with arithmetic and a conditional; the answer must be exact.
+estimated_minutes: 5
+node: control
+params:
+  args: {choice: ["3 8 5 10", "7 2 4 9 6", "12 1 15 4", "2 11 6 13 8"]}
+
+prompt: |
+  On **control**, read `/home/{{lab.control_user}}/scripts/tally.sh`.
+
+  Write the **exact output** it produces when run as `tally.sh {{args}}` into the file
+  `/home/{{lab.control_user}}/answers/tally.txt` (one line per output line, nothing else).
+
+requirements:
+  R1: "answers/tally.txt contains exactly the script's output for: tally.sh {{args}}"
+
+checks:
+  - id: answer
+    covers: [R1]
+    desc: "the answer matches the output of tally.sh {{args}}"
+    run: |
+      want="$(bash /usr/local/libexec/autorelabel/tally-reference.sh {{args}})"
+      test "$(cat /home/{{lab.control_user}}/answers/tally.txt)" = "$want"
+
+references:
+  - "man bash(1): ARITHMETIC EVALUATION, Compound Commands (for, if, (( )) )"

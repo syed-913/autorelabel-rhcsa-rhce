@@ -1,0 +1,47 @@
+title: Create and extract archives with Ansible
+primary: rhce.automate.archiving
+objectives: [rhce.automate.archiving, rhce.rhcsa.essential-tools]
+facets:
+  - rhce.automate.archiving:archiving
+  - rhce.rhcsa.essential-tools:tools
+difficulty: medium
+difficulty_reason: Two different modules (one from a collection), compression format and remote vs local source.
+estimated_minutes: 9
+node: control
+params:
+  word: {choice: [aurora, nebula, zenith, comet]}
+
+prompt: |
+  Create `{{lab.project_dir}}/archive.yml` that:
+
+  - on the hosts in the **prod** group, creates `/root/sysconfig.tar.gz`, a **gzip**-compressed
+    tar archive of the directory `/etc/sysconfig`
+  - on the hosts in the **dev** group, downloads
+    `http://{{lab.utility_fqdn}}/ansible/files/site-{{word}}.tar.gz` and **extracts** it into
+    `/srv/site` (create the directory)
+
+requirements:
+  R1: "/root/sysconfig.tar.gz on the prod hosts is a gzip tar of /etc/sysconfig"
+  R2: "the site archive is extracted into /srv/site on the dev hosts"
+
+checks:
+  - id: backup
+    covers: [R1]
+    on: "@prod"
+    desc: /root/sysconfig.tar.gz
+    run: |
+      f=/root/sysconfig.tar.gz
+      test "$(head -c2 "$f" | od -An -tx1 | tr -d ' \n')" = 1f8b      # gzip magic
+      list="$(tar -tzf "$f")"
+      grep -Eq '(^|/)chronyd$' <<<"$list"
+      grep -Eq '(^|/)crond$' <<<"$list"
+  - id: site
+    covers: [R2]
+    on: "@dev"
+    desc: /srv/site extracted
+    run: |
+      test "$(cat /srv/site/index.html)" = "Site {{word}}"
+      test -f /srv/site/css/site.css
+
+references:
+  - "ansible-doc community.general.archive; ansible-doc ansible.builtin.unarchive (remote_src, src URL)"

@@ -1,0 +1,47 @@
+title: Run tasks conditionally
+primary: rhce.core.conditionals
+objectives: [rhce.core.conditionals, rhce.core.facts]
+facets:
+  - rhce.core.conditionals:when
+  - rhce.core.facts:use-facts
+difficulty: medium
+difficulty_reason: Group-membership and fact-based conditions, each with an else branch.
+estimated_minutes: 8
+node: control
+params:
+  mem: {choice: [256, 512, 65536, 131072]}
+
+prompt: |
+  Create `{{lab.project_dir}}/conditions.yml` that runs on **all managed nodes** and uses
+  conditional tasks (`when`) to:
+
+  - create `/etc/lab-role` containing `development` on hosts in the **dev** group, and
+    containing `production` on hosts in the **prod** group (other hosts get no such file)
+  - create `/etc/memory-class` containing `large` on hosts with **at least {{mem}} MB** of total
+    memory, and `small` on all other hosts
+
+requirements:
+  R1: "/etc/lab-role exists with the right value only on dev and prod hosts"
+  R2: "/etc/memory-class is large or small according to total memory"
+
+checks:
+  - id: role
+    covers: [R1]
+    on: "@all"
+    desc: /etc/lab-role by group
+    run: |
+      want=""
+      for h in $LAB_GROUPS_DEV; do [ "$h" = "$AR_NODE" ] && want=development; done
+      for h in $LAB_GROUPS_PROD; do [ "$h" = "$AR_NODE" ] && want=production; done
+      if [ -n "$want" ]; then test "$(cat /etc/lab-role)" = "$want"; else test ! -e /etc/lab-role; fi
+  - id: memory
+    covers: [R2]
+    on: "@all"
+    desc: /etc/memory-class by memory
+    run: |
+      mb=$(( $(awk '/^MemTotal:/{print $2}' /proc/meminfo) / 1024 ))
+      want=small; [ "$mb" -ge {{mem}} ] && want=large
+      test "$(cat /etc/memory-class)" = "$want"
+
+references:
+  - "Ansible docs: Conditionals (when, group_names, facts)"

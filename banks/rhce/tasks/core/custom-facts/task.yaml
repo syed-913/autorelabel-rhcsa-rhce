@@ -1,0 +1,58 @@
+title: Create and use custom facts
+primary: rhce.core.facts
+objectives: [rhce.core.facts, rhce.nodes.deploy-files]
+facets:
+  - rhce.core.facts:custom-facts
+  - rhce.nodes.deploy-files:copy-files
+difficulty: medium
+difficulty_reason: The facts.d location, INI format and the ansible_local path (file name → section → key) must all line up.
+estimated_minutes: 8
+node: control
+params:
+  svc: {choice: [webapp, inventory, ledger, billing]}
+  port: {choice: [8081, 8443, 9090, 5150]}
+
+prompt: |
+  1. Create `{{lab.project_dir}}/custom-facts.yml` that installs a **custom fact** file on the
+     hosts in the **dev** group: `/etc/ansible/facts.d/lab.fact`, in INI format, with a section
+     `[service]` containing `name={{svc}}` and `port={{port}}`.
+  2. Create `{{lab.project_dir}}/use-facts.yml` that, on the dev hosts, creates
+     `/etc/lab-service` with exactly this line, taking both values **from the custom facts**
+     (`ansible_local`), not from variables you define yourself:
+
+         SERVICE={{svc}} PORT={{port}}
+
+  Run both playbooks.
+
+requirements:
+  R1: "/etc/ansible/facts.d/lab.fact on the dev hosts defines [service] name and port"
+  R2: "/etc/lab-service is built from ansible_local"
+
+checks:
+  - id: factfile
+    covers: [R1]
+    on: "@dev"
+    desc: lab.fact with [service] name and port
+    run: |
+      python3 - <<'PY'
+      import configparser, sys
+      cp = configparser.ConfigParser()
+      cp.read("/etc/ansible/facts.d/lab.fact")
+      s = cp["service"]
+      sys.exit(0 if (s.get("name"), s.get("port")) == ("{{svc}}", "{{port}}") else 1)
+      PY
+  - id: used
+    covers: [R2]
+    on: "@dev"
+    desc: /etc/lab-service content
+    run: test "$(cat /etc/lab-service)" = "SERVICE={{svc}} PORT={{port}}"
+  - id: from-facts
+    covers: [R2]
+    desc: use-facts.yml reads ansible_local
+    run: |
+      playbook_ok use-facts.yml
+      grep -q 'ansible_local' {{lab.project_dir}}/use-facts.yml
+      ! grep -Eq '(^|[^0-9]){{port}}([^0-9]|$)' {{lab.project_dir}}/use-facts.yml || exit 1
+
+references:
+  - "Ansible docs: Discovering variables > Adding custom facts (facts.d, ansible_local)"

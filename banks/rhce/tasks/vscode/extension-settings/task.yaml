@@ -1,0 +1,70 @@
+title: Configure the VS Code Ansible extension and ansible-navigator for a workspace
+primary: rhce.vscode.navigator
+objectives: [rhce.vscode.navigator, rhce.configure.navigator-yml]
+facets:
+  - rhce.vscode.navigator:editor-navigator
+  - rhce.configure.navigator-yml:navigator-yml
+exclusive: [navigator-settings]
+difficulty: medium
+difficulty_reason: Workspace-level editor settings plus the navigator file, each with exact key names.
+estimated_minutes: 8
+node: control
+
+prompt: |
+  In **VS Code** (code-server, see the exam instructions for the address), open the folder
+  `{{lab.project_dir}}` and configure, **for this workspace only**:
+
+  - the Ansible extension runs Ansible in the **execution environment** `{{lab.ee_image}}`,
+    with the container engine **podman** and pull policy **missing**
+  - the extension uses `/usr/local/bin/ansible-navigator` as the ansible-navigator path
+
+  Also make sure `ansible-navigator.yml` in the folder selects the same image with pull policy
+  `missing`, so runs from the integrated terminal behave the same.
+
+requirements:
+  R1: "workspace settings enable the execution environment with the image, podman and pull policy missing"
+  R2: "the workspace settings point the extension to /usr/local/bin/ansible-navigator"
+  R3: "ansible-navigator.yml selects the same image with pull policy missing"
+
+checks:
+  - id: ee-settings
+    covers: [R1]
+    desc: .vscode/settings.json execution environment settings
+    run: |
+      python3 - <<'PY'
+      import json, re, sys
+      raw = open("/home/student/ansible/.vscode/settings.json").read()
+      raw = re.sub(r"^\s*//.*$", "", raw, flags=re.M)          # VS Code allows comments
+      raw = re.sub(r",(\s*[}\]])", r"\1", raw)                   # and trailing commas
+      s = json.loads(raw)
+      ok = (s.get("ansible.executionEnvironment.enabled") is True
+            and s.get("ansible.executionEnvironment.image") == "{{lab.ee_image}}"
+            and s.get("ansible.executionEnvironment.containerEngine") == "podman"
+            and s.get("ansible.executionEnvironment.pull.policy") == "missing")
+      sys.exit(0 if ok else 1)
+      PY
+  - id: navigator-path
+    covers: [R2]
+    desc: ansible-navigator path in the workspace settings
+    run: |
+      python3 - <<'PY'
+      import json, re, sys
+      raw = open("/home/student/ansible/.vscode/settings.json").read()
+      raw = re.sub(r"^\s*//.*$", "", raw, flags=re.M)
+      raw = re.sub(r",(\s*[}\]])", r"\1", raw)
+      s = json.loads(raw)
+      sys.exit(0 if s.get("ansible.ansibleNavigator.path") == "/usr/local/bin/ansible-navigator" else 1)
+      PY
+  - id: navigator-yml
+    covers: [R3]
+    desc: ansible-navigator.yml image and pull policy
+    run: |
+      python3 - <<'PY'
+      import sys, yaml
+      ee = yaml.safe_load(open("/home/student/ansible/ansible-navigator.yml"))["ansible-navigator"]["execution-environment"]
+      sys.exit(0 if ee["image"] == "{{lab.ee_image}}" and ee["pull"]["policy"] == "missing" else 1)
+      PY
+
+references:
+  - "VS Code Ansible extension settings: ansible.executionEnvironment.*, ansible.ansibleNavigator.path"
+  - "VS Code docs: User and Workspace Settings (.vscode/settings.json)"

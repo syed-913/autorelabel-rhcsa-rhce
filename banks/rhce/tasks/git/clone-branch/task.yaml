@@ -1,0 +1,43 @@
+title: Clone a Git repository and check out a branch
+primary: rhce.git.clone
+objectives: [rhce.git.clone, rhce.nodes.deploy-files]
+facets:
+  - rhce.git.clone:git-clone
+  - rhce.nodes.deploy-files:copy-files
+difficulty: easy
+difficulty_reason: Clone with credentials, switch branch, and deploy a file from the working copy.
+estimated_minutes: 7
+node: control
+
+prompt: |
+  As `{{lab.control_user}}` on control:
+
+  1. Clone the repository **`{{lab.git_content_url}}`** into `/home/{{lab.control_user}}/lab-content`
+     (user `{{lab.control_user}}`, same password as your account) and check out the branch
+     **`release`**.
+  2. Create `{{lab.project_dir}}/content.yml` that copies `site/index.html` **from that working
+     copy** to `/srv/lab-content/index.html` on the hosts in the **dev** group, and run it.
+
+requirements:
+  R1: "/home/{{lab.control_user}}/lab-content is a clone of lab-content.git on branch release"
+  R2: "the dev hosts have the release version of index.html"
+
+checks:
+  - id: clone
+    covers: [R1]
+    desc: working copy on branch release
+    run: |
+      d=/home/{{lab.control_user}}/lab-content
+      test "$(stat -c %U "$d")" = {{lab.control_user}}
+      url="$(as_student git -C "$d" remote get-url origin | sed -E 's#://[^/@]*@#://#')"
+      test "${url%/}" = "{{lab.git_content_url}}"
+      test "$(as_student git -C "$d" rev-parse --abbrev-ref HEAD)" = release
+  - id: deployed
+    covers: [R2]
+    on: "@dev"
+    desc: release index.html deployed
+    run: test "$(cat /srv/lab-content/index.html)" = "lab-content release 2.4"
+
+references:
+  - "man git-clone(1), man git-switch(1) / git-checkout(1)"
+  - "ansible-doc ansible.builtin.copy"

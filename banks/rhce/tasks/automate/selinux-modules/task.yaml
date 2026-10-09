@@ -1,0 +1,54 @@
+title: SELinux settings with Ansible modules
+primary: rhce.automate.security
+objectives: [rhce.automate.security, rhce.rhcsa.security]
+facets:
+  - rhce.automate.security:security
+  - rhce.rhcsa.security:security
+exclusive: [selinux-test]
+difficulty: medium
+difficulty_reason: Four modules from two collections; the file context rule must also be applied to existing files.
+estimated_minutes: 10
+node: control
+params:
+  bool: {choice: [httpd_can_sendmail, httpd_use_nfs, ftpd_full_access]}
+  dir: {choice: [/srv/share, /srv/public, /srv/drop]}
+  port: {choice: [2222, 2022, 2200]}
+
+prompt: |
+  Create `{{lab.project_dir}}/selinux-settings.yml` that, on the hosts in the **test** group:
+
+  - keeps SELinux in **enforcing** mode with the **targeted** policy, persistently
+  - turns the boolean **`{{bool}}`** on, persistently
+  - creates `{{dir}}` (mode 0755) and adds a file-context rule labelling **`{{dir}}(/.*)?`** as
+    **`public_content_t`**, then applies it to the directory
+  - labels TCP port **{{port}}** as **`ssh_port_t`**
+
+requirements:
+  R1: "enforcing/targeted in /etc/selinux/config and at runtime; {{bool}} on persistently"
+  R2: "the fcontext rule exists and {{dir}} is labelled public_content_t"
+  R3: "tcp/{{port}} is ssh_port_t"
+
+checks:
+  - id: mode-bool
+    covers: [R1]
+    on: "@test"
+    desc: "enforcing, {{bool}} persistent"
+    run: |
+      test "$(getenforce)" = Enforcing
+      grep -Eq '^SELINUX=enforcing' /etc/selinux/config
+      semanage boolean -l -C | grep -Eq '^{{bool}}[[:space:]]+\(on[[:space:]]*,[[:space:]]*on\)'
+  - id: fcontext
+    covers: [R2]
+    on: "@test"
+    desc: "{{dir}} labelled public_content_t"
+    run: |
+      semanage fcontext -l -C | grep -F '{{dir}}(/.*)?' | grep -q public_content_t
+      test "$(stat -c %C {{dir}} | cut -d: -f3)" = public_content_t
+  - id: port
+    covers: [R3]
+    on: "@test"
+    desc: "tcp/{{port}} is ssh_port_t"
+    run: semanage port -l -C | grep -E '^ssh_port_t[[:space:]]+tcp' | grep -qw {{port}}
+
+references:
+  - "ansible-doc ansible.posix.selinux; ansible.posix.seboolean; community.general.sefcontext; community.general.seport"

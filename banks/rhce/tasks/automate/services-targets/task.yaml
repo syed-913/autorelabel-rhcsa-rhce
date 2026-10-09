@@ -1,0 +1,48 @@
+title: Manage services and the default target
+primary: rhce.automate.services
+objectives: [rhce.automate.services, rhce.rhcsa.operate, rhce.automate.packages]
+facets:
+  - rhce.automate.services:services
+  - rhce.rhcsa.operate:operate
+  - rhce.automate.packages:packages-repos
+difficulty: medium
+difficulty_reason: Started, enabled and masked are different states; the default target needs its own module or command.
+estimated_minutes: 8
+node: control
+params:
+  svc: {choice: [vsftpd, nfs-server, rpcbind]}
+
+prompt: |
+  Create `{{lab.project_dir}}/services.yml` that, on the hosts in the **test** group:
+
+  - installs the package providing **`{{svc}}`**, then starts the service and enables it at boot
+  - **masks** `debug-shell.service`
+  - makes **`multi-user.target`** the default boot target
+
+requirements:
+  R1: "{{svc}} is running and enabled on the test hosts"
+  R2: "debug-shell.service is masked"
+  R3: "the default target is multi-user.target"
+
+checks:
+  - id: service
+    covers: [R1]
+    on: "@test"
+    desc: "{{svc}} running and enabled"
+    run: |
+      systemctl is-enabled -q {{svc}}
+      systemctl is-active -q {{svc}}
+  - id: masked
+    covers: [R2]
+    on: "@test"
+    desc: debug-shell masked
+    run: test "$(systemctl is-enabled debug-shell.service 2>/dev/null)" = masked
+  - id: target
+    covers: [R3]
+    on: "@test"
+    desc: default target
+    run: test "$(systemctl get-default)" = multi-user.target
+
+references:
+  - "ansible-doc ansible.builtin.systemd_service (state, enabled, masked)"
+  - "ansible-doc ansible.builtin.file (state link) / ansible.builtin.command systemctl set-default"

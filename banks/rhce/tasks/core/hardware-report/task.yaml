@@ -1,0 +1,83 @@
+title: Generate a hardware report from Ansible facts
+primary: rhce.core.facts
+objectives: [rhce.core.facts, rhce.automate.file-content, rhce.core.loops, rhce.playbooks.common-modules]
+facets:
+  - rhce.core.facts:use-facts
+  - rhce.automate.file-content:file-content
+  - rhce.core.loops:loop
+  - rhce.playbooks.common-modules:common-modules
+difficulty: hard
+difficulty_reason: >
+  Downloading a file and editing it in place on every node with exact fact names
+  (memtotal_mb, bios_version, devices.<disk>.size) and a NONE fallback for a missing disk.
+estimated_minutes: 14
+node: control
+
+prompt: |
+  Create `{{lab.project_dir}}/hwreport.yml` that, on **all managed nodes**:
+
+  1. downloads `http://{{lab.utility_fqdn}}/ansible/files/hwreport.empty` to `/root/hwreport.txt`
+  2. replaces each value in that file with the real one:
+
+  | Key | Value |
+  |---|---|
+  | `HOST` | the inventory host name |
+  | `MEMORY` | the total memory in MB |
+  | `BIOS` | the BIOS version |
+  | `DISK_A_SIZE` | the size of the disk `{{lab.disk_a}}` as reported by Ansible |
+  | `DISK_B_SIZE` | the size of the disk `{{lab.disk_b}}` |
+  | `DISK_C_SIZE` | the size of the disk `{{lab.disk_c}}` |
+
+  If a disk doesn't exist, its value must be **`NONE`**. Keep the `KEY=value` format and the
+  comment line.
+
+requirements:
+  R1: "/root/hwreport.txt exists on every node, keeps its comment line and the KEY=value format"
+  R2: "HOST, MEMORY and BIOS are correct"
+  R3: "the three disk sizes are correct, NONE for the missing disk"
+
+checks:
+  - id: file
+    covers: [R1]
+    on: "@all"
+    desc: /root/hwreport.txt in the expected format
+    run: |
+      f=/root/hwreport.txt
+      grep -q '^# Hardware report' "$f"
+      for k in HOST MEMORY BIOS DISK_A_SIZE DISK_B_SIZE DISK_C_SIZE; do
+        test "$(grep -c "^$k=" "$f")" -eq 1 || exit 1
+      done
+  - id: system
+    covers: [R2]
+    on: "@all"
+    desc: HOST, MEMORY and BIOS values
+    run: |
+      f=/root/hwreport.txt
+      host="$(sed -n 's/^HOST=//p' "$f")"
+      test "$host" = "$(hostname -s)" -o "$host" = "$(hostname -f)"
+      test "$(sed -n 's/^MEMORY=//p' "$f")" = "$(( $(awk '/^MemTotal:/{print $2}' /proc/meminfo) / 1024 ))"
+      test "$(sed -n 's/^BIOS=//p' "$f")" = "$(cat /sys/class/dmi/id/bios_version)"
+  - id: disks
+    covers: [R3]
+    on: "@all"
+    desc: disk sizes as Ansible reports them
+    run: |
+      python3 - {{lab.disk_a}} {{lab.disk_b}} {{lab.disk_c}} <<'PY'
+      import os, sys
+      def human(n):  # ansible.module_utils.common.text.formatters.bytes_to_human
+          for suffix, limit in (("P", 1 << 50), ("T", 1 << 40), ("G", 1 << 30), ("M", 1 << 20), ("K", 1 << 10)):
+              if n >= limit:
+                  return "%.2f %sB" % (n / limit, suffix)
+          return "%.2f Bytes" % n
+      report = dict(l.rstrip("\n").split("=", 1) for l in open("/root/hwreport.txt") if "=" in l)
+      for key, dev in zip(("DISK_A_SIZE", "DISK_B_SIZE", "DISK_C_SIZE"), sys.argv[1:]):
+          p = f"/sys/block/{dev}/size"
+          want = human(int(open(p).read()) * 512) if os.path.exists(p) else "NONE"
+          if report.get(key) != want:
+              sys.exit(f"{key}={report.get(key)!r}, expected {want!r}")
+      PY
+
+references:
+  - "ansible-doc ansible.builtin.get_url; ansible-doc ansible.builtin.lineinfile"
+  - "Ansible docs: Discovering variables: facts and magic variables"
+  - "ansible <host> -m ansible.builtin.setup -a 'filter=ansible_devices'"

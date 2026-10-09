@@ -1,0 +1,43 @@
+title: Register command output and use it
+primary: rhce.playbooks.register
+objectives: [rhce.playbooks.register, rhce.automate.file-content]
+facets:
+  - rhce.playbooks.register:register
+  - rhce.automate.file-content:file-content
+difficulty: easy
+difficulty_reason: Two commands registered and their stdout written to a file in an exact format.
+estimated_minutes: 6
+node: control
+
+prompt: |
+  Create `{{lab.project_dir}}/status.yml` that, on **all managed nodes**:
+
+  - runs `findmnt -no SOURCE /` and `uname -r` and registers their results
+  - writes `/root/status.txt` with exactly these two lines, using the registered output:
+
+        ROOT_DEVICE=<output of findmnt -no SOURCE />
+        KERNEL=<output of uname -r>
+
+  The two command tasks must never be reported as changed.
+
+requirements:
+  R1: "/root/status.txt holds the root device and kernel version from the commands"
+  R2: "status.yml registers the results and marks the commands as not changing anything"
+
+checks:
+  - id: content
+    covers: [R1]
+    on: "@all"
+    desc: /root/status.txt
+    run: test "$(cat /root/status.txt)" = "$(printf 'ROOT_DEVICE=%s\nKERNEL=%s' "$(findmnt -no SOURCE /)" "$(uname -r)")"
+  - id: playbook
+    covers: [R2]
+    desc: register and changed_when
+    run: |
+      playbook_ok status.yml
+      test "$(grep -Ec '^[[:space:]]*register:' {{lab.project_dir}}/status.yml)" -ge 2
+      grep -Eq '^[[:space:]]*changed_when:[[:space:]]*(false|False|no)' {{lab.project_dir}}/status.yml
+
+references:
+  - "Ansible docs: Using variables > Registering variables"
+  - "ansible-doc ansible.builtin.command"

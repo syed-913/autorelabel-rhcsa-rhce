@@ -1,0 +1,60 @@
+title: Tune ansible.cfg (forks, logging, fact caching)
+primary: rhce.configure.ansible-cfg
+objectives: [rhce.configure.ansible-cfg, rhce.core.config-files]
+facets:
+  - rhce.configure.ansible-cfg:ansible-cfg
+  - rhce.core.config-files:config-precedence
+difficulty: medium
+difficulty_reason: Several option names (and the section they belong to) must be found with ansible-config; the existing settings must survive.
+estimated_minutes: 8
+node: control
+params:
+  forks: {choice: [8, 10, 12, 15]}
+  timeout: {choice: [3600, 7200, 86400]}
+
+prompt: |
+  Modify `{{lab.project_dir}}/ansible.cfg` (keep everything it already does) so that:
+
+  - Ansible runs on up to **{{forks}}** hosts in parallel
+  - every run is logged to `{{lab.project_dir}}/ansible.log`
+  - gathered facts are cached in **JSON files** in `{{lab.project_dir}}/facts_cache`, kept for
+    **{{timeout}}** seconds, and facts are only gathered when they aren't cached yet (smart
+    gathering)
+
+  Run any playbook or ad-hoc command once afterwards so the log and the cache get created.
+
+requirements:
+  R1: "forks = {{forks}}, log_path = {{lab.project_dir}}/ansible.log"
+  R2: "jsonfile fact cache in facts_cache with timeout {{timeout}} and smart gathering"
+  R3: "the earlier settings (inventory, remote_user, become) still apply; log and cache exist"
+
+checks:
+  - id: forks-log
+    covers: [R1]
+    desc: forks and log_path
+    run: |
+      cfg="$(as_student ansible-config dump --only-changed)"
+      grep -Eq '^DEFAULT_FORKS\(.*\) = {{forks}}$' <<<"$cfg"
+      grep -Eq '^DEFAULT_LOG_PATH\(.*\) = {{lab.project_dir}}/ansible.log$' <<<"$cfg"
+  - id: cache
+    covers: [R2]
+    desc: jsonfile fact caching
+    run: |
+      cfg="$(as_student ansible-config dump --only-changed)"
+      grep -Eq '^CACHE_PLUGIN\(.*\) = (ansible\.builtin\.)?jsonfile$' <<<"$cfg"
+      grep -Eq '^CACHE_PLUGIN_CONNECTION\(.*\) = {{lab.project_dir}}/facts_cache/?$' <<<"$cfg"
+      grep -Eq '^CACHE_PLUGIN_TIMEOUT\(.*\) = {{timeout}}$' <<<"$cfg"
+      grep -Eq '^DEFAULT_GATHERING\(.*\) = smart$' <<<"$cfg"
+  - id: still-works
+    covers: [R3]
+    desc: earlier settings intact, log and cache written
+    run: |
+      cfg="$(as_student ansible-config dump --only-changed)"
+      grep -Eq '^DEFAULT_REMOTE_USER\(.*\) = ansible$' <<<"$cfg"
+      grep -Eq '^DEFAULT_BECOME\(.*\) = True$' <<<"$cfg"
+      test -s {{lab.project_dir}}/ansible.log
+      test -n "$(ls -A {{lab.project_dir}}/facts_cache 2>/dev/null)"
+
+references:
+  - "ansible-config list / ansible-config dump --only-changed"
+  - "Ansible docs: Ansible Configuration Settings (DEFAULT_FORKS, DEFAULT_LOG_PATH, CACHE_PLUGIN*, DEFAULT_GATHERING)"

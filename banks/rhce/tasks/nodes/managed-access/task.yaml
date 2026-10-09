@@ -1,0 +1,60 @@
+title: Prepare the managed nodes (SSH keys and privilege escalation)
+primary: rhce.nodes.privilege
+objectives: [rhce.nodes.privilege, rhce.nodes.ssh-keys, rhce.nodes.configure]
+facets:
+  - rhce.nodes.privilege:become
+  - rhce.nodes.ssh-keys:ssh-keys
+  - rhce.nodes.configure:managed-node
+anchor: managed-access
+difficulty: medium
+difficulty_reason: >
+  Key generation and distribution to every managed node plus a validated sudoers drop-in;
+  a wrong user or a sudo rule that still asks for a password breaks every later task.
+estimated_minutes: 10
+node: control
+
+prompt: |
+  Every managed node has a user **`ansible`** (its password is in the exam instructions).
+  From **control**, as `{{lab.control_user}}`:
+
+  - create an SSH key pair for `{{lab.control_user}}` (no passphrase) if it doesn't have one
+  - make it possible for `{{lab.control_user}}` to log in to **every managed node** as `ansible`
+    with that key, without a password
+  - on every managed node, allow `ansible` to run **any command as root with `sudo` without a
+    password**, using a file in `/etc/sudoers.d/`
+
+requirements:
+  R1: "{{lab.control_user}} logs in to every managed node as ansible with a key"
+  R2: "a file in /etc/sudoers.d grants ansible passwordless sudo for all commands"
+  R3: "from control, ansible can run sudo without a password on every managed node"
+
+checks:
+  - id: key-login
+    covers: [R1]
+    desc: "{{lab.control_user}} → ansible@<every managed node> with a key"
+    run: |
+      for h in $LAB_GROUPS_ALL; do
+        as_student ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR "ansible@$h.{{lab.domain}}" true || exit 1
+      done
+  - id: sudoers
+    covers: [R2]
+    on: "@all"
+    desc: sudoers.d grants ansible NOPASSWD for all commands
+    run: |
+      visudo -cq
+      grep -rqsE '^[[:space:]]*ansible[[:space:]]+ALL[[:space:]]*=.*NOPASSWD:[[:space:]]*ALL' /etc/sudoers.d/
+      sudo -l -U ansible | grep -q 'NOPASSWD: ALL'
+  - id: sudo-from-control
+    covers: [R3]
+    desc: "ansible can sudo without a password on every managed node"
+    run: |
+      for h in $LAB_GROUPS_ALL; do
+        as_student ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR "ansible@$h.{{lab.domain}}" sudo -n true || exit 1
+      done
+
+references:
+  - "RHEL 10: Configuring basic system settings > Using secure communications between two systems with OpenSSH"
+  - "RHEL 10: Managing sudo access"
+  - "man ssh-keygen(1), man ssh-copy-id(1), man sudoers(5), man visudo(8)"

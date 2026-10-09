@@ -1,0 +1,44 @@
+title: Change the password of an Ansible Vault file
+primary: rhce.content.vault
+objectives: [rhce.content.vault]
+facets:
+  - rhce.content.vault:vault
+difficulty: easy
+difficulty_reason: One ansible-vault subcommand, with the old and the new password.
+estimated_minutes: 4
+node: control
+params:
+  old: {token: 10}
+  new: {token: 10}
+
+prompt: |
+  `{{lab.project_dir}}/salaries.yml` is encrypted with the vault password **`{{old}}`**.
+
+  Change its vault password to **`{{new}}`**, without changing its content, and save the new
+  password in `{{lab.project_dir}}/salaries-pass.txt` (mode 0600).
+
+requirements:
+  R1: "salaries.yml opens with {{new}}, not with {{old}}, and its content is unchanged"
+  R2: "salaries-pass.txt holds the new password with mode 0600"
+
+checks:
+  - id: rekeyed
+    covers: [R1]
+    desc: new password works, old one doesn't, content intact
+    run: |
+      d={{lab.project_dir}}
+      new="$(mktemp)"; old="$(mktemp)"; trap 'rm -f "$new" "$old"' EXIT
+      echo '{{new}}' > "$new"; echo '{{old}}' > "$old"; chmod 0644 "$new" "$old"
+      plain="$(as_student ansible-vault view --vault-password-file "$new" salaries.yml)"
+      test "$(sha256sum <<<"$plain" | cut -d' ' -f1)" = "$(cat /usr/local/libexec/autorelabel/salaries.sha256)"
+      ! as_student ansible-vault view --vault-password-file "$old" salaries.yml >/dev/null 2>&1 || exit 1
+  - id: passfile
+    covers: [R2]
+    desc: salaries-pass.txt
+    run: |
+      f={{lab.project_dir}}/salaries-pass.txt
+      test "$(stat -c %a "$f")" = 600
+      test "$(tr -d '[:space:]' < "$f")" = "{{new}}"
+
+references:
+  - "ansible-vault rekey --help (--vault-password-file / --new-vault-password-file)"

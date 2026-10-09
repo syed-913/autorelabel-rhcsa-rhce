@@ -1,0 +1,57 @@
+title: LVM storage with Ansible
+primary: rhce.automate.storage
+objectives: [rhce.automate.storage, rhce.automate.filesystems, rhce.rhcsa.storage]
+facets:
+  - rhce.automate.storage:storage
+  - rhce.automate.filesystems:filesystems
+  - rhce.rhcsa.storage:storage
+exclusive: [disk-node2]
+resources:
+  disk: {node2.disk1: 1600}
+difficulty: hard
+difficulty_reason: Partition with the LVM flag, volume group, logical volume, file system and persistent mount, all idempotent.
+estimated_minutes: 13
+node: control
+params:
+  vg: {choice: [vgapp, vgdata, vgweb]}
+  lv: {choice: [lvapp, lvdata, lvweb]}
+  size: {choice: [600, 800, 1000]}
+
+prompt: |
+  Create `{{lab.project_dir}}/lvm.yml` that, on the hosts in the **test** group:
+
+  - creates a **1500 MiB** partition with the **LVM** flag on the second disk (`{{lab.node2.disk1}}`
+    on node2)
+  - creates the volume group **`{{vg}}`** on it
+  - creates the logical volume **`{{lv}}`** of **{{size}} MiB**
+  - formats it with **ext4** and mounts it persistently at **`/mnt/{{lv}}`**
+
+requirements:
+  R1: "{{vg}} exists on a partition of the second disk"
+  R2: "{{lv}} is {{size}} MiB with ext4"
+  R3: "/mnt/{{lv}} is mounted from it after the reboot"
+
+checks:
+  - id: vg
+    covers: [R1]
+    on: "@test"
+    desc: "{{vg}} on the second disk"
+    run: |
+      pvs --noheadings -o pv_name,vg_name | awk '$2=="{{vg}}"{print $1}' | grep -q '^{{lab.node2.disk1}}'
+  - id: lv
+    covers: [R2]
+    on: "@test"
+    desc: "{{lv}}: {{size}} MiB, ext4"
+    run: |
+      test "$(lvs --noheadings --units m --nosuffix -o lv_size {{vg}}/{{lv}} | tr -d ' ')" = "{{size}}.00"
+      test "$(blkid -s TYPE -o value /dev/{{vg}}/{{lv}})" = ext4
+  - id: mount
+    covers: [R3]
+    on: "@test"
+    desc: "/mnt/{{lv}} mounted"
+    run: |
+      test "$(findmnt -no FSTYPE /mnt/{{lv}})" = ext4
+      awk '$2=="/mnt/{{lv}}"' /etc/fstab | grep -q .
+
+references:
+  - "ansible-doc community.general.parted (flags: [lvm]); community.general.lvg; community.general.lvol"

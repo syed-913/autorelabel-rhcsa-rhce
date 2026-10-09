@@ -1,0 +1,80 @@
+title: Configure software repositories on the managed nodes with Ansible
+primary: rhce.automate.packages
+objectives: [rhce.automate.packages, rhce.playbooks.desired-state, rhce.rhcsa.deploy]
+facets:
+  - rhce.automate.packages:packages-repos
+  - rhce.playbooks.desired-state:desired-state
+  - rhce.rhcsa.deploy:deploy
+anchor: repos
+difficulty: easy
+difficulty_reason: The classic first playbook (yum_repository twice); every exact value matters.
+estimated_minutes: 6
+node: control
+
+prompt: |
+  The managed nodes have no software repositories. Create the playbook
+  `{{lab.project_dir}}/repos.yml` that configures these two repositories on **all managed
+  nodes**, and run it:
+
+  | Repository ID | Description | Base URL |
+  |---|---|---|
+  | `BaseOS` | `RHEL 10 BaseOS` | `{{lab.repo_baseos}}` |
+  | `AppStream` | `RHEL 10 AppStream` | `{{lab.repo_appstream}}` |
+
+  Both must be **enabled**, with **GPG signature checking enabled** and the GPG key
+  `{{lab.repo_gpgkey}}`.
+
+requirements:
+  R1: "BaseOS is configured exactly as specified on every managed node"
+  R2: "AppStream is configured exactly as specified on every managed node"
+  R3: "the playbook {{lab.project_dir}}/repos.yml exists and is valid"
+
+checks:
+  - id: baseos
+    covers: [R1]
+    on: "@all"
+    desc: BaseOS repository
+    run: |
+      python3 - BaseOS "RHEL 10 BaseOS" "{{lab.repo_baseos}}" <<'PY'
+      import configparser, glob, sys
+      rid, desc, url = sys.argv[1:4]
+      cp = configparser.RawConfigParser(strict=False)
+      cp.read(sorted(glob.glob("/etc/yum.repos.d/*.repo")))
+      s = cp[rid]
+      ok = (s.get("name", "").strip() == desc and s.get("baseurl", "").strip().rstrip("/") == url
+            and s.get("gpgcheck", "1").strip().lower() in ("1", "true", "yes")
+            and s.get("enabled", "1").strip().lower() in ("1", "true", "yes")
+            and s.get("gpgkey", "").strip().endswith("RPM-GPG-KEY-redhat-release"))
+      sys.exit(0 if ok else 1)
+      PY
+      out="$(dnf -q --disablerepo='*' --enablerepo=BaseOS repoquery bash)"
+      grep -q '^bash-' <<<"$out"
+  - id: appstream
+    covers: [R2]
+    on: "@all"
+    desc: AppStream repository
+    run: |
+      python3 - AppStream "RHEL 10 AppStream" "{{lab.repo_appstream}}" <<'PY'
+      import configparser, glob, sys
+      rid, desc, url = sys.argv[1:4]
+      cp = configparser.RawConfigParser(strict=False)
+      cp.read(sorted(glob.glob("/etc/yum.repos.d/*.repo")))
+      s = cp[rid]
+      ok = (s.get("name", "").strip() == desc and s.get("baseurl", "").strip().rstrip("/") == url
+            and s.get("gpgcheck", "1").strip().lower() in ("1", "true", "yes")
+            and s.get("enabled", "1").strip().lower() in ("1", "true", "yes")
+            and s.get("gpgkey", "").strip().endswith("RPM-GPG-KEY-redhat-release"))
+      sys.exit(0 if ok else 1)
+      PY
+      out="$(dnf -q --disablerepo='*' --enablerepo=AppStream repoquery httpd)"
+      grep -q '^httpd-' <<<"$out"
+  - id: playbook
+    covers: [R3]
+    desc: repos.yml exists and passes a syntax check
+    run: |
+      test -s {{lab.project_dir}}/repos.yml
+      as_student ansible-playbook --syntax-check repos.yml >/dev/null
+
+references:
+  - "ansible-doc ansible.builtin.yum_repository"
+  - "RHEL 10: Managing software with the DNF tool > Configuring DNF repositories"

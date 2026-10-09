@@ -1,0 +1,42 @@
+title: Schedule a cron job with Ansible
+primary: rhce.automate.scheduling
+objectives: [rhce.automate.scheduling, rhce.automate.users]
+facets:
+  - rhce.automate.scheduling:scheduling
+  - rhce.automate.users:users-groups
+difficulty: easy
+difficulty_reason: One user and one cron entry with an exact schedule and command.
+estimated_minutes: 5
+node: control
+params:
+  user: {pool: usernames}
+  every: {choice: [2, 5, 10]}
+
+prompt: |
+  Create `{{lab.project_dir}}/cron.yml` that, on the hosts in the **test** group, creates the user
+  **`{{user}}`** and a cron job for that user named `lab heartbeat` that runs
+
+      logger "EX294 heartbeat"
+
+  every **{{every}}** minutes.
+
+requirements:
+  R1: "{{user}} exists on the test hosts"
+  R2: "{{user}}'s crontab runs logger \"EX294 heartbeat\" every {{every}} minutes"
+
+checks:
+  - id: user
+    covers: [R1]
+    on: "@test"
+    desc: "{{user}} exists"
+    run: id {{user}} >/dev/null
+  - id: cron
+    covers: [R2]
+    on: "@test"
+    desc: "*/{{every}} schedule"
+    run: |
+      tab="$(crontab -l -u {{user}})"
+      grep -Eq '^\*/{{every}}[[:space:]]+\*[[:space:]]+\*[[:space:]]+\*[[:space:]]+\*[[:space:]]+logger "EX294 heartbeat"$' <<<"$tab"
+
+references:
+  - "ansible-doc ansible.builtin.cron; man 5 crontab"

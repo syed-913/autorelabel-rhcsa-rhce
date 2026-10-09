@@ -1,0 +1,46 @@
+title: Find a module in a collection with ansible-navigator and use it
+primary: rhce.run.find-modules
+objectives: [rhce.run.find-modules, rhce.core.docs, rhce.rhcsa.operate]
+facets:
+  - rhce.run.find-modules:navigator-collections
+  - rhce.core.docs:ansible-doc
+  - rhce.rhcsa.operate:operate
+difficulty: medium
+difficulty_reason: The module has to be discovered in a collection, and the persistence option found in its documentation.
+estimated_minutes: 9
+node: control
+params:
+  num: {choice: [2, 3, 4]}
+
+prompt: |
+  Use **`ansible-navigator`** (its `collections` and `doc` subcommands) to find the module in the
+  **community.general** collection that **loads Linux kernel modules**.
+
+  Create `{{lab.project_dir}}/kmod.yml` that uses that module on the hosts in the **dev** group to
+  load the kernel module **`dummy`** with the parameter **`numdummies={{num}}`**, both **now and
+  at every boot** (the module itself must make it persistent).
+
+requirements:
+  R1: "dummy is loaded with numdummies={{num}} after the reboot"
+  R2: "kmod.yml uses community.general.modprobe with persistence"
+
+checks:
+  - id: loaded
+    covers: [R1]
+    on: "@dev"
+    desc: "dummy loaded with numdummies={{num}}"
+    run: |
+      grep -qw '^dummy' /proc/modules
+      test "$(cat /sys/module/dummy/parameters/numdummies)" = "{{num}}"
+      grep -qx 'dummy' /etc/modules-load.d/*.conf
+  - id: playbook
+    covers: [R2]
+    desc: kmod.yml uses community.general.modprobe
+    run: |
+      playbook_ok kmod.yml
+      grep -Eq '(community\.general\.)?modprobe:' {{lab.project_dir}}/kmod.yml
+      grep -Eq 'persistent:[[:space:]]*["'"'"']?present' {{lab.project_dir}}/kmod.yml
+
+references:
+  - "ansible-navigator collections -m stdout; ansible-navigator doc community.general.modprobe -m stdout"
+  - "ansible-doc -l community.general | grep -i kernel"

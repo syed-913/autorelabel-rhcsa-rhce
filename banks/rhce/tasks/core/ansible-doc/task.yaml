@@ -1,0 +1,47 @@
+title: Use the documentation to find a module's options
+primary: rhce.core.docs
+objectives: [rhce.core.docs, rhce.rhcsa.operate, rhce.playbooks.common-modules, rhce.core.modules]
+facets:
+  - rhce.core.modules:modules
+  - rhce.core.docs:ansible-doc
+  - rhce.rhcsa.operate:operate
+  - rhce.playbooks.common-modules:common-modules
+difficulty: medium
+difficulty_reason: The non-default file location is an option you only find in the module's documentation.
+estimated_minutes: 7
+node: control
+params:
+  kp: {choice: [{key: vm.swappiness, value: "10"}, {key: vm.dirty_ratio, value: "15"}, {key: net.ipv4.tcp_keepalive_time, value: "600"}, {key: kernel.pid_max, value: "131072"}]}
+
+prompt: |
+  Using only the documentation installed on control (`ansible-doc` or `ansible-navigator doc`),
+  find how the **`ansible.posix.sysctl`** module can write to a file of your choice.
+
+  Create `{{lab.project_dir}}/sysctl.yml` that, on **all managed nodes**, sets the kernel
+  parameter **`{{kp.key}}`** to **`{{kp.value}}`**:
+
+  - persistently, in the file **`/etc/sysctl.d/90-lab.conf`** (not in `/etc/sysctl.conf`)
+  - applied immediately as well
+
+requirements:
+  R1: "/etc/sysctl.d/90-lab.conf sets {{kp.key}} = {{kp.value}} and /etc/sysctl.conf does not"
+  R2: "{{kp.key}} is {{kp.value}} after the reboot"
+
+checks:
+  - id: file
+    covers: [R1]
+    on: "@all"
+    desc: "{{kp.key}} in /etc/sysctl.d/90-lab.conf only"
+    run: |
+      grep -Eq '^[[:space:]]*{{kp.key}}[[:space:]]*=[[:space:]]*{{kp.value}}[[:space:]]*$' /etc/sysctl.d/90-lab.conf
+      ! grep -Eq '^[[:space:]]*{{kp.key}}[[:space:]]*=' /etc/sysctl.conf || exit 1
+  - id: runtime
+    covers: [R2]
+    on: "@all"
+    desc: "{{kp.key}} = {{kp.value}}"
+    run: test "$(sysctl -n {{kp.key}})" = "{{kp.value}}"
+
+references:
+  - "ansible-doc ansible.posix.sysctl (sysctl_file, reload, sysctl_set)"
+  - "ansible-navigator doc ansible.posix.sysctl -m stdout"
+  - "man sysctl.d(5)"

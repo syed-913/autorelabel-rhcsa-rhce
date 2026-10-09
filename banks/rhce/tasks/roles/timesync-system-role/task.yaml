@@ -1,0 +1,47 @@
+title: Configure time synchronization with the timesync system role
+primary: rhce.roles.collection-content
+objectives: [rhce.roles.collection-content, rhce.rhcsa.deploy]
+facets:
+  - rhce.roles.collection-content:collection-roles
+  - rhce.rhcsa.deploy:deploy
+exclusive: [time-sync]
+difficulty: medium
+difficulty_reason: Using a provided role means finding its variables and their structure in the role's documentation.
+estimated_minutes: 9
+node: control
+
+prompt: |
+  The **RHEL system roles** are installed on control (package `rhel-system-roles`). Create
+  `{{lab.project_dir}}/timesync.yml` that uses the **`timesync`** system role to configure
+  **all managed nodes** to synchronize their clocks with the NTP server
+  **`{{lab.ntp_server}}`** with the **`iburst`** option, and run it.
+
+requirements:
+  R1: "chrony on every managed node uses {{lab.ntp_server}} with iburst"
+  R2: "chronyd is running and enabled"
+  R3: "timesync.yml uses the timesync system role"
+
+checks:
+  - id: config
+    covers: [R1]
+    on: "@all"
+    desc: "server {{lab.ntp_server}} iburst in chrony.conf"
+    run: grep -Eq '^(server|pool)[[:space:]]+{{lab.ntp_server}}([[:space:]].*)?[[:space:]]iburst' /etc/chrony.conf
+  - id: running
+    covers: [R2]
+    on: "@all"
+    desc: chronyd running and enabled
+    run: |
+      systemctl is-enabled -q chronyd
+      systemctl is-active -q chronyd
+  - id: playbook
+    covers: [R3]
+    desc: timesync.yml uses the role
+    run: |
+      playbook_ok timesync.yml
+      grep -Eq 'timesync' {{lab.project_dir}}/timesync.yml
+      grep -q 'timesync_ntp_servers' {{lab.project_dir}}/timesync.yml
+
+references:
+  - "/usr/share/doc/rhel-system-roles/timesync/README.md"
+  - "RHEL 10: Automating system administration by using RHEL system roles > Configuring time synchronization"
