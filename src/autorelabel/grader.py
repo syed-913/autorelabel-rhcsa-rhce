@@ -58,6 +58,13 @@ class TaskResult:
 EventFn = Callable[[str, dict[str, Any]], None]
 
 
+def check_script(lib: str, check: str) -> str:
+    """A check as run on its node: errexit, so every failing line fails the check, not just the
+    last one. Exit status 255 is SSH's own "could not connect", so a check whose ssh command
+    fails (key-based login drills) reports 1 instead and isn't mistaken for an unreachable node."""
+    return f"{lib}\n(\nset -e\n{check}\n)\nrc=$?\n[ \"$rc\" -ne 255 ] || rc=1\nexit \"$rc\"\n"
+
+
 class Grader:
     def __init__(self, session: Session, lab: Lab, bank: Bank, on_event: EventFn | None = None):
         self.s = session
@@ -144,8 +151,7 @@ class Grader:
             return CheckResult(chk.id, chk.desc, node, "error", chk.weight, list(chk.covers),
                                f"template error: {exc}")
         env = {**render.env_for(params, self.facts), "AR_NODE": node}
-        # errexit: every failing line fails the check, not just the last one
-        res = remote.run_script(t, self.check_lib + "\nset -e\n" + script + "\n", env=env, timeout=chk.timeout)
+        res = remote.run_script(t, check_script(self.check_lib, script), env=env, timeout=chk.timeout)
         if res.timed_out:
             status, detail = "error", f"check timed out after {chk.timeout}s"
         elif res.rc == 255 and not res.out:

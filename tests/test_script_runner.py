@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import subprocess
 
-from autorelabel import paths, remote
+from autorelabel import grader, paths, remote
 
 
 def run_wrapped(script: str, env: dict[str, str] | None = None, lib: str = "") -> subprocess.CompletedProcess:
@@ -34,3 +34,13 @@ def test_quiet_grep_survives_pipefail_and_still_fails_when_it_should():
     assert miss.returncode != 0 and "not-reached" not in miss.stdout
     files = run_wrapped("set -e\ngrep -q root /etc/passwd\necho file-ok\n", lib=lib)
     assert files.stdout.strip() == "file-ok"
+
+
+def test_check_exit_codes():
+    lib = (paths.BANKS / "lib" / "check-lib.sh").read_text()
+    assert run_wrapped(grader.check_script(lib, "true")).returncode == 0
+    failing = run_wrapped(grader.check_script(lib, "false\necho not-reached"))
+    assert failing.returncode == 1 and "not-reached" not in failing.stdout
+    # a check's own ssh failing (rc 255) must not look like the node being unreachable
+    assert run_wrapped(grader.check_script(lib, "(exit 255)")).returncode == 1
+    assert run_wrapped(grader.check_script(lib, "exit 3")).returncode == 3
