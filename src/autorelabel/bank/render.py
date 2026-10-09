@@ -1,7 +1,9 @@
-"""Minimal, strict template rendering: {{ name }} or {{ lab.node1.ip }}.
+"""Minimal, strict template rendering: {{name}} or {{lab.node1.ip}} (no spaces).
 
 Deliberately not Jinja: task text must stay simple, and an unknown placeholder
 is an error (caught by the linter) rather than an empty string in an exam.
+Ansible/Jinja expressions are written the usual way, with spaces (`{{ item }}`),
+and are left untouched, so RHCE tasks can show playbooks and templates verbatim.
 """
 
 from __future__ import annotations
@@ -9,7 +11,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-PLACEHOLDER = re.compile(r"\{\{\s*([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*)\s*\}\}")
+PLACEHOLDER = re.compile(r"\{\{([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*)\}\}")
 
 
 class RenderError(KeyError):
@@ -21,6 +23,8 @@ def lookup(ctx: dict[str, Any], dotted: str) -> Any:
     for part in dotted.split("."):
         if isinstance(cur, dict) and part in cur:
             cur = cur[part]
+        elif isinstance(cur, list) and part.isdigit() and int(part) < len(cur):
+            cur = cur[int(part)]
         else:
             raise RenderError(dotted)
     return cur
@@ -43,6 +47,10 @@ def env_for(params: dict[str, Any], lab: dict[str, Any] | None = None) -> dict[s
         if isinstance(obj, dict):
             for k, v in obj.items():
                 flatten(f"{prefix}_{k.upper()}", v)
+        elif isinstance(obj, list):             # P_NAME="a b", P_NAME_0=a, P_NAME_1=b
+            env[prefix] = " ".join(str(v) for v in obj)
+            for i, v in enumerate(obj):
+                flatten(f"{prefix}_{i}", v)
         else:
             env[prefix] = str(obj)
 

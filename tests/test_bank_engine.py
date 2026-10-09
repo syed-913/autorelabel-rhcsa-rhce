@@ -39,12 +39,22 @@ def test_blueprint_arithmetic(exam):
 
 
 def test_render_strict():
-    ctx = {"user": "natasha", "lab": {"node1": {"ip": "172.25.250.11"}}}
-    assert render.render("ssh {{ user }}@{{lab.node1.ip}}", ctx) == "ssh natasha@172.25.250.11"
+    ctx = {"user": "natasha", "pkgs": ["lsof", "strace"], "lab": {"node1": {"ip": "172.25.250.11"}}}
+    assert render.render("ssh {{user}}@{{lab.node1.ip}}", ctx) == "ssh natasha@172.25.250.11"
+    assert render.render("{{pkgs.0}} {{pkgs.1}}", ctx) == "lsof strace"
     with pytest.raises(render.RenderError):
-        render.render("{{ missing }}", ctx)
-    env = render.env_for({"port": 82}, {"node1": {"ip": "1.2.3.4"}})
-    assert env == {"P_PORT": "82", "LAB_NODE1_IP": "1.2.3.4"}
+        render.render("{{missing}}", ctx)
+    with pytest.raises(render.RenderError):
+        render.render("{{pkgs.2}}", ctx)
+    env = render.env_for({"port": 82, "pkgs": ["a", "b"]}, {"node1": {"ip": "1.2.3.4"}})
+    assert env == {"P_PORT": "82", "P_PKGS": "a b", "P_PKGS_0": "a", "P_PKGS_1": "b", "LAB_NODE1_IP": "1.2.3.4"}
+
+
+def test_render_leaves_jinja_alone():
+    # Ansible expressions are written with spaces and must reach the candidate verbatim.
+    text = "line: \"{{ item.key }}={{ ansible_facts['hostname'] }}\" for {{user}}"
+    assert render.render(text, {"user": "x"}) == "line: \"{{ item.key }}={{ ansible_facts['hostname'] }}\" for x"
+    assert render.placeholders(text) == {"user"}
 
 
 # --- a synthetic bank built from the real RHCSA objectives -------------------------

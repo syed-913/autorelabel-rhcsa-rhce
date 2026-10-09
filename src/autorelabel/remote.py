@@ -55,21 +55,31 @@ def ssh_base(t: Target) -> list[str]:
             "-p", str(t.port), f"{t.user}@{t.host}"]
 
 
+def _wrap(script: str, env: dict[str, str] | None) -> str:
+    """The script reaches `bash -s` on stdin. Wrapped in one { } group it is parsed completely
+    before it runs, so it can give its commands /dev/null as stdin: nothing in it (ssh, cat,
+    a stray read) can swallow the rest of the script."""
+    prelude = "".join(f"export {k}={shlex.quote(str(v))}\n" for k, v in (env or {}).items())
+    # Behave like a root login shell, not like sudo: root's usual PATH (sudo's secure_path drops
+    # /usr/local/bin) and no SUDO_* variables (flatpak --user, for one, refuses to run under sudo).
+    shell = ("export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n"
+             "unset SUDO_USER SUDO_UID SUDO_GID SUDO_COMMAND SUDO_HOME\n")
+    return ("set -o pipefail\n" + shell + prelude + "{\nexec </dev/null\nexport AR_STDIN_ISOLATED=1\n"
+            + script + "\n}\n")
+
+
 def run_script(t: Target, script: str, *, env: dict[str, str] | None = None, timeout: float = 120,
                as_root: bool = True) -> proc.Result:
     """Run a bash script on the target. Env vars are exported in a prelude."""
-    prelude = "".join(f"export {k}={shlex.quote(str(v))}\n" for k, v in (env or {}).items())
     remote = "sudo -n bash -s" if as_root else "bash -s"
-    full = "set -o pipefail\n" + prelude + script
-    return proc.run([*ssh_base(t), remote], input=full, timeout=timeout)
+    return proc.run([*ssh_base(t), remote], input=_wrap(script, env), timeout=timeout)
 
 
 def stream_script(t: Target, script: str, *, env: dict[str, str] | None = None, timeout: float = 3600,
                   on_line=None, log_file: Path | None = None, cancel=None) -> proc.Result:
     """Like run_script, but streams merged output line by line (long provisioning)."""
-    prelude = "".join(f"export {k}={shlex.quote(str(v))}\n" for k, v in (env or {}).items())
-    full = "set -o pipefail\n" + prelude + script
-    return proc.stream([*ssh_base(t), "sudo -n bash -s"], input=full, timeout=timeout, on_line=on_line,
+    return proc.stream([*ssh_base(t), "sudo -n bash -s"], input=_wrap(script, env), timeout=timeout,
+                       on_line=on_line,
                        log_file=log_file, cancel=cancel)
 
 
@@ -119,3 +129,23 @@ def copy_to(t: Target, local: Path, remote_path: str, timeout: float = 600) -> p
     p = subprocess.run(cmd, input=data, capture_output=True, timeout=timeout)
     return proc.Result(cmd, p.returncode, p.stdout.decode(errors="replace"),
                        p.stderr.decode(errors="replace"), time.monotonic() - start)
+
+
+def upload(t: Target, items: dict[str, Path], remote_dir: str = "/var/tmp/ar-content",
+           timeout: float = 1800) -> proc.Result:
+    """Copy local files/directories into remote_dir/<name> (as the vagrant user)."""
+    res = run_cmd(t, f"rm -rf {shlex.quote(remote_dir)}; install -d -o vagrant -m 0755 {shlex.quote(remote_dir)}",
+                  timeout=60)
+    if not res.ok:
+        return res
+    opts = [o for o in SSH_OPTS]
+    for name, local in items.items():
+        if not local.exists():
+            continue
+        dest = f"{t.user}@{t.host}:{remote_dir}/{name}"
+        cmd = ["scp", "-r", "-q", *opts, "-o", f"ControlPath={t.control_path()}", "-i", str(t.key),
+               "-P", str(t.port), str(local), dest]
+        res = proc.run(cmd, timeout=timeout)
+        if not res.ok:
+            return res
+    return res

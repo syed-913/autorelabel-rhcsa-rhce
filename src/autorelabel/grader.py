@@ -11,14 +11,13 @@ import json
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from typing import Any
 
-from . import console, log, paths, remote
+from . import console, labfacts, log, paths, remote
 from .bank import Bank, render
 from .fsutil import append_line, atomic_write_json, read_json
 from .lab import Lab
-from .providers import libvirt as lv
 from .session import Session
 
 _log = log.get("grader")
@@ -66,7 +65,9 @@ class Grader:
         self.bank = bank
         self.emit = on_event or (lambda kind, data: None)
         self.facts = lab.facts()
+        self.hv = lab.hv
         self.checkpoint_file = session.dir / "grading.json"
+        self.check_lib = (paths.BANKS / "lib" / "check-lib.sh").read_text()
 
     # --- checkpoints ------------------------------------------------------------------------
     def _load_cp(self) -> dict[str, Any]:
@@ -79,14 +80,28 @@ class Grader:
     def _exam_nodes(self) -> list[str]:
         return [v.name for v in self.lab.vms if v.spec.role != "utility"]
 
+    def _expanded(self, task: Any) -> list[tuple[Any, str]]:
+        """(check, node) pairs. A check `on: "@group"` runs on every host of that inventory
+        group as separate checks `<id>@<node>` sharing the original weight."""
+        out = []
+        for chk in task.checks:
+            nodes = labfacts.check_nodes(chk.on, task.node, self.facts)
+            if chk.on and chk.on.startswith("@"):
+                for n in nodes:
+                    out.append((replace(chk, id=f"{chk.id}@{n}", desc=f"{chk.desc} ({n})", on=n,
+                                        weight=chk.weight / len(nodes)), n))
+            else:
+                out.extend((chk, n) for n in nodes)
+        return out
+
     def _check_jobs(self) -> list[tuple[int, Any, dict[str, Any], str]]:
         jobs = []
         for entry in self.s.tasks:
             task = self.bank.tasks.get(entry["task"])
             if task is None:
                 continue
-            for chk in task.checks:
-                jobs.append((entry["number"], chk, entry["params"], chk.on or task.node))
+            for chk, node in self._expanded(task):
+                jobs.append((entry["number"], chk, entry["params"], node))
         return jobs
 
     def run_pass(self, phase: str, cp: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -128,9 +143,9 @@ class Grader:
         except render.RenderError as exc:
             return CheckResult(chk.id, chk.desc, node, "error", chk.weight, list(chk.covers),
                                f"template error: {exc}")
-        env = render.env_for(params, self.facts)
+        env = {**render.env_for(params, self.facts), "AR_NODE": node}
         # errexit: every failing line fails the check, not just the last one
-        res = remote.run_script(t, "set -e\n" + script + "\n", env=env, timeout=chk.timeout)
+        res = remote.run_script(t, self.check_lib + "\nset -e\n" + script + "\n", env=env, timeout=chk.timeout)
         if res.timed_out:
             status, detail = "error", f"check timed out after {chk.timeout}s"
         elif res.rc == 255 and not res.out:
@@ -144,10 +159,10 @@ class Grader:
     # --- reboot ---------------------------------------------------------------------------
     def _diagnose(self, node: str) -> console.Diagnosis:
         dom = self.lab.vm(node).domain
-        st, reason = lv.state(dom)
+        st, reason = self.hv.state(dom)
         if st != "running":
             return console.Diagnosis("off", f"VM is {st}{f' ({reason})' if reason else ''}.")
-        text = console.probe(dom)
+        text = console.probe(dom, self.hv)
         return console.diagnose(text)
 
     def verified_reboot(self, nodes: list[str]) -> dict[str, str]:
@@ -158,18 +173,18 @@ class Grader:
         def one(node: str) -> None:
             t = self.lab.target(node)
             dom = self.lab.vm(node).domain
-            st, _ = lv.state(dom)
+            st, _ = self.hv.state(dom)
             if st == "paused":
-                lv.resume(dom)
+                self.hv.resume(dom)
             elif st in ("shut off", "crashed"):
                 self.s.incident(node, "powered-off", "was powered off at grading time; powered on")
-                lv.start(dom)
+                self.hv.start(dom)
             before = remote.boot_id(t)
             self.emit("reboot", {"node": node, "stage": "rebooting"})
             if before:
                 remote.run_cmd(t, "systemctl reboot", timeout=15)
             else:
-                lv.reset(dom)
+                self.hv.reset(dom)
                 self.s.incident(node, "unreachable-before-reboot",
                                 "was not reachable before the grading reboot; it was reset")
             remote.close_master(t)
@@ -183,10 +198,10 @@ class Grader:
                         break
                     elapsed = time.monotonic() - start
                     if elapsed > SHUTDOWN_GRACE and escalated is None:
-                        lv.reboot_acpi(dom)
+                        self.hv.reboot_acpi(dom)
                         escalated = "acpi"
                     elif elapsed > SHUTDOWN_GRACE + ACPI_GRACE and escalated == "acpi":
-                        lv.reset(dom)
+                        self.hv.reset(dom)
                         escalated = "reset"
                         self.s.incident(node, "forced-reset",
                                         "did not shut down within 2.5 minutes and was hard-reset; "
@@ -198,11 +213,25 @@ class Grader:
             next_probe = time.monotonic() + 90
             extended = False
             last_diag = None
+            revived = 0
             while True:
                 bid = remote.boot_id(t)
                 if bid and bid != before:
                     self.emit("reboot", {"node": node, "stage": "back"})
                     return
+                st, reason = self.hv.state(dom)
+                if st in ("paused", "shut off", "crashed") and revived < 3:
+                    # Paused or stopped by something outside the exam (host memory pressure, another
+                    # hypervisor, a guest poweroff): not the candidate's work, so bring it back.
+                    revived += 1
+                    self.s.incident(node, "revived", f"was {st} ({reason}) during the grading reboot; restarted")
+                    if st == "paused" and revived == 1:
+                        self.hv.resume(dom)
+                    else:                       # paused again (e.g. a KVM internal error): power-cycle
+                        if st == "paused":
+                            self.hv.destroy(dom)
+                        self.hv.start(dom)
+                    deadline = max(deadline, time.monotonic() + BOOT_TIMEOUT)
                 if time.monotonic() > next_probe:
                     next_probe = time.monotonic() + 30
                     prev = last_diag
@@ -242,7 +271,7 @@ class Grader:
             tr = TaskResult(entry["number"], task.id, render.render(task.title, {**entry["params"],
                                                                               "lab": self.facts}),
                             task.difficulty, task.domain, list(task.objectives), entry["points"])
-            for chk in task.checks:
+            for chk, _node in self._expanded(task):
                 key = f"{entry['number']}:{chk.id}"
                 pre = cp.get("pre", {}).get(key)
                 post = cp.get("post", {}).get(key)

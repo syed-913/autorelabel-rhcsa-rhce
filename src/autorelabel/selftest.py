@@ -20,7 +20,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from . import box, console, paths, remote
+from . import box, console, labfacts, paths, remote
 from . import session as S
 from .bank import Bank, render
 from .bank.model import Task
@@ -29,7 +29,8 @@ from .engine import EXAM_START, Engine, EngineError
 from .fsutil import atomic_write_json, read_json
 
 LineFn = Callable[[str], None]
-ANCHOR_ORDER = ("network-node1", "repos", "root-reset")
+# Anchors are solved in this order (RHCE: configuration → SSH access → repositories through Ansible).
+ANCHOR_ORDER = ("network-node1", "ansible-setup", "managed-access", "repos", "root-reset")
 
 
 def task_digest(task: Task) -> str:
@@ -61,19 +62,18 @@ def verified(bank: Bank) -> dict[str, str]:
 
 
 def plan_batches(bank: Bank, tasks: list[Task], max_size: int = 8) -> list[list[Task]]:
-    """Group tasks that can share a lab: no shared exclusive groups, disk budgets fit,
-    at most one task per anchor; tasks that break boot run alone."""
+    """Group tasks that can share a lab: no shared exclusive groups, disk budgets fit.
+    Tasks that break boot run alone, and so do anchors: their alternative and mistake tests
+    deliberately break what everything else depends on (network, repositories, root access)."""
     cap = _disk_capacity_mib(bank.exam)
     batches: list[list[Task]] = []
-    for t in sorted(tasks, key=lambda x: (x.breaks_boot, x.id)):
+    for t in sorted(tasks, key=lambda x: (x.breaks_boot or bool(x.anchor), x.id)):
         placed = False
-        if not t.breaks_boot:
+        if not (t.breaks_boot or t.anchor):
             for b in batches:
-                if len(b) >= max_size or any(x.breaks_boot for x in b):
+                if len(b) >= max_size or any(x.breaks_boot or x.anchor for x in b):
                     continue
                 if set(t.exclusive) & {e for x in b for e in x.exclusive}:
-                    continue
-                if t.anchor and any(x.anchor == t.anchor for x in b):
                     continue
                 disk: dict[str, int] = {}
                 for x in [*b, t]:
@@ -102,17 +102,21 @@ class SelfTest:
     def _run_on(self, sess: S.Session, entry: dict[str, Any], script: Path, node: str) -> tuple[bool, str]:
         facts = self.lab.facts()
         env = {**render.env_for(entry["params"], facts), "AR_NODE": node, "AR_TASK": entry["task"],
-               "AR_ROOT_PASSWORD": sess.passwords.get(node, "")}
+               "AR_ROOT_PASSWORD": sess.passwords.get(node, ""),
+               **{f"AR_{u.upper()}_PASSWORD": pw for u, pw in sess.accounts.items()}}
         task = self.bank.tasks[entry["task"]]
         if task.breaks_boot and node == task.node:
             # The node is in emergency mode: type the script on its serial console, as a candidate would.
             lines = [f"export {k}={json.dumps(str(v))}" for k, v in env.items() if k.startswith(("P_", "LAB_"))]
             body = [ln for ln in script.read_text().splitlines() if ln.strip() and not ln.lstrip().startswith("#")]
+            log_file = sess.dir / f"console-{entry['task']}-{node}-{script.stem}.log"
             try:
                 out = console.run_commands(self.lab.vm(node).domain, sess.passwords.get(node, ""),
-                                           "\n".join(lines + body))
+                                           "\n".join(lines + body), hv=self.lab.hv)
+                log_file.write_text(out)
                 return True, out[-400:]
             except console.ConsoleError as exc:
+                log_file.write_text(str(exc))
                 return False, str(exc)
         res = remote.run_script(self.lab.target(node), self.lib + "\n" + script.read_text(), env=env, timeout=900)
         return res.ok, (res.out + res.err)[-800:]
@@ -142,7 +146,9 @@ class SelfTest:
                 continue
             if scripts and (kind == "solution" or self._scripts_for(task, kind, index)):
                 participants.append(task.id)
-            for node, script in scripts.items():
+            facts = self.lab.facts()
+            for node, script in [(n, sc) for target, sc in scripts.items()
+                                 for n in labfacts.script_nodes(target, facts)]:
                 ok, out = self._run_on(sess, e, script, node)
                 if not ok:
                     errors.append(f"{task.id}: {script.name} failed on {node}: {out.strip()[-300:]}")
@@ -161,6 +167,18 @@ class SelfTest:
     @staticmethod
     def _failures(t: dict[str, Any]) -> str:
         return "; ".join(f"{c['id']}={c['status']} {c['detail'][:120]}" for c in t["post"] if c["status"] != "pass")
+
+    @staticmethod
+    def _infra_trouble(graded: dict[str, dict[str, Any]]) -> bool:
+        return any(c["status"] == "unreachable" for t in graded.values() for c in t["post"])
+
+    def _retry_round(self, sess: S.Session, kind: str, index: int) -> dict[str, dict[str, Any]]:
+        """A round that should score full marks lost a node (host hiccup, paused VM):
+        run it once more from the exam starting point before blaming the task."""
+        self.say(f"    a node was unreachable during the {kind} round; retrying it once")
+        self._restart_from_exam_start(sess)
+        self._apply(sess, sess.tasks, kind, index, solve_anchors=True)
+        return self._grade(sess, reboot=True)
 
     def _restart_from_exam_start(self, sess: S.Session) -> None:
         self.lab.revert(EXAM_START)
@@ -212,6 +230,8 @@ class SelfTest:
             # 2. reference
             self._apply(sess, sess.tasks, "solution", 0, solve_anchors=True)
             ref = self._grade(sess, reboot=True)
+            if self._infra_trouble(ref):
+                ref = self._retry_round(sess, "solution", 0)
             for t in batch:
                 if not self._full(ref.get(t.id, {"post": []})):
                     fail(t.id, "reference solution not full marks: " + self._failures(ref.get(t.id, {"post": []})))
@@ -222,6 +242,8 @@ class SelfTest:
                     self._restart_from_exam_start(sess)
                     who = self._apply(sess, sess.tasks, kind, i, solve_anchors=True)
                     got = self._grade(sess, reboot=True)
+                    if want_full and self._infra_trouble(got):
+                        got = self._retry_round(sess, kind, i)
                     for t in batch:
                         if t.id not in who or len(t.test_groups(kind)) <= i:
                             continue

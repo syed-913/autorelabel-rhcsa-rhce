@@ -12,7 +12,9 @@ from .loader import Bank
 from .model import DIFFICULTIES, Task
 
 VALID_NODES_RHCSA = {vm.name for vm in labspec.topology("rhcsa", "standard")}
-VALID_NODES_RHCE = {vm.name for vm in labspec.topology("rhce", "standard")}
+# RHCE tasks must work in both profiles: single nodes from the smaller (lite) lab, or @groups.
+VALID_NODES_RHCE = {vm.name for vm in labspec.topology("rhce", "lite")}
+VALID_GROUPS_RHCE = {f"@{g}" for g in labfacts.sample("rhce", "lite")["groups"]}
 _WRITE_HINTS = re.compile(
     r"(^|[;&|]\s*)(rm|mv|cp|touch|mkdir|useradd|usermod|chmod|chown|systemctl\s+(start|stop|enable|disable|restart)"
     r"|dnf\s+(install|remove)|setenforce|firewall-cmd\s+--(add|remove))\b"
@@ -136,7 +138,8 @@ def lint_task(task: Task, bank: Bank) -> list[Issue]:
             if r not in task.requirements:
                 err(f"check {c.id!r} covers unknown requirement {r!r}")
             covered.add(r)
-        if c.on is not None and c.on not in valid_nodes:
+        groups = VALID_GROUPS_RHCE if task.exam == "rhce" else set()
+        if c.on is not None and c.on not in valid_nodes and c.on not in groups:
             err(f"check {c.id!r} runs on unknown node {c.on!r}")
         if c.weight <= 0:
             err(f"check {c.id!r} has non-positive weight")
@@ -149,15 +152,21 @@ def lint_task(task: Task, bank: Bank) -> list[Issue]:
             err(f"requirement {r} is not verified by any check")
 
     # --- placeholders
-    ctx = {**_sample_params(task), "lab": labfacts.sample(task.exam)}
     texts = [("prompt", task.prompt), *[(f"requirement {k}", v) for k, v in task.requirements.items()],
              *[(f"check {c.id}", c.run) for c in task.checks], *[(f"check {c.id} desc", c.desc) for c in task.checks]]
-    for label, text in texts:
-        for ph in render.placeholders(text):
-            try:
-                render.lookup(ctx, ph)
-            except render.RenderError:
-                err(f"{label}: unknown placeholder {{{{{ph}}}}}")
+    if task.solution_md.exists():
+        texts.append(("solution.md", task.solution_md.read_text(encoding="utf-8")))
+    reported: set[str] = set()
+    for profile in ("standard", "lite"):
+        ctx = {**_sample_params(task), "lab": labfacts.sample(task.exam, profile)}
+        for label, text in texts:
+            for ph in render.placeholders(text):
+                try:
+                    render.lookup(ctx, ph)
+                except render.RenderError:
+                    if (label, ph) not in reported:
+                        reported.add((label, ph))
+                        err(f"{label}: unknown placeholder {{{{{ph}}}}} ({profile} profile)")
     for name, spec in task.params.items():
         if spec.kind == "pool" and spec.args not in bank.pools:
             err(f"param {name!r} uses unknown pool {spec.args!r}")
@@ -175,8 +184,13 @@ def lint_task(task: Task, bank: Bank) -> list[Issue]:
         err("solution.sh is missing (needed for self-test)")
     if not task.solution_md.exists():
         err("solution.md is missing (explanation shown after grading)")
+    for stem in ("setup", "solution"):
+        if (task.path / f"{stem}.sh").exists() and (task.path / f"{stem}@{task.node}.sh").exists():
+            err(f"{stem}.sh and {stem}@{task.node}.sh both target {task.node} (the task's node); only one "
+                f"would run. Name scripts for other nodes {stem}@<node>.sh")
+    script_groups = {g[1:] for g in VALID_GROUPS_RHCE} if task.exam == "rhce" else set()
     for node in [*task.setup_scripts, *task.solution_scripts]:
-        if node not in valid_nodes:
+        if node not in valid_nodes and node not in script_groups:
             err(f"script targets unknown node {node!r}")
     if not task.tests("mistake") and not task.mistakes_na:
         err("no common-mistake test (tests/mistake-*.sh) and no `mistakes_na` reason")

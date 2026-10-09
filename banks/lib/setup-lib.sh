@@ -32,7 +32,7 @@ ar_user() {  # ar_user <name> <password> [extra useradd args...]
 # answering the password prompt (used by reference solutions in self-tests).
 ar_ssh_copy_id() {  # ar_ssh_copy_id <local-user> <remote-user@host> <password>
   local user="$1" target="$2" pw="$3"
-  sudo -u "$user" python3 - "$target" "$pw" <<'PY'
+  sudo -H -u "$user" python3 - "$target" "$pw" <<'PY'
 import os, pty, sys, time
 target, pw = sys.argv[1], sys.argv[2]
 pid, fd = pty.fork()
@@ -103,4 +103,29 @@ ar_fill() {  # ar_fill <dir> <word>  -> writes files and records their digest in
   mkdir -p "$dir" /etc/autorelabel
   for i in 1 2 3 4 5; do for _ in $(seq 1 200); do echo "$word record $i"; done > "$dir/data-$i.txt"; done
   (cd "$dir" && sha256sum data-*.txt) > /etc/autorelabel/"$word"-data.sha256
+}
+
+# --- RHCE helpers --------------------------------------------------------------------------------
+as_student() {  # as_student <command> [args...]: run as the candidate in ~/ansible
+  local uid; uid="$(id -u student)"
+  (cd /home/student/ansible 2>/dev/null || cd /home/student
+   runuser -u student -- env -i HOME=/home/student USER=student LOGNAME=student LANG=C.UTF-8 \
+     PATH=/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin XDG_RUNTIME_DIR="/run/user/$uid" \
+     ANSIBLE_NOCOLOR=1 ANSIBLE_DEPRECATION_WARNINGS=0 "$@")
+}
+student_sh() { as_student bash -c "$1"; }
+student_write() {  # student_write <path relative to ~/ansible> [mode]  (content on stdin)
+  local p="/home/student/ansible/$1"
+  runuser -u student -- mkdir -p "$(dirname "$p")"
+  cat > "$p"; chown student:student "$p"; chmod "${2:-0644}" "$p"
+}
+
+# as_user <user> <command> [args...]: run as a user with a clean, login-like environment.
+# (Not sudo: tools like `flatpak --user` refuse to run when SUDO_USER is set.)
+as_user() {
+  local u="$1"; shift
+  local home; home="$(getent passwd "$u" | cut -d: -f6)"
+  (cd "$home" 2>/dev/null || cd /
+   runuser -u "$u" -- env -i HOME="$home" USER="$u" LOGNAME="$u" LANG=C.UTF-8 \
+     PATH=/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin XDG_RUNTIME_DIR="/run/user/$(id -u "$u")" "$@")
 }
