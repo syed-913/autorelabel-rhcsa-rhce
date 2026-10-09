@@ -29,6 +29,9 @@ Vagrant.configure("2") do |config|
 
   lab["vms"].each do |vm|
     config.vm.define vm["name"], autostart: true do |node|
+      if lab["provider"] == "virtualbox"
+        node.vm.base_mac = vm["mgmt_mac"].delete(":")   # NAT adapter: identified by MAC in the guest
+      end
       if lab["provider"] == "libvirt"
         node.vm.network :private_network,
                         ip: vm["lab_ip"],
@@ -42,8 +45,7 @@ Vagrant.configure("2") do |config|
         node.vm.network :private_network,
                         ip: vm["lab_ip"],
                         mac: vm["lab_mac"].delete(":"),
-                        auto_config: false,
-                        name: lab["vbox_hostonly"]
+                        auto_config: false
       end
 
       node.vm.provider :libvirt do |lv|
@@ -72,14 +74,31 @@ Vagrant.configure("2") do |config|
       end
 
       node.vm.provider :virtualbox do |vb|
-        vb.name = "#{lab["prefix"]}#{vm["name"]}"
+        name = "#{lab["prefix"]}#{vm["name"]}"
+        vb.name = name
         vb.cpus = vm["cpus"]
         vb.memory = vm["memory"]
-        vb.linked_clone = true
+        vb.linked_clone = false          # full clones can be moved into the lab storage folder
         vb.gui = false
-        vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4", "--uartmode1", "server",
-                      File.join(lab["console_dir"], "#{vm["name"]}.sock")]
         vb.customize ["modifyvm", :id, "--audio-driver", "none"]
+        vb.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+        vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4",
+                      "--uartmode1", "server", File.join(lab["console_dir"], "console-#{name}.sock")]
+        # The box (built by packer virtualbox-iso) has an AHCI controller named "SATA".
+        vb.customize ["storagectl", :id, "--name", "SATA", "--portcount", 6]
+        vm["disks"].each_with_index do |disk, i|
+          path = File.join(lab["vbox_disk_dir"], "#{name}-#{disk["name"]}.vdi")
+          unless File.exist?(path)
+            vb.customize ["createmedium", "disk", "--filename", path, "--size", disk["size_gb"] * 1024,
+                          "--format", "VDI", "--variant", "Standard"]
+          end
+          vb.customize ["storageattach", :id, "--storagectl", "SATA", "--port", i + 1,
+                        "--device", 0, "--type", "hdd", "--medium", path]
+        end
+        if vm["attach_iso"]
+          vb.customize ["storageattach", :id, "--storagectl", "SATA", "--port", 5,
+                        "--device", 0, "--type", "dvddrive", "--medium", lab["iso_path"]]
+        end
       end
     end
   end

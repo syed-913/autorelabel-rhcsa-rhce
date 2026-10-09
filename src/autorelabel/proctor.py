@@ -13,7 +13,6 @@ from . import log, proc, remote
 from . import session as S
 from .engine import Engine
 from .fsutil import LockBusy, atomic_write_json, file_lock
-from .providers import libvirt as lv
 
 _log = log.get("proctor")
 HEALTH_EVERY = 120
@@ -40,7 +39,7 @@ def _health(engine: Engine, sess: S.Session) -> dict[str, Any]:
     for v in lab.vms:
         if v.spec.role == "utility":
             continue
-        st, reason = lv.state(v.domain)
+        st, reason = lab.hv.state(v.domain)
         entry = {"state": st, "reason": reason, "grader_access": None}
         if st == "running" and v.name not in sess.broken_nodes:
             t = lab.target(v.name)

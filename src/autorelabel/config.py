@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import asdict, dataclass, field, fields
 
 from . import paths
@@ -46,12 +47,21 @@ class Settings:
         return problems
 
 
+def _apply_env(settings: Settings) -> None:
+    # Every VBoxManage / vagrant / packer we start uses the private VirtualBox profile.
+    if settings.storage_dir:
+        os.environ["VBOX_USER_HOME"] = str(paths.vbox_home(settings.storage_dir))
+
+
 def load() -> Settings:
     raw = read_json(paths.CONFIG_FILE, default={}) or {}
     known = {f.name for f in fields(Settings)}
-    return Settings(**{k: v for k, v in raw.items() if k in known})
+    settings = Settings(**{k: v for k, v in raw.items() if k in known})
+    _apply_env(settings)
+    return settings
 
 
 def save(settings: Settings) -> None:
     paths.ensure_workspace()
     atomic_write_json(paths.CONFIG_FILE, asdict(settings))
+    _apply_env(settings)

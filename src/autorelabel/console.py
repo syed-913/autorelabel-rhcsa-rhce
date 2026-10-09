@@ -10,6 +10,7 @@ import select
 import subprocess
 import time
 from dataclasses import dataclass
+from types import ModuleType
 
 from .providers import libvirt as lv
 
@@ -17,15 +18,15 @@ _ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[()][A-Za-z0-9]|\r")
 DETACH = b"\x1d"  # Ctrl+]
 
 
-def interactive_command(domain: str) -> list[str]:
-    return lv.console_command(domain)
+def interactive_command(domain: str, hv: ModuleType = lv) -> list[str]:
+    return hv.console_command(domain)
 
 
-def probe(domain: str, seconds: float = 4.0) -> str:
+def probe(domain: str, hv: ModuleType = lv, seconds: float = 4.0) -> str:
     """Attach to the console, press Enter, capture what the console shows, detach."""
     master, slave = pty.openpty()
     try:
-        p = subprocess.Popen(lv.console_command(domain), stdin=slave, stdout=slave, stderr=slave,
+        p = subprocess.Popen(hv.console_command(domain), stdin=slave, stdout=slave, stderr=slave,
                              start_new_session=True, close_fds=True)
     except FileNotFoundError:
         os.close(master)
@@ -106,12 +107,13 @@ class ConsoleError(RuntimeError):
     pass
 
 
-def run_commands(domain: str, root_password: str, text: str, *, timeout: float = 240) -> str:
+def run_commands(domain: str, root_password: str, text: str, *, timeout: float = 240,
+                 hv: ModuleType = lv) -> str:
     """Log in on the serial console (emergency-mode maintenance prompt or a normal login
     prompt) as root and type `text` line by line, like a candidate would. Used by
     self-tests for tasks that leave a node unbootable. Returns the captured output."""
     master, slave = pty.openpty()
-    p = subprocess.Popen(lv.console_command(domain), stdin=slave, stdout=slave, stderr=slave,
+    p = subprocess.Popen(hv.console_command(domain), stdin=slave, stdout=slave, stderr=slave,
                          start_new_session=True, close_fds=True)
     os.close(slave)
     buf = bytearray()
@@ -130,7 +132,8 @@ def run_commands(domain: str, root_password: str, text: str, *, timeout: float =
                 for pat in patterns:
                     if re.search(pat, text_now[-600:], re.I | re.M):
                         return pat
-        raise ConsoleError(f"console: none of {patterns} seen within {limit:.0f}s")
+        tail = _ANSI.sub("", buf.decode("utf-8", "replace"))[-300:].strip()
+        raise ConsoleError(f"console: none of {patterns} seen within {limit:.0f}s; last output: {tail!r}")
 
     def send(s: str) -> None:
         os.write(master, s.encode())

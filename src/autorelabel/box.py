@@ -36,6 +36,9 @@ def storage_layout(settings: Settings) -> dict[str, Path]:
         "build": root / "packer" / "build",
         "boxes": root / "boxes",
         "content": root / "content",
+        "vbox_home": paths.vbox_home(settings.storage_dir),
+        "vbox_vms": root / "virtualbox" / "vms",
+        "vbox_disks": root / "virtualbox" / "disks",
     }
 
 
@@ -125,6 +128,10 @@ def build(
         env["PACKER_LOG"] = "1"
     for key in ("PACKER_CACHE_DIR", "PACKER_PLUGIN_PATH", "PACKER_CONFIG_DIR"):
         Path(env[key]).mkdir(parents=True, exist_ok=True)
+    if provider == "virtualbox":
+        from .providers import virtualbox as vb
+
+        vb.ensure_profile(layout["vbox_home"], layout["vbox_vms"])
 
     step("Verifying the ISO checksum")
     last = [0.0]

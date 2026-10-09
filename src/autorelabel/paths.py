@@ -17,7 +17,8 @@ def repo_root() -> Path:
 
 
 ROOT = repo_root()
-WORKSPACE = ROOT / ".workspace"
+# AUTORELABEL_WORKSPACE keeps a second, fully separate setup (e.g. another provider) side by side.
+WORKSPACE = Path(os.environ.get("AUTORELABEL_WORKSPACE") or ROOT / ".workspace").resolve()
 LOGS = WORKSPACE / "logs"
 SESSIONS = WORKSPACE / "sessions"
 TMP = WORKSPACE / "tmp"
@@ -44,6 +45,12 @@ def storage_root(storage_dir: str | os.PathLike[str]) -> Path:
     return Path(storage_dir).expanduser().resolve() / PREFIX
 
 
+def vbox_home(storage_dir: str | os.PathLike[str]) -> Path:
+    """autorelabel's private VirtualBox profile (VBOX_USER_HOME): our VMs never appear in,
+    or depend on, the user's own VirtualBox VM list and settings."""
+    return storage_root(storage_dir) / "virtualbox" / "profile"
+
+
 def tool_env(storage_dir: str | None = None) -> dict[str, str]:
     """Environment for child tools (vagrant, packer, pip): keeps their state in our
     directories and disables phone-home checks, so $HOME stays clean."""
@@ -63,4 +70,5 @@ def tool_env(storage_dir: str | None = None) -> dict[str, str]:
         env["PACKER_CACHE_DIR"] = str(root / "packer" / "cache")
         env["PACKER_PLUGIN_PATH"] = str(root / "packer" / "plugins")
         env["PACKER_CONFIG_DIR"] = str(root / "packer" / "config")
+        env["VBOX_USER_HOME"] = str(vbox_home(storage_dir))
     return env

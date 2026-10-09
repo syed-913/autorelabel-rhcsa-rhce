@@ -74,6 +74,17 @@ have() { command -v "$1" >/dev/null 2>&1; }
 VIRSH=()
 if have virsh && virsh -c qemu:///system uri >/dev/null 2>&1; then VIRSH=(virsh -c qemu:///system); fi
 HAVE_VBOX=0; have VBoxManage && HAVE_VBOX=1
+# autorelabel keeps its VMs in a private VirtualBox profile inside the lab storage; older
+# versions (and interrupted runs) may have left VMs in your default profile, so both are cleaned.
+VBOX_PRIVATE=""
+[[ -n "$STORAGE_DIR" && -d "$STORAGE_DIR/$PREFIX/virtualbox/profile" ]] && VBOX_PRIVATE="$STORAGE_DIR/$PREFIX/virtualbox/profile"
+vbm() {  # vbm <private|default> <VBoxManage args...>
+  local prof="$1"; shift
+  if [[ "$prof" == private ]]; then VBOX_USER_HOME="$VBOX_PRIVATE" VBoxManage "$@"
+  else env -u VBOX_USER_HOME VBoxManage "$@"; fi
+}
+vbox_profiles() { [[ -n "$VBOX_PRIVATE" ]] && echo private; echo default; }
+vbox_label() { [[ "$1" == private ]] && echo "autorelabel's VirtualBox profile" || echo "your default VirtualBox profile"; }
 HAVE_VAGRANT=0; have vagrant && HAVE_VAGRANT=1
 export VAGRANT_CHECKPOINT_DISABLE=1
 
@@ -90,9 +101,15 @@ if ((${#VIRSH[@]})); then
   mapfile -t NETWORKS < <({ ledger_ids libvirt-network; "${VIRSH[@]}" net-list --all --name 2>/dev/null | grep "^${PREFIX}-"; } \
     | uniq_lines | while read -r n; do "${VIRSH[@]}" net-info "$n" >/dev/null 2>&1 && echo "$n"; done)
 fi
+VBOX_SHOW=()
 if ((HAVE_VBOX)); then
-  mapfile -t VBOX_VMS < <({ ledger_ids vbox-vm; VBoxManage list vms 2>/dev/null | sed -n "s/^\"\(${PREFIX}-[^\"]*\)\".*/\1/p"; } \
-    | uniq_lines | while read -r v; do VBoxManage showvminfo "$v" >/dev/null 2>&1 && echo "$v"; done)
+  while read -r prof; do
+    while read -r v; do
+      [[ -n "$v" ]] || continue
+      VBOX_VMS+=("$prof:$v"); VBOX_SHOW+=("$v ($(vbox_label "$prof"))")
+    done < <({ ledger_ids vbox-vm; vbm "$prof" list vms 2>/dev/null | sed -n "s/^\"\(${PREFIX}-[^\"]*\)\".*/\1/p"; } \
+      | uniq_lines | while read -r v; do vbm "$prof" showvminfo "$v" >/dev/null 2>&1 && echo "$v"; done)
+  done < <(vbox_profiles)
   mapfile -t VBOX_MEDIA < <(ledger_ids vbox-medium | uniq_lines)
   mapfile -t VBOX_HOSTONLY < <(ledger_ids vbox-hostonly | uniq_lines)
 fi
@@ -130,7 +147,7 @@ section() { local title="$1"; shift; (($#)) || return 0; nothing=0; echo "${B}$t
 section "libvirt domains (with snapshots and disks)" "${DOMAINS[@]}"
 section "libvirt storage pools (all volumes inside)" "${POOLS[@]}"
 section "libvirt networks" "${NETWORKS[@]}"
-section "VirtualBox VMs" "${VBOX_VMS[@]}"
+section "VirtualBox VMs" "${VBOX_SHOW[@]}"
 section "VirtualBox media registrations (files are kept)" "${VBOX_MEDIA[@]}"
 section "VirtualBox host-only interfaces" "${VBOX_HOSTONLY[@]}"
 section "systemd user units" "${UNITS[@]}"
@@ -194,14 +211,24 @@ for n in "${NETWORKS[@]}"; do
   quiet "${VIRSH[@]}" net-destroy "$n"
   step "remove network $n" "${VIRSH[@]}" net-undefine "$n"
 done
-for v in "${VBOX_VMS[@]}"; do
-  quiet VBoxManage controlvm "$v" poweroff
+for pv in "${VBOX_VMS[@]}"; do
+  prof="${pv%%:*}" v="${pv#*:}"
+  quiet vbm "$prof" controlvm "$v" poweroff
   sleep 1
-  step "remove VirtualBox VM $v" VBoxManage unregistervm "$v" --delete
+  step "remove VirtualBox VM $v" vbm "$prof" unregistervm "$v" --delete
 done
-for m in "${VBOX_MEDIA[@]}"; do quiet VBoxManage closemedium dvd "$m"; echo "  ${G}✔${O} unregister medium $m"; done
+for m in "${VBOX_MEDIA[@]}"; do
+  for prof in $(vbox_profiles); do quiet vbm "$prof" closemedium dvd "$m"; done
+  echo "  ${G}✔${O} unregister medium $m"
+done
 for h in "${VBOX_HOSTONLY[@]}"; do
-  if VBoxManage hostonlyif remove "$h" >/dev/null 2>&1 || VBoxManage hostonlynet remove --name="$h" >/dev/null 2>&1; then
+  removed=0
+  for prof in $(vbox_profiles); do
+    if vbm "$prof" hostonlyif remove "$h" >/dev/null 2>&1 || vbm "$prof" hostonlynet remove --name="$h" >/dev/null 2>&1; then
+      removed=1; break
+    fi
+  done
+  if ((removed)); then
     echo "  ${G}✔${O} remove host-only network $h"
   else
     echo "  ${R}✘${O} remove host-only network $h"; FAILED+=("host-only network $h")
@@ -211,6 +238,8 @@ if ((BOXES)); then
   step "remove Vagrant box $BOX" vagrant box remove --force --all "$BOX"
 fi
 ((HAVE_VAGRANT)) && quiet vagrant global-status --prune
+# Let the private profile's VBoxSVC exit before its directory is deleted.
+[[ -n "$VBOX_PRIVATE" ]] && ((${#VBOX_VMS[@]} + ${#VBOX_HOSTONLY[@]})) && sleep 6
 
 for d in "${DIRS[@]}"; do step "delete $d" rm -rf -- "$d"; done
 for d in "${REPO_ITEMS[@]}"; do step "delete $d" rm -rf -- "$d"; done
@@ -225,7 +254,11 @@ if ((${#VIRSH[@]})); then
   while read -r x; do [[ -n "$x" ]] && LEFT+=("libvirt network $x"); done < <("${VIRSH[@]}" net-list --all --name 2>/dev/null | grep "^${PREFIX}-")
 fi
 if ((HAVE_VBOX)); then
-  while read -r x; do [[ -n "$x" ]] && LEFT+=("VirtualBox VM $x"); done < <(VBoxManage list vms 2>/dev/null | sed -n "s/^\"\(${PREFIX}-[^\"]*\)\".*/\1/p")
+  for prof in $(vbox_profiles); do
+    [[ "$prof" == private && ! -d "$VBOX_PRIVATE" ]] && continue
+    while read -r x; do [[ -n "$x" ]] && LEFT+=("VirtualBox VM $x ($(vbox_label "$prof"))"); done \
+      < <(vbm "$prof" list vms 2>/dev/null | sed -n "s/^\"\(${PREFIX}-[^\"]*\)\".*/\1/p")
+  done
 fi
 if ((HAVE_VAGRANT)) && ((KEEP_BOX == 0)) && vagrant box list 2>/dev/null | grep -q "^${BOX} "; then LEFT+=("Vagrant box $BOX"); fi
 for d in "${DIRS[@]}" "${REPO_ITEMS[@]}"; do [[ -e "$d" ]] && LEFT+=("$d"); done
