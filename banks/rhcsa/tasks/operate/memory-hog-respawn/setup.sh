@@ -10,7 +10,9 @@ while True:
     time.sleep(60)
 PY
 chmod 0755 "/usr/local/bin/$P_WORD-cache"; restorecon "/usr/local/bin/$P_WORD-cache"
+# Running right after every boot, and respawned every minute if killed.
 cat > "/etc/cron.d/$P_WORD-cache" <<CRON
+@reboot root /usr/local/bin/$P_WORD-cache >/dev/null 2>&1 &
 * * * * * root pgrep -x $P_WORD-cache >/dev/null || /usr/local/bin/$P_WORD-cache >/dev/null 2>&1 &
 CRON
 chmod 0644 "/etc/cron.d/$P_WORD-cache"
