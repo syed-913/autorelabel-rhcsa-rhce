@@ -92,17 +92,47 @@ class AutorelabelApp(App[None]):
                                      "Starting a new exam abandons it.", yes="Abandon and start new",
                                      danger=True), replace)
             return
-        self._prepare(lambda eng: eng.create(exam, mode="exam"), f"Preparing a new {exam.upper()} exam")
+        self.with_exam_content(exam, lambda: self._prepare(lambda eng: eng.create(exam, mode="exam"),
+                                                            f"Preparing a new {exam.upper()} exam"))
 
-    def start_practice(self, task_ids: list[str]) -> None:
+    def with_exam_content(self, exam: str, then) -> None:
+        """RHCE needs a one-time download (navigator wheels, collections, code-server)."""
+        if exam != "rhce":
+            then()
+            return
+        from .. import content
+
+        st = config.load()
+        ok, _msg = content.status(st)
+        if ok:
+            then()
+            return
+
+        def fn(step, line, cancel):
+            return content.download(st, on_step=step, on_line=line, with_code_server=st.code_server)
+
+        def done(result) -> None:
+            if result:
+                then()
+
+        self.push_screen(Confirm("RHCE content is needed once", (
+            "The RHCE lab needs ansible-navigator, the ansible.posix and community.general\n"
+            "collections" + (" and code-server (VS Code in the browser)" if st.code_server else "") +
+            ". They are downloaded once from PyPI, Ansible Galaxy" +
+            (", GitHub and Open VSX" if st.code_server else "") + "\n(about 60-150 MB) and kept in the lab "
+            "storage. Everything after that works offline."), yes="Download"),
+            lambda yes: yes and self.push_screen(OperationScreen("Downloading RHCE content", fn), done))
+
+    def start_practice(self, task_ids: list[str], exam: str = "rhcsa") -> None:
         current = S.current()
         if current and current.state in (S.IN_PROGRESS, S.INTERRUPTED):
             self.notify("Finish or abandon your current exam first.", severity="warning")
             return
         if current and current.state not in (S.GRADED, S.ABANDONED):
             Engine().abandon(current)
-        self._prepare(lambda eng: eng.create("rhcsa", mode="practice", task_ids=task_ids, timed=False),
-                      "Preparing your practice session")
+        self.with_exam_content(exam, lambda: self._prepare(
+            lambda eng: eng.create(exam, mode="practice", task_ids=task_ids, timed=False),
+            "Preparing your practice session"))
 
     def _prepare(self, create, title: str) -> None:
         holder: dict[str, S.Session] = {}

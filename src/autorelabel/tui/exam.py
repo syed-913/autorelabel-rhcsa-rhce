@@ -568,11 +568,16 @@ class ResultsScreen(Screen[None]):
 class PracticePicker(Screen[None]):
     BINDINGS = [("escape", "back", "Back"), ("enter", "start", "Start")]
 
+    def __init__(self, exam: str = "rhcsa"):
+        super().__init__()
+        self.exam = exam
+
     def compose(self) -> ComposeResult:
         from ..bank import load_bank
 
-        bank = load_bank("rhcsa")
-        yield Static("Practice: choose tasks (space to select, Enter to start)", classes="title")
+        bank = load_bank(self.exam)
+        yield Static(f"{self.exam.upper()} practice: choose tasks (space to select, Enter to start)",
+                     classes="title")
         yield Static("Untimed. You can check your work at any time (k) and after a reboot (r), and read the "
                      "solution (v).", classes="muted")
         options = []
@@ -604,7 +609,7 @@ class PracticePicker(Screen[None]):
         if len(chosen) > 10:
             self.notify("Pick at most 10 tasks per practice session.", severity="warning")
             return
-        self.app.start_practice(chosen)
+        self.app.start_practice(chosen, self.exam)
 
     def action_back(self) -> None:
         self.app.pop_screen()

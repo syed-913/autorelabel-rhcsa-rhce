@@ -65,8 +65,9 @@ class HomeScreen(Screen[None]):
         if sess and sess.state == S.GRADED:
             menu.add_option(Option("▶  Results of your last exam", id="results"))
         menu.add_option(Option("🎯 New RHCSA exam  (20 tasks · 180 min · graded after reboot)", id="new-rhcsa"))
-        menu.add_option(Option("🧪 New RHCE exam   (coming in a later milestone)", id="new-rhce", disabled=True))
-        menu.add_option(Option("🛠  Practice: pick objectives and tasks (untimed)", id="practice"))
+        menu.add_option(Option("🧪 New RHCE exam   (20 tasks · 240 min · graded after reboot)", id="new-rhce"))
+        menu.add_option(Option("🛠  Practice RHCSA: pick tasks (untimed)", id="practice-rhcsa"))
+        menu.add_option(Option("🛠  Practice RHCE: pick tasks (untimed)", id="practice-rhce"))
         menu.add_option(Option("📈 Progress and history", id="history"))
         menu.add_option(Option("🖥  Lab and box", id="lab"))
         menu.add_option(Option("🩺 Doctor (check this host)", id="doctor"))
@@ -118,10 +119,10 @@ class HomeScreen(Screen[None]):
             app.resume_session()
         elif oid == "results":
             app.show_results(S.current())
-        elif oid == "practice":
+        elif oid in ("practice-rhcsa", "practice-rhce"):
             from .exam import PracticePicker
 
-            app.push_screen(PracticePicker())
+            app.push_screen(PracticePicker(oid.split("-", 1)[1]))
 
     def action_doctor(self) -> None:
         self.app.push_screen(DoctorScreen())

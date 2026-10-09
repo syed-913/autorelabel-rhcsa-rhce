@@ -16,6 +16,7 @@ def configured(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, "CONFIG_FILE", tmp_path / "config.json")
     monkeypatch.setattr(paths, "HISTORY_FILE", tmp_path / "history.jsonl")
     monkeypatch.setattr(paths, "SESSIONS", tmp_path / "sessions")
+    monkeypatch.setenv("VBOX_USER_HOME", "")          # config.save sets it; restored after the test
     st = config.Settings(provider="libvirt", storage_dir=str(tmp_path), iso_path=str(tmp_path / "x.iso"))
     (tmp_path / "x.iso").write_bytes(b"0")
     config.save(st)
@@ -37,6 +38,25 @@ def test_home_settings_history_render(configured):
             await pilot.press("escape")
             await pilot.pause()
             assert isinstance(app.screen, HomeScreen)
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("exam", ["rhcsa", "rhce"])
+def test_practice_picker_lists_the_bank(configured, exam):
+    from textual.widgets import SelectionList
+
+    from autorelabel.bank import load_bank
+    from autorelabel.tui.exam import PracticePicker
+
+    async def run() -> None:
+        app = AutorelabelApp()
+        async with app.run_test(size=(140, 45)) as pilot:
+            await pilot.pause()
+            app.push_screen(PracticePicker(exam))
+            await pilot.pause()
+            options = app.screen.query_one(SelectionList).option_count
+            assert options == len(load_bank(exam).tasks)
 
     asyncio.run(run())
 
