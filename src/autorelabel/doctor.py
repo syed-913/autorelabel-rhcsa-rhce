@@ -302,6 +302,19 @@ def check_leftovers() -> Check:
                  f"tracked for uninstall: {summary}")
 
 
+def check_hypervisor_clash(provider: str) -> Check:
+    from .providers import conflict
+
+    title = "No VMs running under the other hypervisor"
+    if not provider:
+        return Check("hv_clash", title, Status.INFO, "checked once a provider is chosen")
+    clash = conflict.check(provider)
+    if clash:
+        return Check("hv_clash", title, Status.WARN, f"{clash[0]}. {clash[1]}")
+    return Check("hv_clash", title, Status.OK,
+                 "KVM and VirtualBox VMs must never run at the same time; autorelabel checks before starting VMs")
+
+
 # --- orchestration -----------------------------------------------------------------
 
 def run(settings: Settings, exam: str = "rhcsa") -> list[Check]:
@@ -314,6 +327,7 @@ def run(settings: Settings, exam: str = "rhcsa") -> list[Check]:
         lambda: check_iso(settings),
         lambda: check_subnets(settings),
         lambda: check_box(provider),
+        lambda: check_hypervisor_clash(provider),
         check_leftovers,
     ]
     if provider in ("libvirt", ""):
@@ -339,7 +353,7 @@ def run(settings: Settings, exam: str = "rhcsa") -> list[Check]:
                     c.status = Status.WARN
     order = ["platform", "cpu", "kvm", "ssh", "vagrant", "packer", "libvirt", "libvirt_group",
              "vagrant_libvirt", "virtualbox", "vagrant_registration", f"memory_{exam}", "storage",
-             "iso", "subnets", "box", "ledger"]
+             "iso", "subnets", "box", "hv_clash", "ledger"]
     results.sort(key=lambda c: order.index(c.id) if c.id in order else len(order))
     return results
 
