@@ -42,7 +42,7 @@ checks:
     covers: [R3]
     on: node2
     desc: the unit file and program still exist
-    run: test -f /etc/systemd/system/{{word}}-worker.service && test -x /usr/local/bin/{{word}}d
+    run: test -f /usr/lib/systemd/system/{{word}}-worker.service && test -x /usr/local/bin/{{word}}d
 
 references:
   - "RHEL 10: Monitoring and managing system status and performance (top, ps)"
