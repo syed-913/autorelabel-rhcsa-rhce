@@ -1,0 +1,716 @@
+{
+  "rhcsa.deploy.at-job": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "ebc38592dd35",
+    "status": "pass"
+  },
+  "rhcsa.deploy.chrony-client": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "b42aa38b76d0",
+    "status": "pass"
+  },
+  "rhcsa.deploy.cron-system": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "1339f592cd7a",
+    "status": "pass"
+  },
+  "rhcsa.deploy.cron-user": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "33d1464bb1d6",
+    "status": "pass"
+  },
+  "rhcsa.deploy.default-target": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "73c6c6a3f011",
+    "status": "pass"
+  },
+  "rhcsa.deploy.graphical-target": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "bf7f4d6d298b",
+    "status": "pass"
+  },
+  "rhcsa.deploy.grub-timeout": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "995c66839556",
+    "status": "pass"
+  },
+  "rhcsa.deploy.install-local-rpm": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "c354eddeb4ed",
+    "status": "pass"
+  },
+  "rhcsa.deploy.kernel-args": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "c92e97ce1d73",
+    "status": "pass"
+  },
+  "rhcsa.deploy.services-enable": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "a1d341442975",
+    "status": "pass"
+  },
+  "rhcsa.deploy.systemd-timer": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "c7ad7ffa90d1",
+    "status": "pass"
+  },
+  "rhcsa.deploy.timezone-and-ntp": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "9095af60826b",
+    "status": "pass"
+  },
+  "rhcsa.deploy.update-from-repo": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "8e6980991543",
+    "status": "pass"
+  },
+  "rhcsa.filesystems.acl-access": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "39826547ca41",
+    "status": "pass"
+  },
+  "rhcsa.filesystems.autofs-direct": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "a28b28e1ab38",
+    "status": "pass"
+  },
+  "rhcsa.filesystems.autofs-home-wildcard": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "8cf0eac8ed59",
+    "status": "pass"
+  },
+  "rhcsa.filesystems.autofs-indirect": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "1ae5b6e48de8",
+    "status": "pass"
+  },
+  "rhcsa.filesystems.collaborative-dir": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "db066b56b03c",
+    "status": "pass"
+  },
+  "rhcsa.filesystems.extend-ext4": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "0d737b3fa5ec",
+    "status": "pass"
+  },
+  "rhcsa.filesystems.extend-xfs": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "b505612467eb",
+    "status": "pass"
+  },
+  "rhcsa.filesystems.fix-home-access": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "d41434b3b9cc",
+    "status": "pass"
+  },
+  "rhcsa.filesystems.nfs-mount": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.cpu-hog: alt-mask@node2.sh failed on node2: Failed to mask unit: File '/etc/systemd/system/pulsar-worker.service' already exists\nERROR: line 197: systemctl mask --now \"$P_WORD-worker.service\"",
+    "digest": "a1d1a5c99bd1",
+    "status": "fail"
+  },
+  "rhcsa.filesystems.vfat-uuid": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.cpu-hog: alt-mask@node2.sh failed on node2: Failed to mask unit: File '/etc/systemd/system/pulsar-worker.service' already exists\nERROR: line 197: systemctl mask --now \"$P_WORD-worker.service\"",
+    "digest": "e5b31d71aee5",
+    "status": "fail"
+  },
+  "rhcsa.filesystems.xfs-and-ext4": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.cpu-hog: alt-mask@node2.sh failed on node2: Failed to mask unit: File '/etc/systemd/system/pulsar-worker.service' already exists\nERROR: line 197: systemctl mask --now \"$P_WORD-worker.service\"",
+    "digest": "b5eb86b8f5b6",
+    "status": "fail"
+  },
+  "rhcsa.networking.configure-node1": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.networking.firewall-remove-services: solution@node2.sh failed on node2: usage: 'firewall-cmd --help' for usage information or see firewall-cmd(1) man page\nfirewall-cmd: error: argument --remove-port: not allowed with argument --remove-service\nERROR: line 181: firewall-cmd --permanent --remove-service=cockpit --remove-service=dhcpv6-client --remove-port=\"$P_PORT/tcp\"",
+    "digest": "f578f4e71881",
+    "status": "fail"
+  },
+  "rhcsa.networking.connection-autoconnect": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.cpu-hog: alt-mask@node2.sh failed on node2: Failed to mask unit: File '/etc/systemd/system/pulsar-worker.service' already exists\nERROR: line 197: systemctl mask --now \"$P_WORD-worker.service\"",
+    "digest": "2001c2200c21",
+    "status": "fail"
+  },
+  "rhcsa.networking.dns-client": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.memory-hog-respawn: solution.sh failed on node1: ERROR: line 197: xargs -r rm -f",
+    "digest": "addecfa25770",
+    "status": "fail"
+  },
+  "rhcsa.networking.firewall-remove-services": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.cpu-hog: alt-mask@node2.sh failed on node2: Failed to mask unit: File '/etc/systemd/system/pulsar-worker.service' already exists\nERROR: line 197: systemctl mask --now \"$P_WORD-worker.service\"",
+    "digest": "772d8d07e4a7",
+    "status": "fail"
+  },
+  "rhcsa.networking.firewall-rich-rule": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "reference solution not full marks: others-blocked=fail ",
+    "digest": "3b1f4dcea93a",
+    "status": "fail"
+  },
+  "rhcsa.networking.hosts-file": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.cpu-hog: alt-mask@node2.sh failed on node2: Failed to mask unit: File '/etc/systemd/system/pulsar-worker.service' already exists\nERROR: line 197: systemctl mask --now \"$P_WORD-worker.service\"",
+    "digest": "35d4b119f1d1",
+    "status": "fail"
+  },
+  "rhcsa.networking.ipv6-address": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "dcc4fc1ed638",
+    "status": "pass"
+  },
+  "rhcsa.operate.boot-emergency-fstab": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "reference solution not full marks: booted=unreachable booted into emergency mode, most likely a bad /etc/fstab entry or a missing volume.; mounted=unreachable booted into emergency mode, most likely a bad /etc/fstab entry or a missing volume.",
+    "digest": "4ae37c278110",
+    "status": "fail"
+  },
+  "rhcsa.operate.boot-emergency-kernel-arg": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.boot-emergency-kernel-arg: solution@node2.sh failed on node2: console: none of ['#\\\\s*$'] seen within 30s",
+    "digest": "96338ee43238",
+    "status": "fail"
+  },
+  "rhcsa.operate.cpu-hog": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.cpu-hog: alt-mask@node2.sh failed on node2: Failed to mask unit: File '/etc/systemd/system/pulsar-worker.service' already exists\nERROR: line 197: systemctl mask --now \"$P_WORD-worker.service\"",
+    "digest": "82e260f83a88",
+    "status": "fail"
+  },
+  "rhcsa.operate.find-log-messages": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.memory-hog-respawn: solution.sh failed on node1: ERROR: line 197: xargs -r rm -f",
+    "digest": "a3e6f1b4df5e",
+    "status": "fail"
+  },
+  "rhcsa.operate.journal-size-limit": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.memory-hog-respawn: solution.sh failed on node1: ERROR: line 197: xargs -r rm -f",
+    "digest": "66f83aff6dae",
+    "status": "fail"
+  },
+  "rhcsa.operate.memory-hog-respawn": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.memory-hog-respawn: solution.sh failed on node1: ERROR: line 197: xargs -r rm -f",
+    "digest": "63d58201d716",
+    "status": "fail"
+  },
+  "rhcsa.operate.network-service-control": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.memory-hog-respawn: solution.sh failed on node1: ERROR: line 197: xargs -r rm -f",
+    "digest": "6c49a114f3d0",
+    "status": "fail"
+  },
+  "rhcsa.operate.nice-cron-job": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.memory-hog-respawn: solution.sh failed on node1: ERROR: line 197: xargs -r rm -f",
+    "digest": "f1cfb9498b12",
+    "status": "fail"
+  },
+  "rhcsa.operate.persistent-journal": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.memory-hog-respawn: solution.sh failed on node1: ERROR: line 197: xargs -r rm -f",
+    "digest": "04116fd2d62f",
+    "status": "fail"
+  },
+  "rhcsa.operate.process-priority": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.operate.memory-hog-respawn: solution.sh failed on node1: ERROR: line 197: xargs -r rm -f",
+    "digest": "521e9c2f24e9",
+    "status": "fail"
+  },
+  "rhcsa.operate.root-account-expired": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "78b9adfeb43c",
+    "status": "pass"
+  },
+  "rhcsa.operate.root-password-reset": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.networking.ipv6-address: mistake-replace@node2.sh failed on node2: sudo: PAM account management error: Authentication service cannot retrieve authentication info\nsudo: a password is required\nrhcsa.operate.rsync-mirror: mistake-no-delete@node2.sh failed on node2: sudo: PAM account management error: Authentication service cannot retrieve authentication info\nsudo: a password is required\nrhcsa.operate.secure-copy: mistake-no-preserve@node2.sh failed on node2: sudo: PAM account management error: Authentication service cannot retrieve authentication info\nsudo: a passwor",
+    "digest": "c1e36c13b413",
+    "status": "fail"
+  },
+  "rhcsa.operate.rsync-mirror": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "a394e001f862",
+    "status": "pass"
+  },
+  "rhcsa.operate.secure-copy": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "reference solution not full marks: synced=fail cat: /etc/autorelabel/pulsar-docs.digest: No such file or directory",
+    "digest": "dc9ef36f1bae",
+    "status": "fail"
+  },
+  "rhcsa.operate.tuned-profile": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "19dcf4a4b1f4",
+    "status": "pass"
+  },
+  "rhcsa.operate.tuned-recommended": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "4080f8872d7b",
+    "status": "pass"
+  },
+  "rhcsa.scripts.arg-loop": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "5f8b82deaa21",
+    "status": "pass"
+  },
+  "rhcsa.scripts.file-loop": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "66d986fe2e27",
+    "status": "pass"
+  },
+  "rhcsa.scripts.path-type": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "ba32a83a5175",
+    "status": "pass"
+  },
+  "rhcsa.scripts.system-report": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "5f2ae6024e27",
+    "status": "pass"
+  },
+  "rhcsa.scripts.user-lookup": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "d0a2314cf968",
+    "status": "pass"
+  },
+  "rhcsa.security.firewall-services": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "0be27719a599",
+    "status": "pass"
+  },
+  "rhcsa.security.firewall-zone": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "38426d40049a",
+    "status": "pass"
+  },
+  "rhcsa.security.selinux-boolean": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "7c8b4f1f117f",
+    "status": "pass"
+  },
+  "rhcsa.security.selinux-contexts": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "e20a7d995112",
+    "status": "pass"
+  },
+  "rhcsa.security.selinux-enforcing": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "00f3925f646d",
+    "status": "pass"
+  },
+  "rhcsa.security.selinux-enforcing-kernel-arg": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "551ad859837e",
+    "status": "pass"
+  },
+  "rhcsa.security.selinux-fcontext-web": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "2483dfede360",
+    "status": "pass"
+  },
+  "rhcsa.security.selinux-find-boolean": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "acedbaf0cd9b",
+    "status": "pass"
+  },
+  "rhcsa.security.selinux-permissive": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "ff5b92f8051e",
+    "status": "pass"
+  },
+  "rhcsa.security.selinux-port-web": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.security.ssh-key-only-user: mistake-global@node1.sh failed on node1: sudo: unknown user priya\nsudo: error initializing audit plugin sudoers_audit\nERROR: line 182: sudo -u \"$P_USER\" ssh-keygen -q -t ed25519 -N '' -f \"/home/$P_USER/.ssh/id_ed25519\"",
+    "digest": "d2754d31b535",
+    "status": "fail"
+  },
+  "rhcsa.security.selinux-ssh-port": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.security.ssh-key-only-user: mistake-global@node1.sh failed on node1: sudo: unknown user priya\nsudo: error initializing audit plugin sudoers_audit\nERROR: line 182: sudo -u \"$P_USER\" ssh-keygen -q -t ed25519 -N '' -f \"/home/$P_USER/.ssh/id_ed25519\"",
+    "digest": "253225ac6f1f",
+    "status": "fail"
+  },
+  "rhcsa.security.ssh-key-only-user": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "reference solution not full marks: key=unreachable Warning: Permanently added '172.25.250.12' (ED25519) to the list of known hosts.\namina@172.25.250.12: Permission denied ",
+    "digest": "b34dc056958c",
+    "status": "fail"
+  },
+  "rhcsa.security.ssh-keys": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "eaf6a7106648",
+    "status": "pass"
+  },
+  "rhcsa.security.umask-system": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "431508ccffba",
+    "status": "pass"
+  },
+  "rhcsa.security.umask-user": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "4d53baf9053a",
+    "status": "pass"
+  },
+  "rhcsa.software.configure-repos": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "21443a83d225",
+    "status": "pass"
+  },
+  "rhcsa.software.flatpak-ref-swap": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "293427c8a819",
+    "status": "pass"
+  },
+  "rhcsa.software.flatpak-remote-install": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "a854989cde27",
+    "status": "pass"
+  },
+  "rhcsa.software.flatpak-user-remote": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "f3820c82ff83",
+    "status": "pass"
+  },
+  "rhcsa.software.install-remove-packages": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "64581d33130f",
+    "status": "pass"
+  },
+  "rhcsa.software.package-group": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "9d5ecbcb1818",
+    "status": "pass"
+  },
+  "rhcsa.storage.gpt-partitions": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "common mistake mistake-wipe was not caught",
+    "digest": "ac4dbd703569",
+    "status": "fail"
+  },
+  "rhcsa.storage.lv-delete": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "9082a57495c0",
+    "status": "pass"
+  },
+  "rhcsa.storage.lvm-create": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.software.flatpak-user-remote: solution@node2.sh failed on node2: ^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 182: dnf -y -q install flatpak\nrhcsa.software.package-group: solution.sh failed on node1: ^^^^^^^^\n  File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n   ",
+    "digest": "be7e334b2951",
+    "status": "fail"
+  },
+  "rhcsa.storage.mount-label": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.software.flatpak-user-remote: solution@node2.sh failed on node2: ^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 182: dnf -y -q install flatpak\nrhcsa.software.package-group: solution.sh failed on node1: ^^^^^^^^\n  File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n   ",
+    "digest": "fd41e65e395d",
+    "status": "fail"
+  },
+  "rhcsa.storage.pv-remove": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.software.flatpak-user-remote: solution@node2.sh failed on node2: ^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 182: dnf -y -q install flatpak\nrhcsa.software.package-group: solution.sh failed on node1: ^^^^^^^^\n  File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n   ",
+    "digest": "3fec6a990f79",
+    "status": "fail"
+  },
+  "rhcsa.storage.swap-lv": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
+    "digest": "c58731118576",
+    "status": "fail"
+  },
+  "rhcsa.storage.swap-partition": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.software.flatpak-user-remote: solution@node2.sh failed on node2: ^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 182: dnf -y -q install flatpak\nrhcsa.software.package-group: solution.sh failed on node1: ^^^^^^^^\n  File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n   ",
+    "digest": "60ab2bbfdad6",
+    "status": "fail"
+  },
+  "rhcsa.storage.vg-extend": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
+    "digest": "7b96865df98d",
+    "status": "fail"
+  },
+  "rhcsa.tools.archive-bzip2": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
+    "digest": "fe68886e8e01",
+    "status": "fail"
+  },
+  "rhcsa.tools.archive-gzip-extract": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
+    "digest": "7ad26e4e6ba9",
+    "status": "fail"
+  },
+  "rhcsa.tools.compress-files": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
+    "digest": "52d3a60816f7",
+    "status": "fail"
+  },
+  "rhcsa.tools.edit-as-user": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
+    "digest": "05efacd9ab79",
+    "status": "fail"
+  },
+  "rhcsa.tools.find-copy-files": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
+    "digest": "f63d8bc1d6f0",
+    "status": "fail"
+  },
+  "rhcsa.tools.fix-broken-link": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
+    "digest": "ab700f8775e1",
+    "status": "fail"
+  },
+  "rhcsa.tools.grep-regex": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "digest": "68c59b7068f4",
+    "status": "fail"
+  },
+  "rhcsa.tools.grep-save-lines": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "digest": "ef9ab756d190",
+    "status": "fail"
+  },
+  "rhcsa.tools.info-date-format": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "digest": "8b8117784913",
+    "status": "fail"
+  },
+  "rhcsa.tools.links": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "digest": "94dbd1b1b144",
+    "status": "fail"
+  },
+  "rhcsa.tools.man-search": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "digest": "c5aaf215f47b",
+    "status": "fail"
+  },
+  "rhcsa.tools.permissions": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "digest": "021042cadcc6",
+    "status": "fail"
+  },
+  "rhcsa.tools.redirection": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "digest": "ddd8a431a843",
+    "status": "fail"
+  },
+  "rhcsa.tools.ssh-remote-command": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "digest": "f48bf5ca6aac",
+    "status": "fail"
+  },
+  "rhcsa.tools.sudo-as-user": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "7b50b4ef218b",
+    "status": "pass"
+  },
+  "rhcsa.tools.tidy-files": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "ead58cf072b9",
+    "status": "pass"
+  },
+  "rhcsa.users.create-users": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "3fefee92c01e",
+    "status": "pass"
+  },
+  "rhcsa.users.group-management": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "390d253c8738",
+    "status": "pass"
+  },
+  "rhcsa.users.modify-delete-users": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "48cd03d8e7a5",
+    "status": "pass"
+  },
+  "rhcsa.users.password-aging": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "1834aaed8db2",
+    "status": "pass"
+  },
+  "rhcsa.users.sudo-access": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-07",
+    "detail": "",
+    "digest": "a5bb393c9313",
+    "status": "pass"
+  }
+}
