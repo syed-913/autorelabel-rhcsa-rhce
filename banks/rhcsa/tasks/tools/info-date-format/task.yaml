@@ -15,14 +15,14 @@ prompt: |
   1. Using the documentation of the `date` command (the GNU coreutils **info** manual has the most
      complete list), create an executable script `/usr/local/bin/isoweek` that prints **only** the
      ISO 8601 **week number** of the current date (for example `07`).
-  2. The `rsync` package ships documentation under `/usr/share/doc`. Write the full path of its
-     **NEWS** file into `/root/rsync-news.txt`.
+  2. The `chrony` package ships documentation under `/usr/share/doc`. Write the full path of its
+     **NEWS** file into `/root/chrony-news.txt`.
 
   (The `info` reader may need to be installed.)
 
 requirements:
   R1: "isoweek prints the ISO week number"
-  R2: "/root/rsync-news.txt contains the path of rsync's NEWS file"
+  R2: "/root/chrony-news.txt contains the path of chrony's NEWS file"
 
 checks:
   - id: script
@@ -35,10 +35,10 @@ checks:
   - id: news
     covers: [R2]
     on: node2
-    desc: the path points to rsync's NEWS file
+    desc: the path points to chrony's NEWS file
     run: |
-      p="$(tr -d '[:space:]' < /root/rsync-news.txt)"
-      case "$p" in /usr/share/doc/rsync*/NEWS*) test -f "$p" ;; *) exit 1 ;; esac
+      p="$(tr -d '[:space:]' < /root/chrony-news.txt)"
+      case "$p" in /usr/share/doc/chrony*/NEWS*) test -f "$p" ;; *) exit 1 ;; esac
 
 references:
   - "info coreutils 'date invocation' (Date conversion specifiers), man date(1)"
