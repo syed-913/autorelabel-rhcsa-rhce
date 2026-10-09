@@ -12,7 +12,7 @@ difficulty_reason: >
   from node2 itself.
 estimated_minutes: 12
 node: node2
-exclusive: [httpd-node2, selinux-node2-enforcing]
+exclusive: [httpd-node2, selinux-node2-enforcing, selinux-mode-node2]
 params:
   port: {choice: [82, 83, 8090, 8909, 9091]}
   token: {token: 10}

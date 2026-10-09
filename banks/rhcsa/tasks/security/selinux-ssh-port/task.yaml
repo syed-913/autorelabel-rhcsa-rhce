@@ -10,7 +10,7 @@ difficulty_reason: >
   port 22 (a mistake there locks everyone out).
 estimated_minutes: 10
 node: node1
-exclusive: [sshd-config-node1]
+exclusive: [sshd-config-node1, selinux-mode-node1]
 params:
   port: {choice: [2022, 2222, 4422]}
 

@@ -11,7 +11,7 @@ difficulty_reason: >
   The trap: chcon makes it work but does not survive a relabel.
 estimated_minutes: 8
 node: node1
-exclusive: [httpd-node1]
+exclusive: [httpd-node1, selinux-mode-node1]
 params:
   site: {choice: [intranet, reports, docs, portal, wiki]}
   token: {token: 10}
