@@ -12,6 +12,8 @@ With `fdisk {{lab.node2.disk1}}`: `d` (delete), `n` (new, accept the default sta
 `n` again (`+{{size2}}M`), `w`. `gdisk` works similarly.
 
 **Classic mistake:** `mklabel` (a new partition table) or picking the wrong partition number.
-The mounted data partition is destroyed. Always `lsblk`/`print` first.
+The data partition is gone from the table: even when its file system survives by luck inside
+a new partition, that partition is no longer one of the two you were asked to create. Always
+`lsblk`/`print` first.
 
 References: RHEL 10 *Managing storage devices* → partitions; `man parted`, `man fdisk`.

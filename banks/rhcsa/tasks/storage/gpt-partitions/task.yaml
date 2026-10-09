@@ -41,9 +41,10 @@ checks:
   - id: created
     covers: [R2]
     on: node2
-    desc: "partitions of about {{size1}} and {{size2}} MiB exist"
+    desc: "new partitions of about {{size1}} and {{size2}} MiB exist (besides the data partition)"
     run: |
-      sizes="$(lsblk -nbro SIZE,TYPE {{lab.node2.disk1}} | awk '$2=="part" {print int($1/1048576)}')"
+      keep="$(findmnt -nvo SOURCE /mnt/keep-{{word}} || true)"
+      sizes="$(lsblk -nbrpo NAME,SIZE,TYPE {{lab.node2.disk1}} | awk -v k="$keep" '$3=="part" && $1!=k {print int($2/1048576)}')"
       echo "$sizes" | awk -v a={{size1}} 'BEGIN{f=0} {if ($1>=a-8 && $1<=a+8) f=1} END{exit !f}'
       echo "$sizes" | awk -v a={{size2}} 'BEGIN{f=0} {if ($1>=a-8 && $1<=a+8) f=1} END{exit !f}'
   - id: data
