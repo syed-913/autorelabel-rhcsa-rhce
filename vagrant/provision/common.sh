@@ -83,8 +83,9 @@ EOF
   chmod 0600 "/etc/NetworkManager/system-connections/${con}.nmconnection"
 }
 
-# Remove the box's installer connections (applied at next boot, so the current
-# SSH session is not disturbed).
+# Remove the box's installer connections. Takes effect at the next boot: never run
+# `nmcli connection reload` afterwards (on VirtualBox the box's profile is the active one
+# carrying the provisioning SSH session); load new profiles with `nmcli connection load`.
 remove_box_connections() {
   local f
   for f in /etc/NetworkManager/system-connections/*.nmconnection; do

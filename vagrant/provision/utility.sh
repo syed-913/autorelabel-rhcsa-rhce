@@ -15,7 +15,9 @@ write_mgmt_config
 write_lab_config "$lab_dev" "$lab_dev"
 remove_box_connections "$lab_dev"
 # Bring the lab NIC up now (the mgmt NIC, our SSH path, is left untouched until reboot).
-nmcli connection reload
+# Load only the new lab profile: a full reload would also apply the removal of the box's
+# connection, which on VirtualBox is the one carrying this SSH session.
+nmcli connection load "/etc/NetworkManager/system-connections/${lab_dev}.nmconnection"
 nmcli connection up "$lab_dev" >/dev/null
 record_fact lab_nic "$lab_dev"
 hostnamectl set-hostname "$AR_FQDN"
