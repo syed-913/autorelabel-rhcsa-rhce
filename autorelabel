@@ -59,7 +59,9 @@ distro_hint() {
   local id="" like="" ver
   if [[ -r /etc/os-release ]]; then
     # shellcheck disable=SC1091
-    id="$(. /etc/os-release; echo "${ID:-}")"; like="$(. /etc/os-release; echo "${ID_LIKE:-}")"
+    id="$(. /etc/os-release; echo "${ID:-}")"
+    # shellcheck disable=SC1091
+    like="$(. /etc/os-release; echo "${ID_LIKE:-}")"
   fi
   ver="$("$1" -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>/dev/null || echo 3)"
   case " $id $like " in

@@ -108,7 +108,7 @@ ar_fill() {  # ar_fill <dir> <word>  -> writes files and records their digest in
 # --- RHCE helpers --------------------------------------------------------------------------------
 as_student() {  # as_student <command> [args...]: run as the candidate in ~/ansible
   local uid; uid="$(id -u student)"
-  (cd /home/student/ansible 2>/dev/null || cd /home/student
+  (cd /home/student/ansible 2>/dev/null || cd /home/student || exit 1
    runuser -u student -- env -i HOME=/home/student USER=student LOGNAME=student LANG=C.UTF-8 \
      PATH=/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin XDG_RUNTIME_DIR="/run/user/$uid" \
      ANSIBLE_NOCOLOR=1 ANSIBLE_DEPRECATION_WARNINGS=0 "$@")
@@ -125,7 +125,7 @@ student_write() {  # student_write <path relative to ~/ansible> [mode]  (content
 as_user() {
   local u="$1"; shift
   local home; home="$(getent passwd "$u" | cut -d: -f6)"
-  (cd "$home" 2>/dev/null || cd /
+  (cd "$home" 2>/dev/null || cd / || exit 1
    runuser -u "$u" -- env -i HOME="$home" USER="$u" LOGNAME="$u" LANG=C.UTF-8 \
      PATH=/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin XDG_RUNTIME_DIR="/run/user/$(id -u "$u")" "$@")
 }

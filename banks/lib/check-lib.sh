@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Read-only helpers available to every check. Defines functions only.
 
 # Checks run with pipefail, so `producer | grep -q x` could fail at random: grep exits at the
@@ -21,7 +22,7 @@ grep() {
 # directory, with a login-like environment (so ansible.cfg in that directory applies).
 as_student() {
   local uid; uid="$(id -u student)"
-  (cd /home/student/ansible 2>/dev/null || cd /home/student
+  (cd /home/student/ansible 2>/dev/null || cd /home/student || exit 1
    runuser -u student -- env -i HOME=/home/student USER=student LOGNAME=student LANG=C.UTF-8 \
      PATH=/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin XDG_RUNTIME_DIR="/run/user/$uid" \
      ANSIBLE_NOCOLOR=1 ANSIBLE_DEPRECATION_WARNINGS=0 "$@")
@@ -69,7 +70,7 @@ playbook_ok() {
 as_user() {
   local u="$1"; shift
   local home; home="$(getent passwd "$u" | cut -d: -f6)"
-  (cd "$home" 2>/dev/null || cd /
+  (cd "$home" 2>/dev/null || cd / || exit 1
    runuser -u "$u" -- env -i HOME="$home" USER="$u" LOGNAME="$u" LANG=C.UTF-8 \
      PATH=/usr/local/bin:/usr/bin:/usr/sbin:/bin:/sbin XDG_RUNTIME_DIR="/run/user/$(id -u "$u")" "$@")
 }

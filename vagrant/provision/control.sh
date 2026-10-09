@@ -47,7 +47,7 @@ gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
 EOF
 # The lab network is configured now; make sure the utility server answers.
-for i in $(seq 1 30); do curl -fs -o /dev/null "http://utility.$AR_DOMAIN/rhel10/BaseOS/repodata/repomd.xml" && break; sleep 2; done
+for _ in $(seq 1 30); do curl -fs -o /dev/null "http://utility.$AR_DOMAIN/rhel10/BaseOS/repodata/repomd.xml" && break; sleep 2; done
 dnf -y -q install ansible-core rhel-system-roles git podman python3-pip vim-enhanced nano bash-completion \
     tar rsync tree >/dev/null
 
