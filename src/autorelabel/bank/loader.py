@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -19,9 +20,21 @@ class BankError(ValueError):
     pass
 
 
+class _BankLoader(yaml.SafeLoader):
+    """YAML 1.2 booleans: only true/false. YAML 1.1 also reads on/off/yes/no as booleans, which
+    would turn a check's `on: node2` key into `True` (and a `no` sshd value into False)."""
+
+
+_BankLoader.yaml_implicit_resolvers = {
+    first: [(tag, rx) for tag, rx in resolvers if tag != "tag:yaml.org,2002:bool"]
+    for first, resolvers in yaml.SafeLoader.yaml_implicit_resolvers.items()}
+_BankLoader.add_implicit_resolver("tag:yaml.org,2002:bool", re.compile(r"^(?:true|True|TRUE|false|False|FALSE)$"),
+                                  list("tTfF"))
+
+
 def _yaml(path: Path) -> Any:
     with open(path, encoding="utf-8") as fh:
-        return yaml.safe_load(fh)
+        return yaml.load(fh, Loader=_BankLoader)  # a SafeLoader
 
 
 def load_objectives(exam: str, root: Path | None = None) -> ObjectiveSet:

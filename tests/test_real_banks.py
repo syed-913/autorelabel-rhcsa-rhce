@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 
 import pytest
+import yaml
 
 from autorelabel import labfacts
 from autorelabel.bank import load_bank
@@ -86,3 +87,11 @@ def test_group_checks_split_their_weight(tmp_path):
     jobs = g._expanded(task)
     assert [(c.id, n) for c, n in jobs] == [("a@node3", "node3"), ("a@node4", "node4"), ("b", "control")]
     assert [c.weight for c, _ in jobs] == [1.0, 1.0, 1.0]
+
+
+def test_check_targets_survive_yaml(bank):
+    # YAML 1.1 reads the key `on` as the boolean True; every `on:` a task writes must reach the model.
+    for task in bank.tasks.values():
+        raw = yaml.safe_load((task.path / "task.yaml").read_text())
+        written = [c.get(True) for c in raw.get("checks", [])]
+        assert [c.on for c in task.checks] == written, task.id
