@@ -154,7 +154,9 @@ def run_commands(domain: str, root_password: str, text: str, *, timeout: float =
         for line in text.splitlines():
             send(line + "\r")
             time.sleep(0.15)
-        send("echo __AR_DONE__$((40+2))\r")
+        # A candidate reboots (or continues the boot) afterwards, which writes everything to disk;
+        # a node left in emergency mode gets hard-reset by the grader, so sync first.
+        send("sync; echo __AR_DONE__$((40+2))\r")
         read_until([r"__AR_DONE__42"], timeout / 2)
         return _ANSI.sub("", buf.decode("utf-8", "replace"))
     finally:
