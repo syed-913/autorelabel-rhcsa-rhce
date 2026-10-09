@@ -61,8 +61,17 @@ your work out of 300** (pass mark 210), the way Red Hat's performance-based exam
 | macOS | ❌ Not supported |
 
 Requirements: an x86-64-v3 CPU (Intel Haswell / AMD Excavator or newer; RHEL 10 requires it),
-virtualization enabled in the BIOS, **about 3 GB free RAM** (RHCSA, *lite* profile) and **about
-30 GB free disk** in a directory of your choice.
+virtualization enabled in the BIOS, **about 3 GB free RAM** (RHCSA, *lite* profile; about 5.5 GB
+for RHCE) and **about 30 GB free disk** in a directory of your choice (40 GB for RHCE).
+
+> **libvirt and VirtualBox on the same machine:** you can have both installed, but never run
+> VirtualBox VMs while KVM/libvirt VMs are running (or the other way round). On some kernel and
+> VirtualBox versions this freezes every KVM guest (`kvm_intel: vmwrite failed` in the kernel log).
+> autorelabel checks before it starts any lab VM and tells you which VMs to shut down first.
+
+With VirtualBox, the lab VMs live in autorelabel's **own VirtualBox profile** inside your lab
+storage directory, so they don't appear in (or depend on) your normal VirtualBox VM list. To look at
+them in the VirtualBox GUI: `VBOX_USER_HOME=<lab storage>/autorelabel/virtualbox/profile virtualbox`.
 
 ## Quick start
 
@@ -137,6 +146,18 @@ anything you installed yourself.
 
 Networks are isolated (no internet, no access to your LAN). Nothing in the lab uses a Red Hat
 subscription.
+
+## What the RHCE lab looks like
+
+| VM | Role | RAM (lite / standard) |
+|---|---|---|
+| `utility` | Everything above, plus a Git server (HTTP) and the Ansible collections and roles the tasks install | 1 GB / 1 GB |
+| `control` | Where you work, as `student`: `ansible-core` and the RHEL system roles from your DVD, `ansible-navigator`, an execution environment built offline from your DVD, and **VS Code in your browser** (code-server with the Red Hat Ansible extension) | 2 GB / 2.5 GB |
+| `node1`… | Managed nodes with an `ansible` user (3 in *lite*, 5 in *standard*), each with a spare disk | 768 MB / 1 GB |
+
+The inventory groups (`dev`, `test`, `prod`, `balancers`, and `webservers` with `prod` as a child)
+are shown in the exam instructions. The first RHCE session downloads its Ansible content once
+(PyPI, Ansible Galaxy, and for code-server GitHub and Open VSX); after that everything is offline.
 
 ## FAQ
 
