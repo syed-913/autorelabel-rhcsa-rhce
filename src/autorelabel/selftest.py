@@ -129,10 +129,12 @@ class SelfTest:
         return groups[index][1] if index < len(groups) else {}
 
     def _apply(self, sess: S.Session, entries: list[dict[str, Any]], kind: str, index: int,
-               solve_anchors: bool) -> list[str]:
+               solve_anchors: bool) -> tuple[list[str], dict[str, str]]:
         """Apply anchor reference solutions (so the lab is usable), then the given kind of
-        script for each task. Returns task ids that took part in this round."""
-        errors: list[str] = []
+        script for each task. Returns the task ids that took part in this round and
+        {task id: error} for scripts that failed. A failing script only fails its own task;
+        a failing anchor fails the round (everything else depends on it)."""
+        failed: dict[str, str] = {}
         participants: list[str] = []
         by_anchor = {self.bank.tasks[e["task"]].anchor: e for e in entries if self.bank.tasks[e["task"]].anchor}
         ordered = [by_anchor[a] for a in ANCHOR_ORDER if a in by_anchor]
@@ -151,10 +153,11 @@ class SelfTest:
                                  for n in labfacts.script_nodes(target, facts)]:
                 ok, out = self._run_on(sess, e, script, node)
                 if not ok:
-                    errors.append(f"{task.id}: {script.name} failed on {node}: {out.strip()[-300:]}")
-        if errors:
-            raise EngineError("self-test script failed", "\n".join(errors))
-        return participants
+                    msg = f"{script.name} failed on {node}: {out.strip()[-300:]}"
+                    if task.anchor:
+                        raise EngineError("self-test script failed", f"{task.id} (anchor): {msg}")
+                    failed.setdefault(task.id, msg)
+        return participants, failed
 
     def _grade(self, sess: S.Session, reboot: bool) -> dict[str, dict[str, Any]]:
         results = self.engine.grade(sess, official=False, reboot=reboot)
@@ -172,13 +175,14 @@ class SelfTest:
     def _infra_trouble(graded: dict[str, dict[str, Any]]) -> bool:
         return any(c["status"] == "unreachable" for t in graded.values() for c in t["post"])
 
-    def _retry_round(self, sess: S.Session, kind: str, index: int) -> dict[str, dict[str, Any]]:
+    def _retry_round(self, sess: S.Session, kind: str, index: int
+                     ) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
         """A round that should score full marks lost a node (host hiccup, paused VM):
         run it once more from the exam starting point before blaming the task."""
         self.say(f"    a node was unreachable during the {kind} round; retrying it once")
         self._restart_from_exam_start(sess)
-        self._apply(sess, sess.tasks, kind, index, solve_anchors=True)
-        return self._grade(sess, reboot=True)
+        _who, failed = self._apply(sess, sess.tasks, kind, index, solve_anchors=True)
+        return self._grade(sess, reboot=True), failed
 
     def _restart_from_exam_start(self, sess: S.Session) -> None:
         self.lab.revert(EXAM_START)
@@ -228,11 +232,15 @@ class SelfTest:
                 if t.id in pre and self._full(pre[t.id]):
                     fail(t.id, "pre-state already scores full marks (setup or checks too weak)")
             # 2. reference
-            self._apply(sess, sess.tasks, "solution", 0, solve_anchors=True)
+            _who, failed = self._apply(sess, sess.tasks, "solution", 0, solve_anchors=True)
             ref = self._grade(sess, reboot=True)
             if self._infra_trouble(ref):
-                ref = self._retry_round(sess, "solution", 0)
+                ref, failed = self._retry_round(sess, "solution", 0)
+            for tid, msg in failed.items():
+                fail(tid, f"reference solution script failed: {msg}")
             for t in batch:
+                if t.id in failed:
+                    continue
                 if not self._full(ref.get(t.id, {"post": []})):
                     fail(t.id, "reference solution not full marks: " + self._failures(ref.get(t.id, {"post": []})))
             # 3/4. alternatives and mistakes, round by round
@@ -240,14 +248,17 @@ class SelfTest:
                 rounds = max((len(t.test_groups(kind)) for t in batch), default=0)
                 for i in range(rounds):
                     self._restart_from_exam_start(sess)
-                    who = self._apply(sess, sess.tasks, kind, i, solve_anchors=True)
+                    who, failed = self._apply(sess, sess.tasks, kind, i, solve_anchors=True)
                     got = self._grade(sess, reboot=True)
                     if want_full and self._infra_trouble(got):
-                        got = self._retry_round(sess, kind, i)
+                        got, failed = self._retry_round(sess, kind, i)
                     for t in batch:
                         if t.id not in who or len(t.test_groups(kind)) <= i:
                             continue
                         name = t.test_groups(kind)[i][0]
+                        if t.id in failed:
+                            fail(t.id, f"{kind} test {name}: script failed: {failed[t.id]}")
+                            continue
                         full = self._full(got.get(t.id, {"post": []}))
                         if want_full and not full:
                             fail(t.id, f"valid alternative {name} was not accepted: "
