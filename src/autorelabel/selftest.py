@@ -110,13 +110,16 @@ class SelfTest:
             lines = [f"export {k}={json.dumps(str(v))}" for k, v in env.items() if k.startswith(("P_", "LAB_"))]
             body = [ln for ln in script.read_text().splitlines() if ln.strip() and not ln.lstrip().startswith("#")]
             log_file = sess.dir / f"console-{entry['task']}-{node}-{script.stem}.log"
+            stamp = f"\n===== {time.strftime('%H:%M:%S')} =====\n"
             try:
                 out = console.run_commands(self.lab.vm(node).domain, sess.passwords.get(node, ""),
                                            "\n".join(lines + body), hv=self.lab.hv)
-                log_file.write_text(out)
+                with open(log_file, "a", encoding="utf-8") as fh:   # one section per attempt
+                    fh.write(stamp + out)
                 return True, out[-400:]
             except console.ConsoleError as exc:
-                log_file.write_text(str(exc))
+                with open(log_file, "a", encoding="utf-8") as fh:
+                    fh.write(stamp + str(exc))
                 return False, str(exc)
         res = remote.run_script(self.lab.target(node), self.lib + "\n" + script.read_text(), env=env, timeout=900)
         return res.ok, (res.out + res.err)[-800:]

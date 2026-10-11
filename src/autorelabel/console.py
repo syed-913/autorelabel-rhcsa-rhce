@@ -144,8 +144,17 @@ def run_commands(domain: str, root_password: str, text: str, *, timeout: float =
         hit = read_until([r"Give root password", r"Press Enter for maintenance", r"login:\s*$",
                           r"#\s*$"], timeout / 2)
         if hit.startswith("Give root") or hit.startswith("Press Enter"):
-            send(root_password + "\r")
-            read_until([r"#\s*$"], 30)
+            # sulogin discards input typed while it switches the terminal to no-echo, so a
+            # password sent the moment the prompt shows can be lost: pause, and retry once.
+            for attempt in range(2):
+                time.sleep(1.5)
+                send(root_password + "\r")
+                try:
+                    read_until([r"#\s*$"], 20)
+                    break
+                except ConsoleError:
+                    if attempt:
+                        raise
         elif hit.startswith("login"):
             send("root\r")
             read_until([r"[Pp]assword:\s*$"], 20)
