@@ -166,11 +166,15 @@ class Engine:
         if sess.exam == "rhce":
             sess.accounts = lab.accounts()
             sess.save()
-        # Prelude: passwords, a reminder banner, temporary setup repository (the RHCE control
-        # node keeps the lab.repo it was built with).
+        # Prelude: passwords, a reminder banner, the Red Hat signing keys, temporary setup
+        # repository (the RHCE control node keeps the lab.repo it was built with).
+        # The keys are imported with rpm because dnf's own key parsing (libdnf keysFromFd on
+        # RHEL 10.0) intermittently fails with "Parsing armored OpenPGP packet(s) failed", which
+        # broke setups and would break a candidate's first `dnf install` the same way.
         for n in exam_nodes:
             script = (
                 f"echo 'root:{sess.passwords[n]}' | chpasswd\n"
+                "rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release\n"
                 f"cat > /etc/motd <<'EOF'\n"
                 f"autorelabel {sess.exam.upper()} lab node. Do not modify the 'mgmt0' interface or the\n"
                 f"'vagrant' account: they are how your work gets graded.\nEOF\n"
