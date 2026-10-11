@@ -28,21 +28,25 @@ checks:
     covers: [R1, R3]
     desc: "exactly the user's regular files are in /root/{{user}}-files, originals still in place"
     run: |
-      find / -user {{user}} -type f -not -path '/proc/*' -not -path '/sys/*' \
-           -not -path '/root/{{user}}-files/*' 2>/dev/null | sort > /tmp/.ar-src
-      test -s /tmp/.ar-src
-      test "$(xargs -d '\n' -n1 basename < /tmp/.ar-src | sort)" = \
-           "$(find /root/{{user}}-files -type f -printf '%f\n' | sort)"
-      grep -q '/srv/{{user}}-report-3.txt' /tmp/.ar-src
+      # find exits 1 on unreadable or vanishing entries: keep its output, not its status
+      src="$(find / \( -path /proc -o -path /sys -o -path /root/{{user}}-files \) -prune \
+                -o -user {{user}} -type f -print 2>/dev/null || true)"
+      test -n "$src"
+      grep -q '^/srv/{{user}}-report-3.txt$' <<<"$src"
+      # every entry of the directory (a copied directory shows up as extra entries)
+      test "$(xargs -d '\n' -n1 basename <<<"$src" | sort)" = \
+           "$(find /root/{{user}}-files -mindepth 1 -printf '%f\n' | sort)"
   - id: attributes
     covers: [R2]
     desc: owner, mode and mtime match the originals
     run: |
-      find / -user {{user}} -type f -not -path '/proc/*' -not -path '/sys/*' \
-           -not -path '/root/{{user}}-files/*' 2>/dev/null | while read -r p; do
+      src="$(find / \( -path /proc -o -path /sys -o -path /root/{{user}}-files \) -prune \
+                -o -user {{user}} -type f -print 2>/dev/null || true)"
+      test -n "$src"
+      while read -r p; do
         c="/root/{{user}}-files/$(basename "$p")"
         test "$(stat -c '%U %a %Y' "$p")" = "$(stat -c '%U %a %Y' "$c")" || { echo "differs: $p"; exit 1; }
-      done
+      done <<<"$src"
 
 references:
   - "man find(1) (-user, -type, -exec), man cp(1) (-p, -a)"
