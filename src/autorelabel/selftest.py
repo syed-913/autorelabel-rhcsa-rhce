@@ -128,12 +128,14 @@ class SelfTest:
         groups = task.test_groups(kind)
         return groups[index][1] if index < len(groups) else {}
 
-    def _apply(self, sess: S.Session, entries: list[dict[str, Any]], kind: str, index: int,
-               solve_anchors: bool) -> tuple[list[str], dict[str, str]]:
-        """Apply anchor reference solutions (so the lab is usable), then the given kind of
-        script for each task. Returns the task ids that took part in this round and
-        {task id: error} for scripts that failed. A failing script only fails its own task;
-        a failing anchor fails the round (everything else depends on it)."""
+    def _apply(self, sess: S.Session, entries: list[dict[str, Any]], kind: str, index: int
+               ) -> tuple[list[str], dict[str, str]]:
+        """Apply this round's script (reference solution, or alternative/mistake test number
+        `index`) for each task. A task without one gets its reference solution instead, like a
+        real exam where everything else is solved: left in its starting state it could break the
+        others (a node's lab connection still down). Returns the tasks whose own script ran and
+        {task id: error} for scripts that failed. A failing script only fails its own task; a
+        failing anchor fails the round (everything else depends on it)."""
         failed: dict[str, str] = {}
         participants: list[str] = []
         by_anchor = {self.bank.tasks[e["task"]].anchor: e for e in entries if self.bank.tasks[e["task"]].anchor}
@@ -142,12 +144,10 @@ class SelfTest:
         for e in ordered:
             task = self.bank.tasks[e["task"]]
             scripts = self._scripts_for(task, kind, index)
-            if task.anchor and solve_anchors and not scripts:
-                scripts = task.solution_scripts
-            elif not scripts:
-                continue
-            if scripts and (kind == "solution" or self._scripts_for(task, kind, index)):
+            if scripts:
                 participants.append(task.id)
+            else:
+                scripts = task.solution_scripts
             facts = self.lab.facts()
             for node, script in [(n, sc) for target, sc in scripts.items()
                                  for n in labfacts.script_nodes(target, facts)]:
@@ -181,7 +181,7 @@ class SelfTest:
         run it once more from the exam starting point before blaming the task."""
         self.say(f"    a node was unreachable during the {kind} round; retrying it once")
         self._restart_from_exam_start(sess)
-        _who, failed = self._apply(sess, sess.tasks, kind, index, solve_anchors=True)
+        _who, failed = self._apply(sess, sess.tasks, kind, index)
         return self._grade(sess, reboot=True), failed
 
     def _restart_from_exam_start(self, sess: S.Session) -> None:
@@ -232,7 +232,7 @@ class SelfTest:
                 if t.id in pre and self._full(pre[t.id]):
                     fail(t.id, "pre-state already scores full marks (setup or checks too weak)")
             # 2. reference
-            _who, failed = self._apply(sess, sess.tasks, "solution", 0, solve_anchors=True)
+            _who, failed = self._apply(sess, sess.tasks, "solution", 0)
             ref = self._grade(sess, reboot=True)
             if self._infra_trouble(ref):
                 ref, failed = self._retry_round(sess, "solution", 0)
@@ -248,7 +248,7 @@ class SelfTest:
                 rounds = max((len(t.test_groups(kind)) for t in batch), default=0)
                 for i in range(rounds):
                     self._restart_from_exam_start(sess)
-                    who, failed = self._apply(sess, sess.tasks, kind, i, solve_anchors=True)
+                    who, failed = self._apply(sess, sess.tasks, kind, i)
                     got = self._grade(sess, reboot=True)
                     if want_full and self._infra_trouble(got):
                         got, failed = self._retry_round(sess, kind, i)

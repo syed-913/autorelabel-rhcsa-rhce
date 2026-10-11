@@ -145,6 +145,9 @@ Helpers from `check-lib.sh`: `as_student`, `student_sh`, `as_user`, `inventory_h
 3. **alternatives**: each `tests/alt-*` group, reboot, full marks;
 4. **mistakes**: each `tests/mistake-*` group, reboot, not full marks.
 
+In rounds 3 and 4, tasks of the batch that have no test of that number get their reference
+solution, so the task under test is judged in an otherwise solved lab.
+
 Compatible tasks share a lab (no common `exclusive` tag, disk budgets fit). Anchors and
 `breaks_boot` tasks always run alone, because their tests break what other tasks need. Results
 go to `banks/<exam>/selftest.json` with a digest of the task's files; `--changed` re-tests only

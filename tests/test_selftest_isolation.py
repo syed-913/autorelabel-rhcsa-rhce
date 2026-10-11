@@ -31,7 +31,7 @@ def _selftest(tasks: dict[str, Task], failing: set[str]) -> SelfTest:
 def test_failing_task_is_reported_alone(tmp_path):
     tasks = {t: _task(tmp_path, t) for t in ("a", "b", "c")}
     st = _selftest(tasks, failing={"b"})
-    who, failed = st._apply(None, [{"task": t} for t in tasks], "solution", 0, solve_anchors=True)
+    who, failed = st._apply(None, [{"task": t} for t in tasks], "solution", 0)
     assert who == ["a", "b", "c"]
     assert set(failed) == {"b"} and "boom" in failed["b"]
 
@@ -40,4 +40,16 @@ def test_failing_anchor_fails_the_round(tmp_path):
     tasks = {"r": _task(tmp_path, "r", anchor="repos"), "a": _task(tmp_path, "a")}
     st = _selftest(tasks, failing={"r"})
     with pytest.raises(EngineError):
-        st._apply(None, [{"task": t} for t in tasks], "solution", 0, solve_anchors=True)
+        st._apply(None, [{"task": t} for t in tasks], "solution", 0)
+
+
+def test_tasks_without_a_test_this_round_are_solved(tmp_path):
+    tasks = {t: _task(tmp_path, t) for t in ("a", "b")}
+    (tasks["a"].path / "tests").mkdir()
+    (tasks["a"].path / "tests" / "mistake-x.sh").write_text("#!/usr/bin/env bash\ntrue\n")
+    ran: list[str] = []
+    st = _selftest(tasks, failing=set())
+    st._run_on = lambda sess, entry, script, node: (ran.append(f"{entry['task']}:{script.name}") or True, "")
+    who, failed = st._apply(None, [{"task": t} for t in tasks], "mistake", 0)
+    assert who == ["a"] and not failed
+    assert ran == ["a:mistake-x.sh", "b:solution.sh"]
