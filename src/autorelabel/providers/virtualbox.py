@@ -88,6 +88,13 @@ def reset(name: str) -> proc.Result:
     return vbm("controlvm", name, "reset", timeout=30)
 
 
+def ctrl_alt_del(name: str) -> proc.Result:
+    """systemd answers Ctrl+Alt+Del with a clean reboot, even in emergency mode (scan codes:
+    Ctrl, Alt, Delete pressed, then released)."""
+    return vbm("controlvm", name, "keyboardputscancode", "1d", "38", "e0", "53", "e0", "d3", "b8", "9d",
+               timeout=15)
+
+
 def reboot_acpi(name: str) -> proc.Result:
     """VirtualBox has no ACPI reboot: press the power button, then power on again."""
     if shutdown(name, wait=60):

@@ -26,6 +26,7 @@ SHUTDOWN_GRACE = 90          # seconds for a normal reboot before ACPI
 ACPI_GRACE = 60              # seconds after ACPI before a hard reset
 BOOT_TIMEOUT = 300           # base wait for a node to come back
 RELABEL_EXTENSION = 900      # extra time while SELinux relabels
+CTRL_ALT_DEL_GRACE = 120     # an unreachable node's clean reboot before a hard reset
 MAX_BOOT_CYCLES = 3
 
 
@@ -190,9 +191,20 @@ class Grader:
             if before:
                 remote.run_cmd(t, "systemctl reboot", timeout=15)
             else:
-                self.hv.reset(dom)
-                self.s.incident(node, "unreachable-before-reboot",
-                                "was not reachable before the grading reboot; it was reset")
+                # Unreachable (emergency mode, broken network): ask systemd for a clean reboot, as
+                # someone at the console would. A hard reset can lose work that is not on disk yet
+                # (GRUB reads /boot without replaying the XFS journal).
+                self.hv.ctrl_alt_del(dom)
+                if remote.wait_reachable(t, timeout=CTRL_ALT_DEL_GRACE):
+                    self.s.incident(node, "unreachable-before-reboot",
+                                    "was not reachable before the grading reboot; it was rebooted "
+                                    "with Ctrl+Alt+Del")
+                else:
+                    if self._diagnose(node).kind != "relabel":
+                        self.hv.reset(dom)
+                    self.s.incident(node, "unreachable-before-reboot",
+                                    "was not reachable before the grading reboot and Ctrl+Alt+Del did "
+                                    "not bring it back; it was reset")
             remote.close_master(t)
             if before:
                 # wait for the node to actually go down (or come back with a new boot id)

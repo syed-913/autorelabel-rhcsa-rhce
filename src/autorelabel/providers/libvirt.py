@@ -147,6 +147,11 @@ def reset(dom: str) -> proc.Result:
     return virsh("reset", dom, timeout=30)
 
 
+def ctrl_alt_del(dom: str) -> proc.Result:
+    """systemd answers Ctrl+Alt+Del with a clean reboot, even in emergency mode."""
+    return virsh("send-key", dom, "KEY_LEFTCTRL", "KEY_LEFTALT", "KEY_DELETE", timeout=15)
+
+
 def reboot_acpi(dom: str) -> proc.Result:
     return virsh("reboot", dom, "--mode", "acpi", timeout=30)
 

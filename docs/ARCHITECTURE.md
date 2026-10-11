@@ -55,7 +55,9 @@ the facts tasks are rendered with (addresses, disks, URLs, RHCE inventory groups
 3. **Run:** the proctor, a transient `systemd-run --user` unit, keeps time from heartbeats, sends
    warnings, watches whether the grader can still reach each node, and at zero pauses the VMs.
 4. **Grade** (`grader.py`): a pre-reboot pass, a **verified reboot** of every exam node (normal
-   reboot, then ACPI, then reset; boot problems are diagnosed from the serial console), then the
+   reboot, then ACPI, then reset; a node it cannot reach gets Ctrl+Alt+Del, which systemd turns
+   into a clean reboot even in emergency mode, before a reset; boot problems are diagnosed from the
+   serial console), then the
    post-reboot pass, which is the only one that counts. Checks are bash scripts run as root over
    the management network with `set -e` and `pipefail`.
 5. **Report:** points per task (partial or strict), per domain and difficulty, checks that worked
