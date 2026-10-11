@@ -46,7 +46,7 @@ checks:
     desc: wildcard map in use, autofs enabled
     run: |
       systemctl is-enabled -q autofs
-      map="$( (cat /etc/auto.master /etc/auto.master.d/*.autofs 2>/dev/null) | awk '$1=="/{{base}}"{print $2}' | head -1)"
+      map="$( (cat /etc/auto.master /etc/auto.master.d/*.autofs 2>/dev/null) | awk '$1=="/{{base}}"{print $2}' | sed -n 1p)"
       test -n "$map" && grep -Eq '^\*[[:space:]].*/exports/{{base}}/&' "$map"
 
 references:

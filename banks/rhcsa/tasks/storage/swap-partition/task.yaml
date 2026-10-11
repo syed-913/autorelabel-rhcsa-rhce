@@ -36,7 +36,7 @@ checks:
     on: node2
     desc: fstab has a swap entry for it
     run: |
-      dev="$(swapon --show=NAME --noheadings | grep '^{{lab.node2.disk1}}' | head -1)"
+      dev="$(swapon --show=NAME --noheadings | grep '^{{lab.node2.disk1}}' | sed -n 1p)"
       uuid="$(blkid -s UUID -o value "$dev")"
       grep -Eq "^[[:space:]]*(UUID=\"?$uuid\"?|$dev|/dev/disk/by-[a-z]+/[^ ]+)[[:space:]]+(none|swap)[[:space:]]+swap" /etc/fstab
   - id: original

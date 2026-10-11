@@ -30,7 +30,7 @@ checks:
     on: node2
     desc: "line 1 is the SELinux type of {{process}}"
     run: |
-      want="$(ps -C {{process}} -o label= | head -1 | cut -d: -f3)"
+      want="$(ps -C {{process}} -o label= | sed -n 1p | cut -d: -f3)"
       got="$(sed -n 1p /root/selinux-report.txt | tr -d '[:space:]')"
       test -n "$want" && test "$got" = "$want"
   - id: file-type

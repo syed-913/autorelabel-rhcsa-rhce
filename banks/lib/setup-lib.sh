@@ -94,7 +94,7 @@ ar_new_partition() {  # ar_new_partition <disk> <size-MiB> [type: linux|lvm|swap
   partprobe "$disk" 2>/dev/null || partx -u "$disk" 2>/dev/null || true
   udevadm settle
   after="$(lsblk -nrpo NAME "$disk" | tail -n +2 | sort)"
-  comm -13 <(echo "$before") <(echo "$after") | head -1
+  comm -13 <(echo "$before") <(echo "$after") | sed -n 1p
 }
 
 # Deterministic content for "data must survive" checks.
