@@ -218,7 +218,7 @@
   },
   "rhcsa.operate.boot-emergency-fstab": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-11",
+    "date": "2026-10-12",
     "detail": "",
     "digest": "4ae37c278110",
     "status": "pass"
@@ -226,9 +226,9 @@
   "rhcsa.operate.boot-emergency-kernel-arg": {
     "box": "RHEL 10.0 20261007.0031",
     "date": "2026-10-12",
-    "detail": "reference solution not full marks: booted=unreachable booted into emergency mode, most likely a bad /etc/fstab entry or a missing volume.; entries=unreachable booted into emergency mode, most likely a bad /etc/fstab entry or a missing volume.",
+    "detail": "",
     "digest": "aa9b39130f72",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.operate.cpu-hog": {
     "box": "RHEL 10.0 20261007.0031",
