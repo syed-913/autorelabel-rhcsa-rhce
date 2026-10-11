@@ -167,18 +167,25 @@
     "digest": "b5eb86b8f5b6",
     "status": "pass"
   },
+  "rhcsa.networking.configure-node1": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-11",
+    "detail": "",
+    "digest": "f578f4e71881",
+    "status": "pass"
+  },
   "rhcsa.networking.connection-autoconnect": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-10",
-    "detail": "setup of task 2 (rhcsa.networking.firewall-rich-rule) failed on node2   File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 71: dnf -y -q install \"$@\" > /dev/null",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "e024cfec8563",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.networking.dns-client": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-10",
-    "detail": "common mistake mistake-resolv-conf was not caught",
-    "digest": "addecfa25770",
+    "date": "2026-10-11",
+    "detail": "reference solution not full marks: managed=fail ",
+    "digest": "5b2869d9cdc6",
     "status": "fail"
   },
   "rhcsa.networking.firewall-remove-services": {
@@ -190,8 +197,8 @@
   },
   "rhcsa.networking.firewall-rich-rule": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-10",
-    "detail": "setup of task 2 (rhcsa.networking.firewall-rich-rule) failed on node2   File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 71: dnf -y -q install \"$@\" > /dev/null",
+    "date": "2026-10-11",
+    "detail": "valid alternative alt-source-zone was not accepted: node1-allowed=fail curl: (7) Failed to connect to 172.25.250.12 port 80 after 3070 ms: Could not connect to server; ssh=fail ",
     "digest": "3b1f4dcea93a",
     "status": "fail"
   },
@@ -202,10 +209,17 @@
     "digest": "35d4b119f1d1",
     "status": "pass"
   },
+  "rhcsa.networking.ipv6-address": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-11",
+    "detail": "",
+    "digest": "dcc4fc1ed638",
+    "status": "pass"
+  },
   "rhcsa.operate.boot-emergency-fstab": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "reference solution not full marks: booted=unreachable booted into emergency mode, most likely a bad /etc/fstab entry or a missing volume.; mounted=unreachable booted into emergency mode, most likely a bad /etc/fstab entry or a missing volume.",
+    "date": "2026-10-11",
+    "detail": "mistake test mistake-delete-line: script failed: mistake-delete-line.sh failed on node1: el Change in UTMP.\\n[  OK  ] Finished audit-rules.service - Load Audit Rules.\\nYou are in emergency mode. After logging in, type \"journalctl -xb\" to view\\nsystem logs, \"systemctl reboot\" to reboot, or \"exit\"\\nto continue bootup.\\nGive root password for maintenance\\n(or press Control-D to continue):'",
     "digest": "4ae37c278110",
     "status": "fail"
   },
@@ -225,45 +239,45 @@
   },
   "rhcsa.operate.find-log-messages": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-10",
-    "detail": "setup of task 2 (rhcsa.networking.firewall-rich-rule) failed on node2   File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 71: dnf -y -q install \"$@\" > /dev/null",
+    "date": "2026-10-11",
+    "detail": "reference solution not full marks: errors=fail ",
     "digest": "a3e6f1b4df5e",
     "status": "fail"
   },
   "rhcsa.operate.journal-size-limit": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-10",
-    "detail": "setup of task 2 (rhcsa.networking.firewall-rich-rule) failed on node2   File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 71: dnf -y -q install \"$@\" > /dev/null",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "66f83aff6dae",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.operate.memory-hog-respawn": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-10",
-    "detail": "setup of task 2 (rhcsa.networking.firewall-rich-rule) failed on node2   File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 71: dnf -y -q install \"$@\" > /dev/null",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "6275134816bf",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.operate.network-service-control": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-10",
-    "detail": "setup of task 2 (rhcsa.networking.firewall-rich-rule) failed on node2   File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 71: dnf -y -q install \"$@\" > /dev/null",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "6c49a114f3d0",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.operate.nice-cron-job": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-10",
-    "detail": "setup of task 2 (rhcsa.networking.firewall-rich-rule) failed on node2   File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 71: dnf -y -q install \"$@\" > /dev/null",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "f1cfb9498b12",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.operate.persistent-journal": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-10",
-    "detail": "setup of task 2 (rhcsa.networking.firewall-rich-rule) failed on node2   File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 71: dnf -y -q install \"$@\" > /dev/null",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "04116fd2d62f",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.operate.process-priority": {
     "box": "RHEL 10.0 20261007.0031",
@@ -533,115 +547,115 @@
   },
   "rhcsa.storage.swap-partition": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.software.flatpak-user-remote: solution@node2.sh failed on node2: ^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Parsing armored OpenPGP packet(s) failed\nERROR: line 182: dnf -y -q install flatpak\nrhcsa.software.package-group: solution.sh failed on node1: ^^^^^^^^\n  File \"/usr/lib64/python3.12/site-packages/libdnf/repo.py\", line 341, in keysFromFd\n    return _repo.Key_keysFromFd(fileDescriptor)\n   ",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "60ab2bbfdad6",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.storage.vg-extend": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "7b96865df98d",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.tools.archive-bzip2": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "fe68886e8e01",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.tools.archive-gzip-extract": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "7ad26e4e6ba9",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.tools.compress-files": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
-    "digest": "52d3a60816f7",
-    "status": "fail"
+    "date": "2026-10-11",
+    "detail": "",
+    "digest": "3ddabe004de4",
+    "status": "pass"
   },
   "rhcsa.tools.edit-as-user": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "05efacd9ab79",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.tools.find-copy-files": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
-    "digest": "f63d8bc1d6f0",
+    "date": "2026-10-11",
+    "detail": "reference solution not full marks: complete=fail ; attributes=fail ",
+    "digest": "8f72b4a08690",
     "status": "fail"
   },
   "rhcsa.tools.fix-broken-link": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.find-copy-files: solution.sh failed on node1: ERROR: line 182: find / -user \"$P_USER\" -type f -not -path '/proc/*' -not -path '/sys/*' -exec cp -p {} \"/root/$P_USER-files/\" \\; 2> /dev/null",
-    "digest": "ab700f8775e1",
-    "status": "fail"
+    "date": "2026-10-11",
+    "detail": "",
+    "digest": "2126cf0cadbb",
+    "status": "pass"
   },
   "rhcsa.tools.grep-regex": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
-    "digest": "68c59b7068f4",
-    "status": "fail"
+    "date": "2026-10-11",
+    "detail": "",
+    "digest": "a43559a568b2",
+    "status": "pass"
   },
   "rhcsa.tools.grep-save-lines": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "ef9ab756d190",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.tools.info-date-format": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
-    "digest": "8b8117784913",
+    "date": "2026-10-11",
+    "detail": "common mistake mistake-week-of-year was not caught",
+    "digest": "2a0c0acc8eb0",
     "status": "fail"
   },
   "rhcsa.tools.links": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "94dbd1b1b144",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.tools.man-search": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "date": "2026-10-11",
+    "detail": "mistake test mistake-no-index: script failed: mistake-no-index.sh failed on node1: ERROR: line 197: man -k \"$P_KEYWORD\" > \"/root/man-$P_KEYWORD.txt\" 2>&1",
     "digest": "c5aaf215f47b",
     "status": "fail"
   },
   "rhcsa.tools.permissions": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "021042cadcc6",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.tools.redirection": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "ddd8a431a843",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.tools.ssh-remote-command": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.tools.info-date-format: solution@node2.sh failed on node2: ERROR: line 182: grep -m1 '/NEWS' > /root/rsync-news.txt\nrhcsa.tools.redirection: solution@node2.sh failed on node2: ERROR: line 180: lab-inventory > /root/inventory.out 2> /root/inventory.err",
+    "date": "2026-10-11",
+    "detail": "",
     "digest": "f48bf5ca6aac",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.tools.sudo-as-user": {
     "box": "RHEL 10.0 20261007.0031",
