@@ -1,9 +1,9 @@
 {
   "rhcsa.deploy.at-job": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
+    "date": "2026-10-11",
     "detail": "",
-    "digest": "ebc38592dd35",
+    "digest": "a245c73a1f4e",
     "status": "pass"
   },
   "rhcsa.deploy.chrony-client": {
@@ -184,9 +184,9 @@
   "rhcsa.networking.dns-client": {
     "box": "RHEL 10.0 20261007.0031",
     "date": "2026-10-11",
-    "detail": "reference solution not full marks: managed=fail ",
-    "digest": "5b2869d9cdc6",
-    "status": "fail"
+    "detail": "",
+    "digest": "caf389a49e3e",
+    "status": "pass"
   },
   "rhcsa.networking.firewall-remove-services": {
     "box": "RHEL 10.0 20261007.0031",
@@ -198,9 +198,9 @@
   "rhcsa.networking.firewall-rich-rule": {
     "box": "RHEL 10.0 20261007.0031",
     "date": "2026-10-11",
-    "detail": "valid alternative alt-source-zone was not accepted: node1-allowed=fail curl: (7) Failed to connect to 172.25.250.12 port 80 after 3070 ms: Could not connect to server; ssh=fail ",
+    "detail": "",
     "digest": "3b1f4dcea93a",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.networking.hosts-file": {
     "box": "RHEL 10.0 20261007.0031",
@@ -219,14 +219,14 @@
   "rhcsa.operate.boot-emergency-fstab": {
     "box": "RHEL 10.0 20261007.0031",
     "date": "2026-10-11",
-    "detail": "mistake test mistake-delete-line: script failed: mistake-delete-line.sh failed on node1: el Change in UTMP.\\n[  OK  ] Finished audit-rules.service - Load Audit Rules.\\nYou are in emergency mode. After logging in, type \"journalctl -xb\" to view\\nsystem logs, \"systemctl reboot\" to reboot, or \"exit\"\\nto continue bootup.\\nGive root password for maintenance\\n(or press Control-D to continue):'",
+    "detail": "",
     "digest": "4ae37c278110",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.operate.boot-emergency-kernel-arg": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.operate.boot-emergency-kernel-arg: solution@node2.sh failed on node2: console: none of ['#\\\\s*$'] seen within 30s",
+    "date": "2026-10-11",
+    "detail": "reference solution not full marks: booted=unreachable booted into emergency mode, most likely a bad /etc/fstab entry or a missing volume.; entries=unreachable booted into emergency mode, most likely a bad /etc/fstab entry or a missing volume.",
     "digest": "96338ee43238",
     "status": "fail"
   },
@@ -240,9 +240,9 @@
   "rhcsa.operate.find-log-messages": {
     "box": "RHEL 10.0 20261007.0031",
     "date": "2026-10-11",
-    "detail": "reference solution not full marks: errors=fail ",
-    "digest": "a3e6f1b4df5e",
-    "status": "fail"
+    "detail": "",
+    "digest": "d1e251f4ae54",
+    "status": "pass"
   },
   "rhcsa.operate.journal-size-limit": {
     "box": "RHEL 10.0 20261007.0031",
@@ -295,8 +295,8 @@
   },
   "rhcsa.operate.root-password-reset": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
-    "detail": "self-test script failed rhcsa.networking.ipv6-address: mistake-replace@node2.sh failed on node2: sudo: PAM account management error: Authentication service cannot retrieve authentication info\nsudo: a password is required\nrhcsa.operate.rsync-mirror: mistake-no-delete@node2.sh failed on node2: sudo: PAM account management error: Authentication service cannot retrieve authentication info\nsudo: a password is required\nrhcsa.operate.secure-copy: mistake-no-preserve@node2.sh failed on node2: sudo: PAM account management error: Authentication service cannot retrieve authentication info\nsudo: a passwor",
+    "date": "2026-10-11",
+    "detail": "reference solution not full marks: password=fail ",
     "digest": "c1e36c13b413",
     "status": "fail"
   },
@@ -468,6 +468,13 @@
     "digest": "4d53baf9053a",
     "status": "pass"
   },
+  "rhcsa.software.configure-repos": {
+    "box": "RHEL 10.0 20261007.0031",
+    "date": "2026-10-11",
+    "detail": "",
+    "digest": "21443a83d225",
+    "status": "pass"
+  },
   "rhcsa.software.flatpak-ref-swap": {
     "box": "RHEL 10.0 20261007.0031",
     "date": "2026-10-07",
@@ -590,9 +597,9 @@
   "rhcsa.tools.find-copy-files": {
     "box": "RHEL 10.0 20261007.0031",
     "date": "2026-10-11",
-    "detail": "reference solution not full marks: complete=fail ; attributes=fail ",
-    "digest": "8f72b4a08690",
-    "status": "fail"
+    "detail": "",
+    "digest": "87b5c0abd3a0",
+    "status": "pass"
   },
   "rhcsa.tools.fix-broken-link": {
     "box": "RHEL 10.0 20261007.0031",
@@ -618,8 +625,8 @@
   "rhcsa.tools.info-date-format": {
     "box": "RHEL 10.0 20261007.0031",
     "date": "2026-10-11",
-    "detail": "common mistake mistake-week-of-year was not caught",
-    "digest": "2a0c0acc8eb0",
+    "detail": "reference solution script failed: solution@node2.sh failed on node2: ERROR: line 197: grep -m1 '/NEWS' > /root/chrony-news.txt",
+    "digest": "e3e055838e68",
     "status": "fail"
   },
   "rhcsa.tools.links": {
@@ -632,9 +639,9 @@
   "rhcsa.tools.man-search": {
     "box": "RHEL 10.0 20261007.0031",
     "date": "2026-10-11",
-    "detail": "mistake test mistake-no-index: script failed: mistake-no-index.sh failed on node1: ERROR: line 197: man -k \"$P_KEYWORD\" > \"/root/man-$P_KEYWORD.txt\" 2>&1",
-    "digest": "c5aaf215f47b",
-    "status": "fail"
+    "detail": "",
+    "digest": "0b24b46487a7",
+    "status": "pass"
   },
   "rhcsa.tools.permissions": {
     "box": "RHEL 10.0 20261007.0031",
@@ -694,9 +701,9 @@
   },
   "rhcsa.users.password-aging": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
+    "date": "2026-10-11",
     "detail": "",
-    "digest": "1834aaed8db2",
+    "digest": "62f3bd75a41a",
     "status": "pass"
   },
   "rhcsa.users.sudo-access": {
