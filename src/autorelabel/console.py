@@ -108,10 +108,11 @@ class ConsoleError(RuntimeError):
 
 
 def run_commands(domain: str, root_password: str, text: str, *, timeout: float = 240,
-                 hv: ModuleType = lv) -> str:
+                 hv: ModuleType = lv, reboot: bool = False) -> str:
     """Log in on the serial console (emergency-mode maintenance prompt or a normal login
     prompt) as root and type `text` line by line, like a candidate would. Used by
-    self-tests for tasks that leave a node unbootable. Returns the captured output."""
+    self-tests for tasks that leave a node unbootable. With `reboot`, finish with
+    `systemctl reboot` as a candidate does. Returns the captured output."""
     master, slave = pty.openpty()
     p = subprocess.Popen(hv.console_command(domain), stdin=slave, stdout=slave, stderr=slave,
                          start_new_session=True, close_fds=True)
@@ -163,10 +164,13 @@ def run_commands(domain: str, root_password: str, text: str, *, timeout: float =
         for line in text.splitlines():
             send(line + "\r")
             time.sleep(0.15)
-        # A candidate reboots (or continues the boot) afterwards, which writes everything to disk;
-        # a node left in emergency mode gets hard-reset by the grader, so sync first.
         send("sync; echo __AR_DONE__$((40+2))\r")
         read_until([r"__AR_DONE__42"], timeout / 2)
+        if reboot:
+            # A clean reboot, not just sync: GRUB reads /boot (XFS) without replaying its journal,
+            # so after a hard reset it would still see the old boot entries.
+            send("systemctl reboot\r")
+            time.sleep(2)
         return _ANSI.sub("", buf.decode("utf-8", "replace"))
     finally:
         try:

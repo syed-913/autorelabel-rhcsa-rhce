@@ -113,9 +113,11 @@ class SelfTest:
             stamp = f"\n===== {time.strftime('%H:%M:%S')} =====\n"
             try:
                 out = console.run_commands(self.lab.vm(node).domain, sess.passwords.get(node, ""),
-                                           "\n".join(lines + body), hv=self.lab.hv)
+                                           "\n".join(lines + body), hv=self.lab.hv, reboot=True)
                 with open(log_file, "a", encoding="utf-8") as fh:   # one section per attempt
                     fh.write(stamp + out)
+                # let it come back (a mistake test may leave it unbootable: then the grader finds out)
+                remote.wait_reachable(self.lab.target(node), timeout=180)
                 return True, out[-400:]
             except console.ConsoleError as exc:
                 with open(log_file, "a", encoding="utf-8") as fh:
