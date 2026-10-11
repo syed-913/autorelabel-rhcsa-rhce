@@ -106,9 +106,9 @@
   },
   "rhcsa.filesystems.autofs-home-wildcard": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
+    "date": "2026-10-12",
     "detail": "",
-    "digest": "8cf0eac8ed59",
+    "digest": "ad73a2a6eafb",
     "status": "pass"
   },
   "rhcsa.filesystems.autofs-indirect": {
@@ -225,9 +225,9 @@
   },
   "rhcsa.operate.boot-emergency-kernel-arg": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-11",
+    "date": "2026-10-12",
     "detail": "reference solution not full marks: booted=unreachable booted into emergency mode, most likely a bad /etc/fstab entry or a missing volume.; entries=unreachable booted into emergency mode, most likely a bad /etc/fstab entry or a missing volume.",
-    "digest": "96338ee43238",
+    "digest": "aa9b39130f72",
     "status": "fail"
   },
   "rhcsa.operate.cpu-hog": {
@@ -295,10 +295,10 @@
   },
   "rhcsa.operate.root-password-reset": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-11",
-    "detail": "reference solution not full marks: password=fail ",
+    "date": "2026-10-12",
+    "detail": "",
     "digest": "c1e36c13b413",
-    "status": "fail"
+    "status": "pass"
   },
   "rhcsa.operate.rsync-mirror": {
     "box": "RHEL 10.0 20261007.0031",
@@ -386,9 +386,9 @@
   },
   "rhcsa.security.selinux-contexts": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-07",
+    "date": "2026-10-12",
     "detail": "",
-    "digest": "e20a7d995112",
+    "digest": "a3fd70bff428",
     "status": "pass"
   },
   "rhcsa.security.selinux-enforcing": {
@@ -554,9 +554,9 @@
   },
   "rhcsa.storage.swap-partition": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-11",
+    "date": "2026-10-12",
     "detail": "",
-    "digest": "60ab2bbfdad6",
+    "digest": "7c1c28ed5cf9",
     "status": "pass"
   },
   "rhcsa.storage.vg-extend": {
@@ -624,10 +624,10 @@
   },
   "rhcsa.tools.info-date-format": {
     "box": "RHEL 10.0 20261007.0031",
-    "date": "2026-10-11",
-    "detail": "reference solution script failed: solution@node2.sh failed on node2: ERROR: line 197: grep -m1 '/NEWS' > /root/chrony-news.txt",
-    "digest": "e3e055838e68",
-    "status": "fail"
+    "date": "2026-10-12",
+    "detail": "",
+    "digest": "cf2ad21c8f9a",
+    "status": "pass"
   },
   "rhcsa.tools.links": {
     "box": "RHEL 10.0 20261007.0031",
