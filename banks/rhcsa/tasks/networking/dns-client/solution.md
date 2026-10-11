@@ -9,6 +9,9 @@ getent hosts utility
 ```
 
 **Classic mistake:** editing `/etc/resolv.conf` directly. NetworkManager owns the file and
-regenerates it from the connection settings at the next boot.
+rewrites it from the connection settings whenever DNS information changes (a connection going up,
+a DHCP lease), so the edit only survives until then. If you really want a hand-written
+`/etc/resolv.conf`, first tell NetworkManager to leave it alone (`dns=none` in a file under
+`/etc/NetworkManager/conf.d/`, then `systemctl reload NetworkManager`).
 
 References: RHEL 10 *Configuring and managing networking* → DNS; `man nmcli`.

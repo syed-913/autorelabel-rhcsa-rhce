@@ -35,6 +35,14 @@ checks:
       grep -Eq '^nameserver[[:space:]]+{{lab.dns}}' /etc/resolv.conf
       grep -Eq '^search[[:space:]].*lab\.example\.com' /etc/resolv.conf
       getent hosts utility >/dev/null
+  - id: managed
+    covers: [R1]
+    on: node2
+    desc: "NetworkManager provides the DNS settings (or is configured to leave resolv.conf alone)"
+    run: |
+      if NetworkManager --print-config 2>/dev/null | grep -Eq '^[[:space:]]*(dns|rc-manager)[[:space:]]*=[[:space:]]*(none|unmanaged)[[:space:]]*$'; then exit 0; fi
+      nmcli -g IP4.DNS device show | tr '|' '\n' | tr -d ' ' | grep -qxF '{{lab.dns}}'
+      nmcli -g IP4.DOMAIN device show | tr '|' '\n' | tr -d ' ' | grep -qxF 'lab.example.com'
   - id: hostname
     covers: [R2]
     on: node2
