@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from autorelabel.bank.model import Task
-from autorelabel.engine import EngineError
+from autorelabel.engine import EngineError, fresh_checkpoint
 from autorelabel.selftest import SelfTest
 
 
@@ -53,3 +53,10 @@ def test_tasks_without_a_test_this_round_are_solved(tmp_path):
     who, failed = st._apply(None, [{"task": t} for t in tasks], "mistake", 0)
     assert who == ["a"] and not failed
     assert ran == ["a:mistake-x.sh", "b:solution.sh"]
+
+
+def test_each_unofficial_grading_gets_its_own_checkpoint(tmp_path):
+    first = fresh_checkpoint(tmp_path)
+    first.write_text("{}")
+    second = fresh_checkpoint(tmp_path)
+    assert first != second and not second.exists()

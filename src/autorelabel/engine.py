@@ -11,6 +11,7 @@ import sys
 import threading
 import time
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from . import box, config, labfacts, ledger, log, paths, proc, remote, secrets_util
@@ -34,6 +35,16 @@ class EngineError(RuntimeError):
     def __init__(self, message: str, hint: str = ""):
         super().__init__(message)
         self.hint = hint
+
+
+def fresh_checkpoint(directory: Path) -> Path:
+    """A new checkpoint file for an unofficial grading. Numbered, not timestamped: self-test
+    rounds can start within the same second, and reusing a finished checkpoint would return the
+    previous round's results."""
+    n = 1
+    while (directory / f"check-{n:03d}.json").exists():
+        n += 1
+    return directory / f"check-{n:03d}.json"
 
 
 def bank_digest(exam: str) -> str:
@@ -293,7 +304,7 @@ class Engine:
         try:
             g = Grader(sess, lab, bank, on_event)
             if not official:
-                g.checkpoint_file = sess.dir / f"check-{int(time.time())}.json"
+                g.checkpoint_file = fresh_checkpoint(sess.dir)
             results = g.grade(reboot=reboot)
         except Exception:
             if official:
