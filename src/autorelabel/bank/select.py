@@ -9,6 +9,7 @@ coverage across attempts without biasing toward weak areas.
 
 from __future__ import annotations
 
+import datetime
 import random
 import string
 from collections import Counter
@@ -159,9 +160,20 @@ def _order(bank: Bank, tasks: list[Task]) -> list[Task]:
     return sorted(tasks, key=key)
 
 
-def resolve_params(tasks: list[Task], pools: dict[str, list[Any]], rng: random.Random) -> list[dict[str, Any]]:
+def future_date(args: Any, rng: random.Random, today: datetime.date) -> str:
+    """`[min, max]` days from today -> "YYYY-MM-DD"; `{days: [min, max], times: [...]}` adds
+    " HH:MM". Relative to the exam's creation, so a task like scheduling an at job never asks
+    for a date that has already passed."""
+    days, times = (args["days"], args.get("times")) if isinstance(args, dict) else (args, None)
+    day = (today + datetime.timedelta(days=rng.randint(int(days[0]), int(days[1])))).isoformat()
+    return f"{day} {rng.choice(times)}" if times else day
+
+
+def resolve_params(tasks: list[Task], pools: dict[str, list[Any]], rng: random.Random,
+                   today: datetime.date | None = None) -> list[dict[str, Any]]:
     """Draw parameters. Pool draws are without replacement across the whole exam
     so two tasks never collide on a username, port, path, ..."""
+    today = today or datetime.date.today()
     remaining = {name: list(values) for name, values in pools.items()}
     for values in remaining.values():
         rng.shuffle(values)
@@ -177,6 +189,8 @@ def resolve_params(tasks: list[Task], pools: dict[str, list[Any]], rng: random.R
                 p[name] = "".join(rng.choice(string.ascii_lowercase + string.digits) for _ in range(int(spec.args)))
             elif spec.kind == "value":
                 p[name] = spec.args
+            elif spec.kind == "future_date":
+                p[name] = future_date(spec.args, rng, today)
             elif spec.kind == "pool":
                 values = remaining.get(spec.args)
                 if not values:

@@ -13,7 +13,7 @@ import yaml
 from .. import paths
 from .model import Blueprint, Check, Domain, Facet, Objective, ObjectiveSet, ParamSpec, Task
 
-PARAM_KINDS = ("choice", "range", "token", "value", "pool")
+PARAM_KINDS = ("choice", "range", "token", "value", "pool", "future_date")
 
 
 class BankError(ValueError):

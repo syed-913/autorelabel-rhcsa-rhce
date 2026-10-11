@@ -48,6 +48,8 @@ console_only: false                  # node has no network at the start
 practice_only: false                 # valid drill, never drawn into a full exam
 params:
   vg: {choice: [datavg, appvg]}      # choice | range [lo, hi] | token <length> | value <x> | pool <name>
+  when: {future_date: [20, 300]}     # YYYY-MM-DD, 20-300 days after the exam is created;
+                                     # {days: [20, 300], times: ["09:30"]} adds a time (quote it)
   user: {pool: usernames}            # pools (banks/<exam>/pools.yaml) are drawn without replacement
 prompt: |
   On node1, create ... `{{vg}}` ... `{{lab.node1.disk1}}`

@@ -76,6 +76,8 @@ def _sample_params(task: Task) -> dict[str, object]:
             out[name] = spec.args
         elif spec.kind == "pool":
             out[name] = f"<{spec.args}>"
+        elif spec.kind == "future_date":
+            out[name] = "2030-01-15 09:30" if isinstance(spec.args, dict) else "2030-01-15"
     return out
 
 
@@ -174,6 +176,15 @@ def lint_task(task: Task, bank: Bank) -> list[Issue]:
             err(f"param {name!r}: choice needs a non-empty list")
         if spec.kind == "range" and (not isinstance(spec.args, list) or len(spec.args) != 2):
             err(f"param {name!r}: range needs [min, max]")
+        if spec.kind == "future_date":
+            fd = spec.args if isinstance(spec.args, dict) else {"days": spec.args}
+            days, times = fd.get("days"), fd.get("times", ["00:00"])
+            if (not isinstance(days, list) or len(days) != 2 or not all(isinstance(d, int) for d in days)
+                    or not 1 <= days[0] <= days[1] or set(fd) - {"days", "times"}
+                    or not isinstance(times, list) or not times
+                    or not all(isinstance(t, str) and re.fullmatch(r"[0-2]\d:[0-5]\d", t) for t in times)):
+                err(f"param {name!r}: future_date needs [min, max] days (min >= 1), "
+                    "or {days: [min, max], times: [HH:MM, ...]}")
 
     # --- anchors / exclusivity
     if task.anchor and task.anchor not in bank.blueprint.anchors:

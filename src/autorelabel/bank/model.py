@@ -69,7 +69,7 @@ class Check:
 @dataclass(frozen=True)
 class ParamSpec:
     name: str
-    kind: str                       # choice | range | token | value | pool
+    kind: str                       # choice | range | token | value | pool | future_date
     args: Any
 
 

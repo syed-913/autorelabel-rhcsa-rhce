@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import datetime
 import itertools
+import random
 from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from autorelabel.bank import coverage, lint, render
 from autorelabel.bank.loader import Bank, load_blueprint, load_objectives
-from autorelabel.bank.model import Check, Task
-from autorelabel.bank.select import SelectionError, _matches, generate
+from autorelabel.bank.model import Check, ParamSpec, Task
+from autorelabel.bank.select import SelectionError, _matches, generate, resolve_params
 
 EXAMS = ("rhcsa", "rhce")
 
@@ -160,3 +163,28 @@ def test_errexit_hazards_detected():
     assert "! grep -q x f" in bad
     assert "out=$(cmd); rc=$?" in bad
     assert not lint.errexit_hazards("cat <<'X'\n! not code\nX\n! last line is fine\n")
+
+
+def test_future_dates_are_relative_to_the_exam():
+    today = datetime.date(2026, 12, 30)
+    task = Task(id="x.y.z", exam="rhcsa", domain="y", path=Path("/nonexistent"), title="t", primary="p",
+                objectives=(), facets=(), difficulty="easy", estimated_minutes=1, node="node1", prompt="",
+                requirements={}, checks=(), references=(),
+                params={"day": ParamSpec("day", "future_date", [20, 30]),
+                        "at": ParamSpec("at", "future_date", {"days": [1, 1], "times": ["06:15"]})})
+    for seed in range(50):
+        (p,) = resolve_params([task], {}, random.Random(seed), today=today)
+        assert 20 <= (datetime.date.fromisoformat(p["day"]) - today).days <= 30
+        assert p["at"] == "2026-12-31 06:15"
+
+
+@pytest.mark.parametrize("args,ok", [
+    ([20, 300], True), ({"days": [1, 5], "times": ["09:30", "17:45"]}, True),
+    ([0, 5], False), ([5], False), ({"days": [1, 5], "times": [1065]}, False),   # unquoted 17:45
+    ({"days": [1, 5], "when": ["09:30"]}, False),
+])
+def test_lint_future_date_args(args, ok, synthetic_bank):
+    base = next(iter(synthetic_bank.tasks.values()))
+    task = replace(base, params={"d": ParamSpec("d", "future_date", args)})
+    msgs = [i.message for i in lint.lint_task(task, synthetic_bank) if "future_date" in i.message]
+    assert (not msgs) == ok, msgs
