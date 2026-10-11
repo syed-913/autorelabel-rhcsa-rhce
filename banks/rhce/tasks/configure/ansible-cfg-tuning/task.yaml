@@ -42,7 +42,8 @@ checks:
     run: |
       cfg="$(as_student ansible-config dump --only-changed)"
       grep -Eq '^CACHE_PLUGIN\(.*\) = (ansible\.builtin\.)?jsonfile$' <<<"$cfg"
-      grep -Eq '^CACHE_PLUGIN_CONNECTION\(.*\) = {{lab.project_dir}}/facts_cache/?$' <<<"$cfg"
+      # a relative path stays as written (the cache resolves it from the project directory)
+      grep -Eq '^CACHE_PLUGIN_CONNECTION\(.*\) = ({{lab.project_dir}}/|\./|~/ansible/)?facts_cache/?$' <<<"$cfg"
       grep -Eq '^CACHE_PLUGIN_TIMEOUT\(.*\) = {{timeout}}$' <<<"$cfg"
       grep -Eq '^DEFAULT_GATHERING\(.*\) = smart$' <<<"$cfg"
   - id: still-works
