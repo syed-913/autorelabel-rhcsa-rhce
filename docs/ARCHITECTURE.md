@@ -49,8 +49,9 @@ the facts tasks are rendered with (addresses, disks, URLs, RHCE inventory groups
 1. **Create:** `bank/select.py` draws a blueprint-valid exam from a seed: anchors first, required
    objective groups, domain quotas, the difficulty mix, exclusive groups and disk budgets;
    parameters are drawn (pools without replacement). Each node gets a fresh root password.
-2. **Prepare:** revert to `baseline`, run the task setups (anchors last), remove the temporary
-   setup repository, snapshot `exam-start`.
+2. **Prepare:** revert to `baseline`, set the root passwords, import the Red Hat signing keys
+   with `rpm --import` (dnf's own key parsing is unreliable on RHEL 10.0), run the task setups
+   (anchors last) from a temporary setup repository, remove it, snapshot `exam-start`.
 3. **Run:** the proctor, a transient `systemd-run --user` unit, keeps time from heartbeats, sends
    warnings, watches whether the grader can still reach each node, and at zero pauses the VMs.
 4. **Grade** (`grader.py`): a pre-reboot pass, a **verified reboot** of every exam node (normal
