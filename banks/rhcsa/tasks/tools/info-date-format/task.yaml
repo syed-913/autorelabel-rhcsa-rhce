@@ -32,6 +32,15 @@ checks:
     run: |
       test -x /usr/local/bin/isoweek
       test "$(/usr/local/bin/isoweek | tr -d '[:space:]')" = "$(date +%V)"
+      # Also on dates where the Sunday/Monday-based week numbers (%U, %W) differ from the ISO
+      # week: a `date` first in PATH pins the date. (A script calling /usr/bin/date directly
+      # ignores it and prints today's week, which is accepted too.)
+      shim="$(mktemp -d)"; trap 'rm -rf "$shim"' EXIT
+      for d in 2026-01-03 2027-01-01 2026-03-08; do
+        printf '#!/bin/sh\nexec /usr/bin/date -d %s "$@"\n' "$d" > "$shim/date"; chmod 0755 "$shim/date"
+        got="$(PATH="$shim:$PATH" /usr/local/bin/isoweek | tr -d '[:space:]')"
+        test "$got" = "$(/usr/bin/date -d "$d" +%V)" || test "$got" = "$(date +%V)"
+      done
   - id: news
     covers: [R2]
     on: node2
