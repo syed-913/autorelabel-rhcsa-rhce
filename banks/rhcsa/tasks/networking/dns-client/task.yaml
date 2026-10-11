@@ -42,7 +42,7 @@ checks:
     run: |
       if NetworkManager --print-config 2>/dev/null | grep -Eq '^[[:space:]]*(dns|rc-manager)[[:space:]]*=[[:space:]]*(none|unmanaged)[[:space:]]*$'; then exit 0; fi
       nmcli -g IP4.DNS device show | tr '|' '\n' | tr -d ' ' | grep -qxF '{{lab.dns}}'
-      nmcli -g IP4.DOMAIN device show | tr '|' '\n' | tr -d ' ' | grep -qxF 'lab.example.com'
+      nmcli -g IP4.SEARCHES device show | tr '|' '\n' | tr -d ' ' | grep -qxF 'lab.example.com'
   - id: hostname
     covers: [R2]
     on: node2
