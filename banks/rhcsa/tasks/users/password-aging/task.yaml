@@ -16,7 +16,7 @@ params:
   user: {pool: usernames}
   maxdays: {choice: [45, 60, 90]}
   warn: {choice: [5, 7, 10]}
-  expire: {choice: ["2027-03-31", "2027-06-30", "2027-12-31"]}
+  expire: {future_date: [60, 500]}
   defmax: {choice: [30, 60, 120]}
 
 prompt: |
