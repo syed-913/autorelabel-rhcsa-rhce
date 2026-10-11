@@ -165,6 +165,15 @@ def test_errexit_hazards_detected():
     assert not lint.errexit_hazards("cat <<'X'\n! not code\nX\n! last line is fine\n")
 
 
+def test_early_exit_pipes_detected():
+    script = ("rpm -qd x | grep -m1 NEWS\nps | head -1 | cut -c1\nfind / | grep -q y\n"
+              "a || head -1 f\nsed -n 1p <<<\"$x\"\ngrep -m1 a <<<\"$x\"\n# x | head\ny | sort  # not | head\n"
+              "cat <<'E'\nx | head\nE\n")
+    assert lint.early_exit_pipes(script, quiet_grep_ok=False) == [
+        "rpm -qd x | grep -m1 NEWS", "ps | head -1 | cut -c1", "find / | grep -q y"]
+    assert lint.early_exit_pipes(script, quiet_grep_ok=True) == ["rpm -qd x | grep -m1 NEWS", "ps | head -1 | cut -c1"]
+
+
 def test_future_dates_are_relative_to_the_exam():
     today = datetime.date(2026, 12, 30)
     task = Task(id="x.y.z", exam="rhcsa", domain="y", path=Path("/nonexistent"), title="t", primary="p",

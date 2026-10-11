@@ -92,7 +92,10 @@ They run as root over SSH, like a root login shell: root's normal `PATH` (includ
 `/usr/local/bin`), no `SUDO_*` variables, stdin is `/dev/null`, and `banks/lib/setup-lib.sh` is
 prepended, which sets `set -Eeuo pipefail` and an ERR trap. **Any failing command fails the
 script**: append `|| true` where failure is expected (`find /` over `/proc`, `grep` over a glob
-that may match nothing), and avoid `cmd | grep -q` in scripts (see below).
+that may match nothing). Never pipe into a reader that stops early (`| head`, `| grep -m`,
+and in scripts `| grep -q`): the writer can die of SIGPIPE, which `pipefail` turns into a random
+failure. Use `sed -n 1p` (reads to the end) or a here-string (`grep -m1 x <<<"$out"`); lint
+rejects the pipe.
 
 Helpers from `setup-lib.sh`:
 
@@ -124,7 +127,8 @@ succeeds.
 - `! cmd` and `test ... && ...` don't fail a `set -e` script unless they are the last line; lint
   rejects them elsewhere. Write `! cmd || exit 1`, or split the line.
 - `producer | grep -q x` is safe in checks (check-lib makes quiet greps drain the pipe), but prefer
-  `out="$(producer)"; grep -q x <<<"$out"` when the producer may print a lot.
+  `out="$(producer)"; grep -q x <<<"$out"` when the producer may print a lot. `| head` and
+  `| grep -m` are not: use `sed -n 1p`.
 - A plain YAML scalar must not contain `: `. Use a block scalar (`run: |`).
 - Check the **result**, not the method: the effective configuration (`sshd -T`,
   `ansible-config dump --only-changed`, `firewall-cmd --list-all`, `ansible-inventory --list`),

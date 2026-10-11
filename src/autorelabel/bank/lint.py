@@ -55,6 +55,33 @@ def errexit_hazards(script: str) -> list[str]:
     return bad
 
 
+_PIPE_INTO = r"(?<![|])[|](?![|])\s*"
+_EARLY_EXIT = re.compile(_PIPE_INTO + r"(head\b|grep\b[^|]*?\s(-[a-zA-Z]*m|--max-count))")
+_EARLY_EXIT_QUIET = re.compile(_PIPE_INTO + r"grep\b[^|]*?\s(-[a-zA-Z]*q|--quiet|--silent)")
+
+
+def early_exit_pipes(script: str, *, quiet_grep_ok: bool) -> list[str]:
+    """Lines that pipe into a reader that stops early (`head`, `grep -m`, and in scripts
+    `grep -q`): the writer may then die of SIGPIPE, which pipefail turns into a failure, now and
+    then. Use `sed -n 1p` (reads to the end) or a here-string. Checks may use `grep -q`, which
+    check-lib makes drain the pipe."""
+    bad, term = [], None
+    for raw in script.splitlines():
+        if term:
+            if raw.strip() == term:
+                term = None
+            continue
+        m = _HEREDOC.search(raw)
+        if m:
+            term = m.group(1)
+        st = re.sub(r"\s#\s.*$", "", raw.strip())     # drop a trailing comment
+        if st.startswith("#"):
+            continue
+        if _EARLY_EXIT.search(st) or (not quiet_grep_ok and _EARLY_EXIT_QUIET.search(st)):
+            bad.append(st)
+    return bad
+
+
 @dataclass(frozen=True)
 class Issue:
     severity: str        # error | warning
@@ -149,6 +176,9 @@ def lint_task(task: Task, bank: Bank) -> list[Issue]:
             warn(f"check {c.id!r} looks like it modifies state; checks must be read-only")
         for line in errexit_hazards(c.run):
             err(f"check {c.id!r}: a failure of this line would be ignored (append '|| exit 1'): {line[:80]}")
+        for line in early_exit_pipes(c.run, quiet_grep_ok=True):
+            err(f"check {c.id!r}: piping into head / grep -m can kill the writer (SIGPIPE + pipefail); "
+                f"use sed -n 1p or a here-string: {line[:80]}")
     for r in task.requirements:
         if r not in covered:
             err(f"requirement {r} is not verified by any check")
@@ -207,9 +237,12 @@ def lint_task(task: Task, bank: Bank) -> list[Issue]:
         err("no common-mistake test (tests/mistake-*.sh) and no `mistakes_na` reason")
     for script in [*task.setup_scripts.values(), *task.solution_scripts.values(),
                    *task.tests("alt"), *task.tests("mistake")]:
-        head = script.read_text(encoding="utf-8").splitlines()[:3]
-        if not head or not head[0].startswith("#!"):
+        text = script.read_text(encoding="utf-8")
+        if not text.startswith("#!"):
             err(f"{script.name}: missing shebang")
+        for line in early_exit_pipes(text, quiet_grep_ok=False):
+            err(f"{script.name}: piping into head / grep -q / grep -m can kill the writer (SIGPIPE + "
+                f"pipefail); use sed -n 1p or a here-string: {line[:80]}")
     return issues
 
 
