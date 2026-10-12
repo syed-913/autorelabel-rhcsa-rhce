@@ -315,6 +315,17 @@ def check_hypervisor_clash(provider: str) -> Check:
                  "KVM and VirtualBox VMs must never run at the same time; autorelabel checks before starting VMs")
 
 
+def check_vbox_profile(settings: Settings) -> Check:
+    from .providers import virtualbox as vb
+
+    title = "VirtualBox free for the lab profile"
+    home = paths.vbox_home(settings.storage_dir).resolve()
+    if any(h != home for h in vb.service_homes()):
+        return Check("vbox_profile", title, Status.WARN,
+                     "VirtualBox Manager or your own VirtualBox VMs are running. " + vb.ProfileBusy.hint)
+    return Check("vbox_profile", title, Status.OK, "lab VMs stay in autorelabel's own VirtualBox profile")
+
+
 # --- orchestration -----------------------------------------------------------------
 
 def run(settings: Settings, exam: str = "rhcsa") -> list[Check]:
@@ -334,6 +345,8 @@ def run(settings: Settings, exam: str = "rhcsa") -> list[Check]:
         jobs += [check_kvm, check_libvirt, check_libvirt_group]
     if provider in ("virtualbox", ""):
         jobs.append(check_virtualbox)
+    if provider == "virtualbox" and settings.storage_dir:
+        jobs.append(lambda: check_vbox_profile(settings))
     results: list[Check] = []
     with ThreadPoolExecutor(max_workers=8) as pool:
         for out in pool.map(lambda f: f(), jobs):
@@ -353,7 +366,7 @@ def run(settings: Settings, exam: str = "rhcsa") -> list[Check]:
                     c.status = Status.WARN
     order = ["platform", "cpu", "kvm", "ssh", "vagrant", "packer", "libvirt", "libvirt_group",
              "vagrant_libvirt", "virtualbox", "vagrant_registration", f"memory_{exam}", "storage",
-             "iso", "subnets", "box", "hv_clash", "ledger"]
+             "iso", "subnets", "box", "hv_clash", "vbox_profile", "ledger"]
     results.sort(key=lambda c: order.index(c.id) if c.id in order else len(order))
     return results
 

@@ -35,7 +35,11 @@ the facts tasks are rendered with (addresses, disks, URLs, RHCE inventory groups
   `trusted` zone, the `vagrant` account) and *lab* (what the candidate configures, no internet).
   libvirt uses dedicated networks and a dedicated storage pool in the lab storage directory;
   VirtualBox uses NAT plus a host-only network, in a **private VirtualBox profile**
-  (`VBOX_USER_HOME` inside the lab storage).
+  (`VBOX_USER_HOME` inside the lab storage). VirtualBox runs one `VBoxSVC` per user, and
+  `VBOX_USER_HOME` only counts when it starts: while one serves another profile, every
+  `VBoxManage` call goes to that profile. `providers/virtualbox.py` therefore waits for such a
+  service to exit before each call (and refuses if VirtualBox Manager or the user's VMs keep it
+  alive), and `conflict.py` reads the process list instead of asking `VBoxManage`.
 - **Provisioning:** the app provisions over SSH (`vagrant/provision/*.sh`, streamed with progress
   markers), not through Vagrant provisioners, so it can retry and verify. The utility VM serves
   the DVD repositories, Flatpaks, DNS, NTP, NFS, and for RHCE a Git server and Ansible content.

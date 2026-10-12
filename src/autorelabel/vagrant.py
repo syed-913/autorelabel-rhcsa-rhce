@@ -18,6 +18,10 @@ def _env(storage_dir: str | None = None, extra: dict[str, str] | None = None) ->
     env["VAGRANT_CWD"] = str(paths.VAGRANT_DIR)
     if extra:
         env.update(extra)
+    if env.get("VAGRANT_DEFAULT_PROVIDER") == "virtualbox" and env.get("VBOX_USER_HOME"):
+        from .providers import virtualbox as vb
+
+        vb.wait_for_own_service(Path(env["VBOX_USER_HOME"]))   # Vagrant runs VBoxManage itself
     return env
 
 

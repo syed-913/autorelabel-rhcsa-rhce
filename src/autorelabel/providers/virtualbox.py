@@ -15,7 +15,51 @@ class VirtualBoxError(RuntimeError):
     pass
 
 
+class ProfileBusy(VirtualBoxError):
+    hint = ("Close VirtualBox Manager and shut down your own VirtualBox VMs, then retry. VirtualBox "
+            "serves one settings profile at a time, and autorelabel keeps its lab VMs out of yours.")
+
+
+SERVICE_WAIT = 60   # an idle VBoxSVC exits about 5 s after its last client
+
+
+def service_homes(proc_root: Path = Path("/proc")) -> list[Path | None]:
+    """The profile each running VBoxSVC of this user serves (None: the default profile)."""
+    homes: list[Path | None] = []
+    uid = os.getuid()
+    for pid_dir in proc_root.iterdir():
+        if not pid_dir.name.isdigit():
+            continue
+        try:
+            if pid_dir.stat().st_uid != uid or (pid_dir / "comm").read_text().strip() != "VBoxSVC":
+                continue
+            environ = (pid_dir / "environ").read_bytes().split(b"\0")
+        except OSError:
+            continue
+        home = next((e.split(b"=", 1)[1].decode() for e in environ if e.startswith(b"VBOX_USER_HOME=")), "")
+        homes.append(Path(home).resolve() if home else None)
+    return homes
+
+
+def wait_for_own_service(home: Path, timeout: float = SERVICE_WAIT, proc_root: Path = Path("/proc")) -> None:
+    """VirtualBox runs one VBoxSVC per user, and VBOX_USER_HOME only counts when it starts.
+    While one serves another profile (VirtualBox Manager open, the user's own VMs running, or a
+    command a moment ago), our VBoxManage calls would silently act on that profile: register lab
+    VMs in the user's VM list, or change the user's default machine folder. Wait for it to exit;
+    refuse if it stays."""
+    want = home.resolve()
+    deadline = time.monotonic() + timeout
+    while any(h != want for h in service_homes(proc_root)):
+        if time.monotonic() >= deadline:
+            raise ProfileBusy("VirtualBox is busy with your own VirtualBox settings "
+                              "(VirtualBox Manager or your own VMs are running)")
+        time.sleep(1)
+
+
 def vbm(*args: str, timeout: float = 120, check: bool = False) -> proc.Result:
+    home = os.environ.get("VBOX_USER_HOME")
+    if home:
+        wait_for_own_service(Path(home))
     res = proc.run(["VBoxManage", *args], timeout=timeout)
     if check and not res.ok:
         raise VirtualBoxError(f"VBoxManage {' '.join(args[:2])}: {res.tail(3)}")

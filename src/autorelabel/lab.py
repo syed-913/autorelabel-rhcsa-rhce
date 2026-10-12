@@ -182,6 +182,11 @@ class Lab:
         clash = conflict.check(self.provider)
         if clash:
             raise LabError(*clash)
+        if self.provider == "virtualbox":
+            try:
+                vb.wait_for_own_service(paths.vbox_home(self.settings.storage_dir))
+            except vb.ProfileBusy as exc:
+                raise LabError(str(exc), exc.hint) from exc
 
     def _vagrant_up(self, names: list[str], step: StepFn, line: LineFn | None, log_file: Path,
                     cancel: threading.Event | None) -> None:

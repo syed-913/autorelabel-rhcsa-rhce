@@ -70,8 +70,11 @@ for RHCE) and **about 30 GB free disk** in a directory of your choice (40 GB for
 > autorelabel checks before it starts any lab VM and tells you which VMs to shut down first.
 
 With VirtualBox, the lab VMs live in autorelabel's **own VirtualBox profile** inside your lab
-storage directory, so they don't appear in (or depend on) your normal VirtualBox VM list. To look at
-them in the VirtualBox GUI: `VBOX_USER_HOME=<lab storage>/autorelabel/virtualbox/profile virtualbox`.
+storage directory, so they don't appear in (or depend on) your normal VirtualBox VM list. VirtualBox
+can only serve one profile at a time, so **close VirtualBox Manager and shut down your own
+VirtualBox VMs before starting a lab**; autorelabel waits briefly and then tells you if they are
+still open. To look at the lab VMs in the VirtualBox GUI (with VirtualBox Manager closed):
+`VBOX_USER_HOME=<lab storage>/autorelabel/virtualbox/profile virtualbox`.
 
 ## Quick start
 

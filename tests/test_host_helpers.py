@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from autorelabel import fsutil, hostinfo, ledger, paths, vagrant
 
 
@@ -69,3 +71,35 @@ def test_vagrant_machine_readable():
     )
     rows = vagrant.parse_machine_readable(out)
     assert ("vagrant-libvirt", "plugin-version", ["0.12.2, global"]) in rows
+
+
+def _fake_proc(root, pid: str, comm: str, environ: str = "", cmdline: str = "") -> None:
+    d = root / pid
+    d.mkdir()
+    (d / "comm").write_text(comm + "\n")
+    (d / "environ").write_bytes(environ.replace(" ", "\0").encode())
+    (d / "cmdline").write_bytes(cmdline.replace(" ", "\0").encode())
+
+
+def test_vboxsvc_profiles_are_detected(tmp_path):
+    from autorelabel.providers import virtualbox as vb
+
+    ours = tmp_path / "profile"
+    _fake_proc(tmp_path, "100", "VBoxSVC", f"HOME=/home/u VBOX_USER_HOME={ours}")
+    _fake_proc(tmp_path, "200", "bash", "HOME=/home/u")
+    (tmp_path / "self").mkdir()
+    assert vb.service_homes(tmp_path) == [ours.resolve()]
+    vb.wait_for_own_service(ours, timeout=0, proc_root=tmp_path)       # ours: no wait
+    _fake_proc(tmp_path, "101", "VBoxSVC", "HOME=/home/u")             # the user's default profile
+    with pytest.raises(vb.ProfileBusy):
+        vb.wait_for_own_service(ours, timeout=0, proc_root=tmp_path)
+
+
+def test_running_virtualbox_vms_from_processes(tmp_path):
+    from autorelabel.providers import conflict
+
+    _fake_proc(tmp_path, "300", "VBoxHeadless", cmdline="/usr/lib/virtualbox/VBoxHeadless --comment "
+               "autorelabel-rhcsa-node1 --startvm 1b2c --vrde config")
+    _fake_proc(tmp_path, "301", "VirtualBoxVM", cmdline="/usr/lib/virtualbox/VirtualBoxVM --startvm win11")
+    _fake_proc(tmp_path, "302", "VBoxSVC", cmdline="/usr/lib/virtualbox/VBoxSVC --auto-shutdown")
+    assert conflict.running_virtualbox_vms(tmp_path) == ["autorelabel-rhcsa-node1", "win11"]

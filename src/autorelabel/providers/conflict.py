@@ -8,25 +8,32 @@ refused while the other hypervisor has VMs running.
 
 from __future__ import annotations
 
-import os
+from itertools import pairwise
+from pathlib import Path
 
 from .. import proc
 
+# The processes VirtualBox runs a VM in (headless, VirtualBox Manager window, SDL).
+VM_PROCESSES = {"VBoxHeadless", "VirtualBoxVM", "VBoxSDL"}
 
-def running_virtualbox_vms() -> list[str]:
-    """Running VirtualBox VMs in the user's default profile and in autorelabel's profile."""
-    if not proc.which("VBoxManage"):
-        return []
-    names: list[str] = []
-    homes = [None, os.environ.get("VBOX_USER_HOME")]
-    for home in dict.fromkeys(homes):
-        env = dict(os.environ)
-        env.pop("VBOX_USER_HOME", None)
-        if home:
-            env["VBOX_USER_HOME"] = home
-        res = proc.run(["VBoxManage", "list", "runningvms"], timeout=30, env=env)
-        names += [ln.split('"')[1] for ln in res.out.splitlines() if ln.count('"') >= 2]
-    return sorted(set(names))
+
+def running_virtualbox_vms(proc_root: Path = Path("/proc")) -> list[str]:
+    """Running VirtualBox VMs of every user and profile, read from the process list. Asking
+    VBoxManage instead would start a VBoxSVC for the profile asked about, which then serves
+    every VBoxManage call for a few seconds (see virtualbox.wait_for_own_service)."""
+    names: set[str] = set()
+    for pid_dir in proc_root.iterdir():
+        if not pid_dir.name.isdigit():
+            continue
+        try:
+            if (pid_dir / "comm").read_text().strip() not in VM_PROCESSES:
+                continue
+            argv = (pid_dir / "cmdline").read_bytes().decode(errors="replace").split("\0")
+        except OSError:
+            continue
+        args = dict(pairwise(argv))
+        names.add(args.get("--comment") or args.get("--startvm") or f"process {pid_dir.name}")
+    return sorted(names)
 
 
 def running_kvm_domains() -> list[str]:
