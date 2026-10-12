@@ -31,9 +31,13 @@ checks:
   - id: previous-boot
     covers: [R2]
     on: node2
-    desc: journalctl --list-boots shows more than one boot
-    # Rows start with the boot index (0, -1, ...); RHEL 10 prints a header line too.
-    run: test "$(journalctl --list-boots 2>/dev/null | awk '$1 ~ /^-?[0-9]+$/' | wc -l)" -ge 2
+    desc: this boot's messages are stored on disk (kept at the next reboot)
+    run: |
+      # This boot is stored on disk, so it will still be there after the next reboot. (Counting
+      # boots would wrongly require journalctl --flush: after a restart of journald, the boot in
+      # which persistence was configured stays in /run until the next boot.)
+      bid="$(tr -d - < /proc/sys/kernel/random/boot_id)"
+      journalctl -D /var/log/journal --list-boots 2>/dev/null | grep -q "$bid"
 
 references:
   - "RHEL 10: Configuring basic system settings > Making systemd-journald storage persistent"

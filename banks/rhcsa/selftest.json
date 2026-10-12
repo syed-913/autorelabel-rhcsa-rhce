@@ -22,10 +22,10 @@
   },
   "rhcsa.deploy.cron-user": {
     "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
-    "detail": "mistake test mistake-swapped-fields: script failed: mistake-swapped-fields.sh failed on node1: \"-\":1: bad hour\nInvalid crontab file, can't install.\nERROR: line 201: crontab -u \"$P_USER\" -",
-    "digest": "33d1464bb1d6",
-    "status": "fail"
+    "date": "2026-10-13",
+    "detail": "",
+    "digest": "fc2e8b3d24d3",
+    "status": "pass"
   },
   "rhcsa.deploy.default-target": {
     "box": "RHEL 10.0 20261012.2257",
@@ -246,10 +246,10 @@
   },
   "rhcsa.operate.journal-size-limit": {
     "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
-    "detail": "reference solution not full marks: persistent=fail ",
-    "digest": "d88c3f2b2b43",
-    "status": "fail"
+    "date": "2026-10-13",
+    "detail": "",
+    "digest": "4f6d36fe90de",
+    "status": "pass"
   },
   "rhcsa.operate.memory-hog-respawn": {
     "box": "RHEL 10.0 20261012.2257",
@@ -274,10 +274,10 @@
   },
   "rhcsa.operate.persistent-journal": {
     "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
-    "detail": "reference solution not full marks: previous-boot=fail ",
-    "digest": "bea5b95cdb2c",
-    "status": "fail"
+    "date": "2026-10-13",
+    "detail": "",
+    "digest": "607314376dd1",
+    "status": "pass"
   },
   "rhcsa.operate.process-priority": {
     "box": "RHEL 10.0 20261012.2257",

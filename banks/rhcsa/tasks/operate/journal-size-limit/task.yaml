@@ -23,10 +23,13 @@ requirements:
 checks:
   - id: persistent
     covers: [R1]
-    desc: journal files in /var/log/journal and more than one boot listed
+    desc: the journal of this boot is stored in /var/log/journal
     run: |
-      find /var/log/journal -name 'system*.journal' | grep -q .
-      test "$(journalctl --list-boots | awk '$1 ~ /^-?[0-9]+$/' | wc -l)" -ge 2   # skip the header line
+      # This boot is stored on disk, so it will still be there after the next reboot. (Counting
+      # boots would wrongly require journalctl --flush: after a restart of journald, the boot in
+      # which persistence was configured stays in /run until the next boot.)
+      bid="$(tr -d - < /proc/sys/kernel/random/boot_id)"
+      journalctl -D /var/log/journal --list-boots 2>/dev/null | grep -q "$bid"
   - id: size
     covers: [R2]
     desc: "SystemMaxUse={{size}}M is in effect"
