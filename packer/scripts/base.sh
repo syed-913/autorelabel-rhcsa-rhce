@@ -32,7 +32,7 @@ fi
 if [[ -f /etc/dnf/plugins/product-id.conf ]]; then
   sed -i 's/^enabled=.*/enabled=0/' /etc/dnf/plugins/product-id.conf
 fi
-command -v subscription-manager >/dev/null && subscription-manager clean >/dev/null 2>&1 || true
+if command -v subscription-manager >/dev/null; then subscription-manager clean >/dev/null 2>&1 || true; fi
 rm -f /etc/yum.repos.d/*.repo
 
 echo "STEP: identity"
