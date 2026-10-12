@@ -39,6 +39,7 @@ class CheckResult:
     weight: float
     covers: list[str]
     detail: str = ""
+    guard: bool = False
 
 
 @dataclass
@@ -131,7 +132,7 @@ class Grader:
                 key = f"{number}:{chk.id}"
                 if node in unreachable:
                     res = CheckResult(chk.id, chk.desc, node, "unreachable", chk.weight, list(chk.covers),
-                                      unreachable[node])
+                                      unreachable[node], chk.guard)
                 else:
                     res = self._run_check(t, node, chk, params)
                 done[key] = asdict(res)
@@ -150,7 +151,7 @@ class Grader:
             desc = render.render(chk.desc, ctx)
         except render.RenderError as exc:
             return CheckResult(chk.id, chk.desc, node, "error", chk.weight, list(chk.covers),
-                               f"template error: {exc}")
+                               f"template error: {exc}", chk.guard)
         env = {**render.env_for(params, self.facts), "AR_NODE": node}
         res = remote.run_script(t, check_script(self.check_lib, script), env=env, timeout=chk.timeout)
         if res.timed_out:
@@ -161,7 +162,7 @@ class Grader:
             status, detail = "pass", ""
         else:
             status, detail = "fail", (res.out.strip() or res.err.strip())[-300:]
-        return CheckResult(chk.id, desc, node, status, chk.weight, list(chk.covers), detail)
+        return CheckResult(chk.id, desc, node, status, chk.weight, list(chk.covers), detail, chk.guard)
 
     # --- reboot ---------------------------------------------------------------------------
     def _diagnose(self, node: str) -> console.Diagnosis:
@@ -301,8 +302,13 @@ class Grader:
                     tr.not_persistent.append(chk.id)
             total_w = sum(c.weight for c in tr.post) or 1.0
             ok_w = sum(c.weight for c in tr.post if c.status == "pass")
+            # Guards (things not to break) are true before any work: they only count once a
+            # check of the work itself passes, so an untouched task scores nothing.
+            started = any(c.status == "pass" and not c.guard for c in tr.post)
             if strict:
                 tr.points = float(tr.points_possible) if ok_w == total_w and tr.post else 0.0
+            elif not started:
+                tr.points = 0.0
             else:
                 tr.points = round(tr.points_possible * ok_w / total_w, 2)
             results.append(tr)
@@ -396,6 +402,9 @@ def write_report(session: Session, bank: Bank, results: dict[str, Any]) -> str:
         for inc in r["incidents"]:
             lines.append(f"- **{inc['node']}**: {inc['message']}")
     lines += ["", "## Tasks", ""]
+    if any(c.get("guard") for t in r["tasks"] for c in t["post"]):
+        lines += ["*(guard)*: something you must not break. Guards only score once a check of the task's "
+                  "own work passes.", ""]
     for t in r["tasks"]:
         mark = "✅" if t["points"] == t["points_possible"] else ("⚠️" if t["points"] else "❌")
         lines.append(f"### {mark} Task {t['number']}: {t['title']} — {t['points']:g}/{t['points_possible']} "
@@ -405,7 +414,8 @@ def write_report(session: Session, bank: Bank, results: dict[str, Any]) -> str:
             extra = " — **worked before the reboot but not after (not persistent)**" \
                 if c["id"] in t["not_persistent"] else ""
             detail = f" ({c['detail']})" if c["status"] != "pass" and c["detail"] else ""
-            lines.append(f"- {sym} {c['desc']}{extra}{detail}")
+            guard = " *(guard)*" if c.get("guard") else ""
+            lines.append(f"- {sym} {c['desc']}{guard}{extra}{detail}")
         lines.append("")
     text = "\n".join(lines).rstrip() + "\n"
     session.report_file.write_text(text, encoding="utf-8")

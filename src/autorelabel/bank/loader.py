@@ -102,6 +102,7 @@ def load_task(path: Path, exam: str) -> Task:
                 on=c.get("on"),
                 weight=float(c.get("weight", 1)),
                 timeout=int(c.get("timeout", 60)),
+                guard=c.get("guard", False),
             )
             for c in raw.get("checks", [])
         )

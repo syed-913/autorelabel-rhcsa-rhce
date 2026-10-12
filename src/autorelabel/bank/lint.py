@@ -155,6 +155,8 @@ def lint_task(task: Task, bank: Bank) -> list[Issue]:
         err("no requirements listed")
     if not task.checks:
         err("no checks")
+    elif all(c.guard is True for c in task.checks):
+        err("every check is a guard: at least one check must verify the work itself")
     covered: set[str] = set()
     seen_ids: set[str] = set()
     for c in task.checks:
@@ -172,6 +174,8 @@ def lint_task(task: Task, bank: Bank) -> list[Issue]:
             err(f"check {c.id!r} runs on unknown node {c.on!r}")
         if c.weight <= 0:
             err(f"check {c.id!r} has non-positive weight")
+        if not isinstance(c.guard, bool):
+            err(f"check {c.id!r}: guard must be true or false")
         if _WRITE_HINTS.search(c.run):
             warn(f"check {c.id!r} looks like it modifies state; checks must be read-only")
         for line in errexit_hazards(c.run):

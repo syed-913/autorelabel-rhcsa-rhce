@@ -64,6 +64,9 @@ class Check:
     on: str | None = None          # node to run on; None = the task's node
     weight: float = 1.0
     timeout: int = 60
+    # Something the candidate must not break (SELinux stays enforcing, data stays intact): true
+    # before any work is done, so it only scores once one of the task's other checks passes.
+    guard: bool = False
 
 
 @dataclass(frozen=True)

@@ -542,6 +542,8 @@ class ResultsScreen(Screen[None]):
         for c in t["post"]:
             sym = {"pass": "✔", "fail": "✘", "error": "!", "unreachable": "⨯"}[c["status"]]
             line = f"- {sym} {c['desc']}"
+            if c.get("guard"):
+                line += " *(guard: must not break; scores once the task's own work does)*"
             if c["id"] in t["not_persistent"]:
                 line += " **(worked before the reboot, not after: not persistent)**"
             if c["status"] != "pass" and c.get("detail"):

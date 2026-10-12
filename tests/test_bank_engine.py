@@ -197,3 +197,11 @@ def test_lint_future_date_args(args, ok, synthetic_bank):
     task = replace(base, params={"d": ParamSpec("d", "future_date", args)})
     msgs = [i.message for i in lint.lint_task(task, synthetic_bank) if "future_date" in i.message]
     assert (not msgs) == ok, msgs
+
+
+def test_lint_needs_a_check_that_is_not_a_guard(synthetic_bank):
+    base = next(iter(synthetic_bank.tasks.values()))
+    only_guards = replace(base, checks=tuple(replace(c, guard=True) for c in base.checks))
+    msgs = [i.message for i in lint.lint_task(only_guards, synthetic_bank) if i.severity == "error"]
+    assert any("every check is a guard" in m for m in msgs)
+    assert not [i for i in lint.lint_task(base, synthetic_bank) if "guard" in i.message]

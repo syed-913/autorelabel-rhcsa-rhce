@@ -1,7 +1,7 @@
 """Task self-test on real VMs: the quality gate every task must pass.
 
 For each task:
-  1. pre-state:   right after setup, the task must NOT score full marks
+  1. pre-state:   untouched and graded like an exam (after a reboot), the task must score nothing
   2. reference:   solution scripts, then a reboot → full marks
   3. alternative: each tests/alt-*.sh, then a reboot → full marks (valid methods aren't punished)
   4. mistakes:    each tests/mistake-*.sh, then a reboot → NOT full marks (classic errors are caught)
@@ -235,13 +235,19 @@ class SelfTest:
         try:
             sess = self.engine.create(self.exam, mode="practice", task_ids=[t.id for t in batch], timed=False)
             sess.mode = "selftest"
+            sess.scoring = "partial"   # judge every check, whatever the user's scoring setting
             sess.save()
             self.engine.prepare(sess, on_step=lambda s: self.say(f"    {s}"))
-            # 1. pre-state
-            pre = self._grade(sess, reboot=False)
+            # 1. pre-state: an untouched task must score nothing, also after the grading reboot
+            pre = self._grade(sess, reboot=True)
             for t in batch:
-                if t.id in pre and self._full(pre[t.id]):
-                    fail(t.id, "pre-state already scores full marks (setup or checks too weak)")
+                r = pre.get(t.id)
+                if r and r["points"] > 0:
+                    free = ", ".join(c["id"] for c in r["post"] if c["status"] == "pass")
+                    fail(t.id, f"untouched, it already scores {r['points']:g} points (passing: {free}): mark "
+                               "checks of things not to break with guard: true, or make the setup break "
+                               "what the others verify")
+            self._restart_from_exam_start(sess)
             # 2. reference
             _who, failed = self._apply(sess, sess.tasks, "solution", 0)
             ref = self._grade(sess, reboot=True)

@@ -55,6 +55,7 @@ prompt: |
   On node1, create ... `{{vg}}` ... `{{lab.node1.disk1}}`
 requirements:
   R1: "VG {{vg}} exists with {{pe}} MiB extents"
+  R2: "the existing data is kept"
 checks:
   - id: vg
     covers: [R1]                     # every requirement needs at least one check
@@ -64,12 +65,25 @@ checks:
     timeout: 60
     run: |
       test "$(vgs --noheadings --units m -o vg_extent_size {{vg}} | tr -d ' ')" = "{{pe}}.00m"
+  - id: data
+    covers: [R2]
+    desc: "the existing LV still holds its data"
+    guard: true                      # must not break; see "Guard checks" below
+    run: test -s /srv/data/marker
 references:
   - "RHEL 10: Configuring and managing logical volumes > ..."
   - "man vgcreate(8)"
 ```
 
 `mistakes_na: <reason>` replaces the mistake tests when no realistic mistake exists.
+
+### Guard checks
+
+A check of something the candidate must **not** break (SELinux stays enforcing, existing data
+stays intact, ssh stays allowed) is already true before any work is done. Mark it `guard: true`.
+A task scores nothing until at least one of its other checks passes. After that, guards count like
+any other check, so breaking one still costs points. Every task needs at least one check that is
+not a guard. The self-test enforces this: an untouched task must score 0 (see below).
 
 ### Placeholders
 
@@ -146,7 +160,9 @@ Helpers from `check-lib.sh`: `as_student`, `student_sh`, `as_user`, `inventory_h
 
 `./autorelabel selftest --exam rhcsa [task ids] [--changed]` runs every task on real VMs:
 
-1. **pre-state**: right after setup, the task must not score full marks;
+1. **pre-state**: untouched, graded like an exam (after a reboot), the task must score 0 points.
+   A check that passes here either is a guard (mark it) or verifies something the setup doesn't
+   break (fix the setup or the check);
 2. **reference**: `solution*.sh`, reboot, full marks;
 3. **alternatives**: each `tests/alt-*` group, reboot, full marks;
 4. **mistakes**: each `tests/mistake-*` group, reboot, not full marks.
