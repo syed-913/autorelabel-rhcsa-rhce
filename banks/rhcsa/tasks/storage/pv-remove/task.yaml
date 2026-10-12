@@ -42,6 +42,7 @@ checks:
       p2="$(cat /etc/autorelabel/{{vg}}-pv2)"
       ! pvs --noheadings -o pv_name 2>/dev/null | grep -qw "$p2"
   - id: intact
+    guard: true
     covers: [R3]
     desc: LV mounted, data intact
     run: |

@@ -39,6 +39,7 @@ checks:
     desc: "no {{word}}d process after reboot"
     run: "! pgrep -x {{word}}d >/dev/null"
   - id: kept
+    guard: true
     covers: [R3]
     on: node2
     desc: the unit file and program still exist

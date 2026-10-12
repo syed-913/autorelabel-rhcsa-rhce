@@ -33,6 +33,7 @@ checks:
       ! grep -Eq '^[^#]*[[:space:]]/scratch[[:space:]]' /etc/fstab || exit 1
       systemctl is-system-running | grep -Eq 'running|degraded'
   - id: vg
+    guard: true
     covers: [R3]
     desc: "{{vg}} still exists"
     run: vgs {{vg}} >/dev/null 2>&1

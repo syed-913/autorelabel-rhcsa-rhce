@@ -27,6 +27,7 @@ checks:
       ! echo "$s" | tr ' ' '\n' | grep -Eqx 'cockpit|dhcpv6-client' || exit 1
       ! echo "$p" | tr ' ' '\n' | grep -qx '{{port}}/tcp'
   - id: ssh
+    guard: true
     covers: [R2]
     on: node2
     desc: ssh remains

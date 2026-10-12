@@ -34,6 +34,7 @@ checks:
       test "$(df -m --output=size /srv/{{vg}}-home | tail -1 | tr -d ' ')" -ge 650
       test "$(lvs --noheadings --units m -o lv_size {{vg}}/homelv | tr -d ' m' | cut -d. -f1)" -ge 700
   - id: data
+    guard: true
     covers: [R2]
     on: node2
     desc: data intact

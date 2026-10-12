@@ -36,6 +36,7 @@ checks:
     desc: "{{port}}/tcp is allowed (after reboot)"
     run: firewall-cmd --list-ports | tr ' ' '\n' | grep -qx '{{port}}/tcp'
   - id: ssh
+    guard: true
     covers: [R3]
     on: node2
     desc: ssh is still allowed

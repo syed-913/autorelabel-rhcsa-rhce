@@ -45,6 +45,7 @@ checks:
       grep -A8 '^\[remote "{{remote}}"\]' "$cfg" | grep -q 'gpg-verify=true'
       test -s "/home/{{user}}/.local/share/flatpak/repo/{{remote}}.trustedkeys.gpg"
   - id: not-system
+    guard: true
     covers: [R3]
     on: node2
     desc: "no system remote called {{remote}}"

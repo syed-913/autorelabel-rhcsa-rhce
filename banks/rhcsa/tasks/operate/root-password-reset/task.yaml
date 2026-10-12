@@ -41,6 +41,7 @@ checks:
       sys.exit(0 if stored and crypt.crypt("{{new_password}}", stored) == stored else 1)
       PY
   - id: shadow-label
+    guard: true
     covers: [R2]
     on: node2
     desc: /etc/shadow has its default SELinux type (shadow_t)

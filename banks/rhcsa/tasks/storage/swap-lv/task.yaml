@@ -38,6 +38,7 @@ checks:
       swapon --show=NAME --noheadings | grep -q "$(readlink -f /dev/{{vg}}/swaplv)"
       grep -Eq '^[[:space:]]*(/dev/{{vg}}/swaplv|/dev/mapper/{{vg}}-swaplv|UUID=[^ ]+)[[:space:]]+(none|swap)[[:space:]]+swap' /etc/fstab
   - id: intact
+    guard: true
     covers: [R3]
     desc: existing data intact
     run: cd /srv/{{vg}}-data && sha256sum -c --quiet /etc/autorelabel/{{vg}}-data.sha256

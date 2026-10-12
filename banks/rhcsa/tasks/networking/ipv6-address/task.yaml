@@ -29,6 +29,7 @@ checks:
       nic="$(sed -n 's/^lab_nic=//p' /etc/autorelabel/facts)"
       ip -6 -o addr show dev "$nic" | grep -qw '{{lab.ipv6_prefix}}{{host}}/64'
   - id: kept
+    guard: true
     covers: [R2]
     on: node2
     desc: old addresses kept

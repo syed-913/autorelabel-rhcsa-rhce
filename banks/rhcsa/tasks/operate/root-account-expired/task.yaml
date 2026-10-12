@@ -44,6 +44,7 @@ checks:
       case "$hash" in '!'*) exit 1 ;; esac
       test -z "$expire" -o "$expire" = "-1"
   - id: labels
+    guard: true
     covers: [R3]
     desc: /etc/shadow is shadow_t
     run: |

@@ -44,6 +44,7 @@ checks:
       matchpathcon -n /srv/{{site}}/new-file.html | grep -q httpd_sys_content_t
       matchpathcon -V /srv/{{site}}/index.html | grep -q verified
   - id: enforcing
+    guard: true
     covers: [R3]
     desc: SELinux is enforcing
     run: test "$(getenforce)" = Enforcing

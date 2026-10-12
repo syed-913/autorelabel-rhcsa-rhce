@@ -51,6 +51,7 @@ checks:
       sudo -n -l -U {{operator}} /usr/bin/systemctl restart chronyd >/dev/null
       ! sudo -n -l -U {{operator}} /usr/bin/systemctl restart sshd >/dev/null 2>&1
   - id: valid
+    guard: true
     covers: [R4]
     on: node2
     desc: visudo reports no errors

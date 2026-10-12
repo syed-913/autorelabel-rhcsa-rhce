@@ -44,6 +44,7 @@ checks:
       login_defs="$(awk '$1=="UMASK"{print $2}' /etc/login.defs)"
       test "$result" = 0027 || test "$login_defs" = 027 -o "$login_defs" = 0027
   - id: root
+    guard: true
     covers: [R3]
     on: node2
     desc: root keeps umask 0022

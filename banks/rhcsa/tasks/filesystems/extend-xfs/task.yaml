@@ -35,6 +35,7 @@ checks:
     desc: the file system grew too
     run: test "$(df -m --output=size /srv/{{vg}} | tail -1 | tr -d ' ')" -ge $(({{target}} - 60))
   - id: data
+    guard: true
     covers: [R3]
     desc: data intact
     run: cd /srv/{{vg}} && sha256sum -c --quiet /etc/autorelabel/{{vg}}-data.sha256

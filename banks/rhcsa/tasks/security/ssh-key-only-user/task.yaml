@@ -40,6 +40,7 @@ checks:
     run: |
       sshd -T -C user={{user}},host=node1,addr={{lab.node1.ip}} 2>/dev/null | grep -qx 'passwordauthentication no'
   - id: others
+    guard: true
     covers: [R3]
     on: node2
     desc: root still allows passwords

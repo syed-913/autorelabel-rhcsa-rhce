@@ -26,6 +26,7 @@ checks:
     desc: "{{user}}'s login shell reports umask 0027"
     run: test "$(su - {{user}} -c umask 2>/dev/null | tail -1)" = 0027
   - id: others
+    guard: true
     covers: [R2]
     desc: root keeps umask 0022
     run: test "$(su - root -c umask 2>/dev/null | tail -1)" = 0022

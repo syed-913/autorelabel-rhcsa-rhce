@@ -52,6 +52,7 @@ checks:
     desc: labtools 1.1 installed
     run: test "$(rpm -q --qf '%{VERSION}' labtools)" = 1.1
   - id: global-gpg
+    guard: true
     covers: [R3]
     on: node2
     desc: dnf.conf still has gpgcheck=1

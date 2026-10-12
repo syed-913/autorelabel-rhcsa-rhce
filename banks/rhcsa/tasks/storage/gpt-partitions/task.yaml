@@ -48,6 +48,7 @@ checks:
       echo "$sizes" | awk -v a={{size1}} 'BEGIN{f=0} {if ($1>=a-8 && $1<=a+8) f=1} END{exit !f}'
       echo "$sizes" | awk -v a={{size2}} 'BEGIN{f=0} {if ($1>=a-8 && $1<=a+8) f=1} END{exit !f}'
   - id: data
+    guard: true
     covers: [R3]
     on: node2
     desc: data partition mounted and unchanged

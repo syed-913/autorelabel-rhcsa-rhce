@@ -39,6 +39,7 @@ checks:
     run: |
       for i in $(seq 1 14); do pgrep -x {{word}}-cache >/dev/null && exit 1; sleep 5; done; exit 0
   - id: kept
+    guard: true
     covers: [R3]
     desc: program file kept
     run: test -x /usr/local/bin/{{word}}-cache

@@ -33,6 +33,7 @@ checks:
       test "$(vgs --noheadings -o pv_count {{vg}} | tr -d ' ')" = 2
       test "$(vgs --noheadings --units m -o vg_size {{vg}} | tr -d ' m' | cut -d. -f1)" -ge 800
   - id: intact
+    guard: true
     covers: [R2]
     on: node2
     desc: data intact

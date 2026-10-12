@@ -40,6 +40,7 @@ checks:
       uuid="$(blkid -s UUID -o value "$dev")"
       grep -Eq "^[[:space:]]*(UUID=\"?$uuid\"?|$dev|/dev/disk/by-[a-z]+/[^ ]+)[[:space:]]+(none|swap)[[:space:]]+swap" /etc/fstab
   - id: original
+    guard: true
     covers: [R3]
     on: node2
     desc: the rhel-swap LV is still active

@@ -49,6 +49,7 @@ checks:
       sudo -u {{reader}} test -x /srv/{{word}} && sudo -u {{writer}} test -x /srv/{{word}} || exit 1
       getfacl -p /srv/{{word}} 2>/dev/null | grep -Eq '^default:user:{{writer}}:rw'
   - id: unchanged
+    guard: true
     covers: [R4]
     desc: owner/mode unchanged
     run: |

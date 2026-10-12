@@ -35,11 +35,13 @@ checks:
     desc: node1 gets the page
     run: curl -fsS --max-time 5 http://{{lab.node2.ip}}/ | grep -q "AR-{{token}}"
   - id: others-blocked
+    guard: true
     covers: [R2]
     on: utility
     desc: utility is blocked
     run: "! curl -fsS --max-time 5 http://{{lab.node2.ip}}/ >/dev/null 2>&1"
   - id: ssh
+    guard: true
     covers: [R3]
     on: utility
     desc: ssh port still open from utility
