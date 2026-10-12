@@ -62,7 +62,8 @@ have() { command -v "$1" >/dev/null 2>&1; }
   names "$HOME/.local/lib"
 
   section "VirtualBox (default profile)"
-  tree "$HOME/.config/VirtualBox" "$HOME/VirtualBox VMs"
+  # VBoxSVC.log* rotate whenever a VBoxSVC starts (this script's own queries start one).
+  tree "$HOME/.config/VirtualBox" "$HOME/VirtualBox VMs" | grep -vE ' VBoxSVC\.log(\.[0-9]+)?$'
   digest "$HOME/.config/VirtualBox/VirtualBox.xml"
   if have VBoxManage; then
     # One VBoxSVC per user: let a service for another profile exit first.
