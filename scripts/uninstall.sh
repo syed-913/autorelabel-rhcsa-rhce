@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 # autorelabel uninstaller: removes everything autorelabel created on this host.
 #
-# Pure bash on purpose: works even if Python or the .venv is broken, and a copy
-# of this script (plus the ledger) lives in <lab-storage>/autorelabel/ so you can
-# still clean up after deleting the repository folder.
+# Pure bash on purpose: works even if the .venv is broken (the system python3 is
+# only used, when present, to edit Vagrant's machine index), and a copy of this
+# script (plus the ledger) lives in <lab-storage>/autorelabel/ so you can still
+# clean up after deleting the repository folder.
 #
 #   ./autorelabel uninstall [--dry-run] [--yes] [--keep-box] [--delete-iso]
 #
 # What it removes (only things autorelabel created, found via the ledger and the
 # "autorelabel-" name prefix): libvirt domains/snapshots/volumes/pool/networks,
-# VirtualBox VMs and media registrations, the Vagrant box, the lab storage
-# subdirectory, .workspace/ and .venv/ in the repo, ~/.config/autorelabel.
-# It never removes your ISO (unless --delete-iso), your global Vagrant plugins,
+# VirtualBox VMs and media registrations, the Vagrant box and autorelabel's
+# entries in Vagrant's machine index, the lab storage subdirectory, .workspace/
+# and .venv/ in the repo, ~/.config/autorelabel. It never removes your ISO
+# (unless --delete-iso), your Vagrant plugins, other Vagrant projects' entries,
 # or anything you installed with sudo; for those it prints the undo commands.
 set -uo pipefail
 
@@ -26,7 +28,7 @@ for arg in "$@"; do
     --yes|-y) ASSUME_YES=1 ;;
     --keep-box) KEEP_BOX=1 ;;
     --delete-iso) DELETE_ISO=1 ;;
-    -h|--help) sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) awk 'NR > 1 && !/^#/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "unknown option: $arg" >&2; exit 2 ;;
   esac
 done
@@ -117,6 +119,30 @@ vbox_profiles() {
 vbox_label() { [[ "$1" == private ]] && echo "autorelabel's VirtualBox profile" || echo "your default VirtualBox profile"; }
 HAVE_VAGRANT=0; have vagrant && HAVE_VAGRANT=1
 export VAGRANT_CHECKPOINT_DISABLE=1
+# Vagrant's global machine index (vagrant global-status) lists the machines of every Vagrant
+# project on this host. Only autorelabel's entries (its Vagrantfile) are removed: `vagrant
+# global-status --prune` would also drop the stale entries of your other projects.
+VAGRANT_INDEX="${VAGRANT_HOME:-$HOME/.vagrant.d}/data/machine-index/index"
+vagrant_index() {  # vagrant_index <count|remove>: autorelabel's machine-index entries
+  [[ -n "$REPO" && -f "$VAGRANT_INDEX" ]] && have python3 && have flock || return 1
+  flock "$VAGRANT_INDEX.lock" python3 -I - "$1" "$VAGRANT_INDEX" "$REPO/vagrant" <<'PY'
+import json, os, sys, tempfile
+action, path, ours = sys.argv[1:]
+with open(path, encoding="utf-8") as fh:
+    data = json.load(fh)
+machines = data.get("machines", {})
+keep = {k: m for k, m in machines.items() if m.get("vagrantfile_path") != ours}
+if action == "count":
+    print(len(machines) - len(keep))
+elif len(keep) != len(machines):
+    data["machines"] = keep
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path))
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, separators=(",", ":"), ensure_ascii=False)   # as Vagrant writes it
+    os.chmod(tmp, os.stat(path).st_mode & 0o7777)
+    os.replace(tmp, path)
+PY
+}
 
 # --- Discover what exists ------------------------------------------------------------
 uniq_lines() { awk '{ sub(/[ \t]+$/, "") } NF && !seen[$0]++'; }   # virsh pads --name output
@@ -150,6 +176,7 @@ fi
 if ((HAVE_VAGRANT)) && ((KEEP_BOX == 0)); then
   if vagrant box list 2>/dev/null | grep -q "^${BOX} "; then BOXES=1; fi
 fi
+INDEX_ENTRIES="$(vagrant_index count 2>/dev/null || echo 0)"
 
 safe_dir() {  # only ever delete our own directories
   local d="$1"
@@ -183,6 +210,7 @@ section "VirtualBox media registrations (files are kept)" "${VBOX_MEDIA[@]}"
 section "VirtualBox host-only interfaces" "${VBOX_HOSTONLY[@]}"
 section "systemd user units" "${UNITS[@]}"
 ((BOXES)) && section "Vagrant box" "$BOX (all providers and versions)"
+((INDEX_ENTRIES > 0)) && section "Vagrant machine index (vagrant global-status)" "$INDEX_ENTRIES autorelabel entries"
 section "directories" "${DIRS[@]}"
 REPO_ITEMS=()
 if [[ -n "$REPO" ]]; then
@@ -277,7 +305,7 @@ done
 if ((BOXES)); then
   step "remove Vagrant box $BOX" vagrant box remove --force --all "$BOX"
 fi
-((HAVE_VAGRANT)) && quiet vagrant global-status --prune
+if ((INDEX_ENTRIES > 0)); then step "remove autorelabel's entries from Vagrant's machine index" vagrant_index remove; fi
 # Let the private profile's VBoxSVC exit before its directory is deleted.
 [[ -n "$VBOX_PRIVATE" ]] && quiet vbox_wait none private
 
@@ -301,6 +329,8 @@ if ((HAVE_VBOX)); then
   done
 fi
 if ((HAVE_VAGRANT)) && ((KEEP_BOX == 0)) && vagrant box list 2>/dev/null | grep -q "^${BOX} "; then LEFT+=("Vagrant box $BOX"); fi
+left_index="$(vagrant_index count 2>/dev/null || echo 0)"
+((left_index > 0)) && LEFT+=("$left_index entries in Vagrant's machine index (vagrant global-status)")
 for d in "${DIRS[@]}" "${REPO_ITEMS[@]}"; do [[ -e "$d" ]] && LEFT+=("$d"); done
 
 if ((${#LEFT[@]})); then
@@ -314,6 +344,10 @@ else
   STATUS=0
 fi
 if ((KEEP_BOX)); then echo "${D}Kept the Vagrant box ($BOX) as requested.${O}"; fi
+if [[ -z "$REPO" ]] && ((HAVE_VAGRANT)); then
+  echo "${D}Without the repository, Vagrant's machine index may still list the lab VMs. To clear every${O}"
+  echo "${D}deleted machine from it (other projects' too): vagrant global-status --prune${O}"
+fi
 if [[ -n "$ISO_PATH" && -f "$ISO_PATH" ]]; then echo "${D}Your ISO was kept: $ISO_PATH${O}"; fi
 if ((${#USER_UNDO[@]})); then
   echo; echo "${B}Steps you ran yourself during setup (undo them only if you want to):${O}"
