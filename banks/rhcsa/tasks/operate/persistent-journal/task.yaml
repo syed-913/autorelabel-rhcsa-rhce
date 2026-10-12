@@ -32,7 +32,8 @@ checks:
     covers: [R2]
     on: node2
     desc: journalctl --list-boots shows more than one boot
-    run: test "$(journalctl --list-boots 2>/dev/null | grep -c .)" -ge 2
+    # Rows start with the boot index (0, -1, ...); RHEL 10 prints a header line too.
+    run: test "$(journalctl --list-boots 2>/dev/null | awk '$1 ~ /^-?[0-9]+$/' | wc -l)" -ge 2
 
 references:
   - "RHEL 10: Configuring basic system settings > Making systemd-journald storage persistent"
