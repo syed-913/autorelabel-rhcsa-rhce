@@ -107,3 +107,21 @@ solution, valid alternatives and classic mistakes, each graded after a reboot. S
 | `.workspace/` | settings, sessions, logs, Vagrant state, history (inside the repository, ignored by git) |
 | `<lab storage>/autorelabel/` | libvirt pool, VirtualBox profile and VMs, Packer cache and boxes, RHCE content, uninstall ledger and a rescue copy of the uninstaller |
 | `$XDG_RUNTIME_DIR/autorelabel/` | SSH control sockets, VirtualBox serial console sockets |
+
+Outside these, the tools autorelabel drives keep their usual state: the Vagrant box in
+`~/.vagrant.d/boxes/` and entries in Vagrant's machine index, and libvirt's own definitions of the
+lab's networks, pool and VMs. `./autorelabel uninstall` removes all of it, guided by the ledger
+(`ledger.tsv`, written before anything is created) and the `autorelabel-` name prefix. Two things
+stay, because only root can remove them, and autorelabel never runs `sudo`:
+
+- libvirt's QEMU log of each lab VM in `/var/log/libvirt/qemu/` (the uninstaller prints the
+  `sudo rm` command);
+- kernel modules the kernel loads on demand for libvirt VMs (`vhost_net`, `tap`, ...), as for
+  any VM; they are gone after the next reboot.
+
+**Footprint audit.** `scripts/dev/footprint.sh <file>` snapshots everything on the host that
+autorelabel or these tools could change (home directory dotfiles, Vagrant, VirtualBox's default
+profile, libvirt objects, network interfaces, user units, processes, temporary directories). Take
+one on a clean host, install and use autorelabel (box build, exam, grading), run
+`./autorelabel uninstall`, take another and `diff` them: apart from the two items above, they
+must be identical.
