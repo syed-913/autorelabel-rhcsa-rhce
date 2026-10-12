@@ -208,6 +208,12 @@ class Lab:
                 step("Vagrant reported a lock; retrying")
                 time.sleep(10)
                 continue
+            # vagrant-libvirt occasionally gives up right after starting a domain ("not ready for
+            # guest communication ... a bug should be reported") and removes it again: retry once.
+            if "not ready for guest communication" in res.out and attempt == 1:
+                step("Vagrant gave up on a VM that was still booting; retrying")
+                time.sleep(10)
+                continue
             raise LabError(f"vagrant up failed for {', '.join(names)}",
                            "Open the log for details. Common causes: low memory, the box missing, "
                            "or a leftover VM from an interrupted run (Lab → Destroy, then retry).", log_file)
