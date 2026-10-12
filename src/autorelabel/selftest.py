@@ -8,7 +8,8 @@ For each task:
 
 Compatible tasks run together in batches (one reboot per round) to keep this fast.
 Results are stored per task with a digest of the task's files, so edited tasks
-are re-tested and the coverage report can mark verified tasks.
+are re-tested and the coverage report can mark verified tasks. Each provider keeps its own
+results file; the coverage report uses libvirt's, the primary provider.
 """
 
 from __future__ import annotations
@@ -42,17 +43,21 @@ def task_digest(task: Task) -> str:
     return h.hexdigest()[:12]
 
 
-def results_file(exam: str) -> Path:
-    return paths.BANKS / exam / "selftest.json"
+PRIMARY_PROVIDER = "libvirt"
 
 
-def load_results(exam: str) -> dict[str, Any]:
-    return read_json(results_file(exam), default={}) or {}
+def results_file(exam: str, provider: str = PRIMARY_PROVIDER) -> Path:
+    name = "selftest.json" if provider == PRIMARY_PROVIDER else f"selftest-{provider}.json"
+    return paths.BANKS / exam / name
 
 
-def verified(bank: Bank) -> dict[str, str]:
+def load_results(exam: str, provider: str = PRIMARY_PROVIDER) -> dict[str, Any]:
+    return read_json(results_file(exam, provider), default={}) or {}
+
+
+def verified(bank: Bank, provider: str = PRIMARY_PROVIDER) -> dict[str, str]:
     """task id -> stamp, for tasks whose current files passed self-test."""
-    res = load_results(bank.exam)
+    res = load_results(bank.exam, provider)
     out = {}
     for tid, task in bank.tasks.items():
         r = res.get(tid)
@@ -199,12 +204,13 @@ class SelfTest:
 
     # --- main ---------------------------------------------------------------------------------------
     def run(self, task_ids: list[str] | None = None, *, only_changed: bool = False) -> dict[str, Any]:
+        provider = self.engine.settings.provider
         tasks = [self.bank.tasks[t] for t in (task_ids or sorted(self.bank.tasks))]
         if only_changed:
-            ok = verified(self.bank)
+            ok = verified(self.bank, provider)
             tasks = [t for t in tasks if t.id not in ok]
-        results = load_results(self.exam)
-        manifest = box.manifest(self.engine.settings, self.engine.settings.provider) or {}
+        results = load_results(self.exam, provider)
+        manifest = box.manifest(self.engine.settings, provider) or {}
         stamp = {"box": f"RHEL {manifest.get('rhel_version', '?')} {manifest.get('version', '')}".strip(),
                  "date": time.strftime("%Y-%m-%d")}
         batches = plan_batches(self.bank, tasks)
@@ -216,7 +222,7 @@ class SelfTest:
                 results[tid] = {"status": status, "detail": detail, "digest": task_digest(self.bank.tasks[tid]),
                                 **stamp}
                 self.say(f"    {status.upper():4} {tid} {detail}")
-            atomic_write_json(results_file(self.exam), results)
+            atomic_write_json(results_file(self.exam, provider), results)
         return results
 
     def _run_batch(self, batch: list[Task]) -> dict[str, tuple[str, str]]:

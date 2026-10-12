@@ -156,8 +156,9 @@ solution, so the task under test is judged in an otherwise solved lab.
 
 Compatible tasks share a lab (no common `exclusive` tag, disk budgets fit). Anchors and
 `breaks_boot` tasks always run alone, because their tests break what other tasks need. Results
-go to `banks/<exam>/selftest.json` with a digest of the task's files; `--changed` re-tests only
-tasks whose files changed or that never passed. Console transcripts and every grading round are
+go to `banks/<exam>/selftest.json` (libvirt, the primary provider; the coverage report reads this
+one) or `banks/<exam>/selftest-virtualbox.json`, with a digest of the task's files; `--changed`
+re-tests only tasks whose files changed or that never passed on the current provider. Console transcripts and every grading round are
 kept in the session directory under `.workspace/sessions/`.
 
 ## Before you open a pull request

@@ -60,3 +60,18 @@ def test_each_unofficial_grading_gets_its_own_checkpoint(tmp_path):
     first.write_text("{}")
     second = fresh_checkpoint(tmp_path)
     assert first != second and not second.exists()
+
+
+def test_each_provider_keeps_its_own_results(tmp_path, monkeypatch):
+    from autorelabel import paths, selftest
+
+    monkeypatch.setattr(paths, "BANKS", tmp_path)
+    assert selftest.results_file("rhcsa").name == "selftest.json"
+    assert selftest.results_file("rhcsa", "virtualbox").name == "selftest-virtualbox.json"
+    task = _task(tmp_path, "t")
+    (tmp_path / "rhcsa").mkdir()
+    selftest.results_file("rhcsa", "virtualbox").write_text(
+        f'{{"t": {{"status": "pass", "digest": "{selftest.task_digest(task)}"}}}}')
+    bank = SimpleNamespace(exam="rhcsa", tasks={"t": task})
+    assert selftest.verified(bank) == {}
+    assert list(selftest.verified(bank, "virtualbox")) == ["t"]
