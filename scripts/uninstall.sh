@@ -77,19 +77,49 @@ HAVE_VBOX=0; have VBoxManage && HAVE_VBOX=1
 # autorelabel keeps its VMs in a private VirtualBox profile inside the lab storage; older
 # versions (and interrupted runs) may have left VMs in your default profile, so both are cleaned.
 VBOX_PRIVATE=""
-[[ -n "$STORAGE_DIR" && -d "$STORAGE_DIR/$PREFIX/virtualbox/profile" ]] && VBOX_PRIVATE="$STORAGE_DIR/$PREFIX/virtualbox/profile"
+[[ -n "$STORAGE_DIR" && -d "$STORAGE_DIR/$PREFIX/virtualbox/profile" ]] && VBOX_PRIVATE="$(readlink -m -- "$STORAGE_DIR/$PREFIX/virtualbox/profile")"
+# VirtualBox runs one VBoxSVC per user, bound to the profile it started with: a VBoxManage
+# command for another profile silently acts on the running one. So before using a profile, wait
+# for a VBoxSVC serving another one to exit (an idle one does within about 5 s).
+vbox_svc_homes() {  # the profile each of our running VBoxSVCs serves (empty line: default)
+  local pid home
+  for pid in $(pgrep -u "$(id -u)" -x VBoxSVC 2>/dev/null); do
+    home="$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null | sed -n 's/^VBOX_USER_HOME=//p')"
+    if [[ -n "$home" ]]; then readlink -m -- "$home"; else echo; fi
+  done
+}
+vbox_wait() {  # vbox_wait <only|none> <private|default>: VBoxSVC serves only that profile / not it
+  local mode="$1" want="" h i busy
+  [[ "$2" == private ]] && want="$VBOX_PRIVATE"
+  for ((i = 0; i < 60; i++)); do
+    busy=0
+    while IFS= read -r h; do
+      if [[ "$mode" == only && "$h" != "$want" ]] || [[ "$mode" == none && "$h" == "$want" ]]; then busy=1; fi
+    done < <(vbox_svc_homes)
+    ((busy)) || return 0
+    sleep 1
+  done
+  return 1
+}
 vbm() {  # vbm <private|default> <VBoxManage args...>
   local prof="$1"; shift
+  vbox_wait only "$prof" || return 1
   if [[ "$prof" == private ]]; then VBOX_USER_HOME="$VBOX_PRIVATE" VBoxManage "$@"
   else env -u VBOX_USER_HOME VBoxManage "$@"; fi
 }
-vbox_profiles() { [[ -n "$VBOX_PRIVATE" ]] && echo private; echo default; }
+VBOX_SKIPPED=()   # profiles VirtualBox could not switch to (VirtualBox Manager or VMs kept it busy)
+vbox_profiles() {
+  local p
+  for p in ${VBOX_PRIVATE:+private} default; do
+    [[ " ${VBOX_SKIPPED[*]} " == *" $p "* ]] || echo "$p"
+  done
+}
 vbox_label() { [[ "$1" == private ]] && echo "autorelabel's VirtualBox profile" || echo "your default VirtualBox profile"; }
 HAVE_VAGRANT=0; have vagrant && HAVE_VAGRANT=1
 export VAGRANT_CHECKPOINT_DISABLE=1
 
 # --- Discover what exists ------------------------------------------------------------
-uniq_lines() { awk 'NF && !seen[$0]++'; }
+uniq_lines() { awk '{ sub(/[ \t]+$/, "") } NF && !seen[$0]++'; }   # virsh pads --name output
 
 DOMAINS=() POOLS=() NETWORKS=() VBOX_VMS=() VBOX_MEDIA=() VBOX_HOSTONLY=() UNITS=() DIRS=() BOXES=0
 
@@ -104,6 +134,7 @@ fi
 VBOX_SHOW=()
 if ((HAVE_VBOX)); then
   while read -r prof; do
+    if ! vbox_wait only "$prof"; then VBOX_SKIPPED+=("$prof"); continue; fi
     while read -r v; do
       [[ -n "$v" ]] || continue
       VBOX_VMS+=("$prof:$v"); VBOX_SHOW+=("$v ($(vbox_label "$prof"))")
@@ -159,6 +190,15 @@ if [[ -n "$REPO" ]]; then
   while IFS= read -r d; do REPO_ITEMS+=("$d"); done < <(find "$REPO/src" "$REPO/tests" -type d -name __pycache__ 2>/dev/null)
 fi
 section "repository runtime files" "${REPO_ITEMS[@]}"
+for p in "${VBOX_SKIPPED[@]}"; do
+  if [[ "$p" == private ]]; then
+    echo "${Y}VirtualBox Manager or your own VMs kept VirtualBox busy, so autorelabel's VirtualBox profile${O}"
+    echo "${Y}was not opened. Its VMs are deleted together with the lab storage folder.${O}"
+  else
+    echo "${Y}VirtualBox stayed busy with autorelabel's profile, so your default VirtualBox profile was not${O}"
+    echo "${Y}checked for VMs left by older versions. Run the uninstaller again afterwards to check it.${O}"
+  fi
+done
 if ((DELETE_ISO)) && [[ -n "$ISO_PATH" && -f "$ISO_PATH" ]]; then section "ISO (--delete-iso)" "$ISO_PATH"; fi
 
 mapfile -t USER_UNDO < <(ledger_details user-action | uniq_lines)
@@ -217,13 +257,13 @@ for pv in "${VBOX_VMS[@]}"; do
   sleep 1
   step "remove VirtualBox VM $v" vbm "$prof" unregistervm "$v" --delete
 done
-for m in "${VBOX_MEDIA[@]}"; do
-  for prof in $(vbox_profiles); do quiet vbm "$prof" closemedium dvd "$m"; done
-  echo "  ${G}✔${O} unregister medium $m"
+for prof in $( ((${#VBOX_MEDIA[@]})) && vbox_profiles); do
+  for m in "${VBOX_MEDIA[@]}"; do quiet vbm "$prof" closemedium dvd "$m"; done
 done
+for m in "${VBOX_MEDIA[@]}"; do echo "  ${G}✔${O} unregister medium $m"; done
 for h in "${VBOX_HOSTONLY[@]}"; do
   removed=0
-  for prof in $(vbox_profiles); do
+  for prof in $(vbox_profiles); do   # host-only interfaces are system-wide: any profile can remove them
     if vbm "$prof" hostonlyif remove "$h" >/dev/null 2>&1 || vbm "$prof" hostonlynet remove --name="$h" >/dev/null 2>&1; then
       removed=1; break
     fi
@@ -239,7 +279,7 @@ if ((BOXES)); then
 fi
 ((HAVE_VAGRANT)) && quiet vagrant global-status --prune
 # Let the private profile's VBoxSVC exit before its directory is deleted.
-[[ -n "$VBOX_PRIVATE" ]] && ((${#VBOX_VMS[@]} + ${#VBOX_HOSTONLY[@]})) && sleep 6
+[[ -n "$VBOX_PRIVATE" ]] && quiet vbox_wait none private
 
 for d in "${DIRS[@]}"; do step "delete $d" rm -rf -- "$d"; done
 for d in "${REPO_ITEMS[@]}"; do step "delete $d" rm -rf -- "$d"; done
