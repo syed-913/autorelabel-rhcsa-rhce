@@ -349,6 +349,11 @@ if [[ -z "$REPO" ]] && ((HAVE_VAGRANT)); then
   echo "${D}deleted machine from it (other projects' too): vagrant global-status --prune${O}"
 fi
 if [[ -n "$ISO_PATH" && -f "$ISO_PATH" ]]; then echo "${D}Your ISO was kept: $ISO_PATH${O}"; fi
+# libvirt keeps each VM's QEMU log (root-owned) after the VM is deleted; removing it needs root.
+if compgen -G "/var/log/libvirt/qemu/${PREFIX}-*.log" >/dev/null; then
+  echo "${D}libvirt kept its logs of the lab VMs (root-owned, about 1 MB each). To remove them too:${O}"
+  echo "${D}  sudo rm -f /var/log/libvirt/qemu/${PREFIX}-*.log*${O}"
+fi
 if ((${#USER_UNDO[@]})); then
   echo; echo "${B}Steps you ran yourself during setup (undo them only if you want to):${O}"
   printf '  %s\n' "${USER_UNDO[@]}"

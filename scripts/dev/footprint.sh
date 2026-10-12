@@ -92,7 +92,7 @@ have() { command -v "$1" >/dev/null 2>&1; }
     done
   fi
   names /etc/libvirt/qemu /etc/libvirt/qemu/networks /etc/libvirt/storage /var/lib/libvirt/dnsmasq \
-        /var/lib/libvirt/images 2>/dev/null
+        /var/lib/libvirt/images /var/log/libvirt/qemu 2>/dev/null
   tree "$HOME/.config/libvirt" "$HOME/.local/share/libvirt" "$HOME/.cache/libvirt"
 
   section "network interfaces and routes"
