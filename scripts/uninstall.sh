@@ -309,6 +309,10 @@ if ((INDEX_ENTRIES > 0)); then step "remove autorelabel's entries from Vagrant's
 # Let the private profile's VBoxSVC exit before its directory is deleted.
 [[ -n "$VBOX_PRIVATE" ]] && quiet vbox_wait none private
 
+# Close autorelabel's SSH connection-sharing masters before their socket folder goes.
+for sock in "${XDG_RUNTIME_DIR:-/nonexistent}/$PREFIX"/*; do
+  [[ -S "$sock" ]] && quiet ssh -o ControlPath="$sock" -O exit "$PREFIX-lab"
+done
 for d in "${DIRS[@]}"; do step "delete $d" rm -rf -- "$d"; done
 for d in "${REPO_ITEMS[@]}"; do step "delete $d" rm -rf -- "$d"; done
 if ((DELETE_ISO)) && [[ -n "$ISO_PATH" && -f "$ISO_PATH" ]]; then step "delete $ISO_PATH" rm -f -- "$ISO_PATH"; fi
