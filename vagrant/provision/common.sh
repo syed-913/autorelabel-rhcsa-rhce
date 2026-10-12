@@ -7,6 +7,11 @@ export LC_ALL=C
 
 step() { echo "STEP: $*"; }
 
+# dnf's own import of a repository's gpgkey (libdnf keysFromFd on RHEL 10.0) intermittently
+# fails with "Parsing armored OpenPGP packet(s) failed". With the key already in the rpm
+# database, dnf never parses it. (Exam sessions do the same for the candidate's dnf.)
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+
 nic_by_mac() {
   local want="${1,,}" dev
   for dev in /sys/class/net/*; do
