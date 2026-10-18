@@ -465,7 +465,18 @@ class Lab:
         for n in names or self.names():
             if not remote.wait_reachable(self.target(n), timeout=timeout):
                 missing.append(n)
+            elif self.vm(n).spec.role == "utility" and not self._utility_serving():
+                missing.append(f"{n} (lab DNS and repositories)")
         return missing
+
+    def _utility_serving(self, timeout: int = 90) -> bool:
+        """The utility answers SSH (management network) a moment before it serves the lab network:
+        wait until its lab address answers DNS and HTTP, or a node's first dnf can fail."""
+        ip = self.facts()["utility"]["ip"]
+        cmd = (f"for i in $(seq 1 {timeout // 3}); do getent hosts utility.{labfacts.DOMAIN} >/dev/null && "
+               f"curl -fsS -m 5 -o /dev/null http://{ip}/rhel10/BaseOS/repodata/repomd.xml && exit 0; "
+               "sleep 3; done; exit 1")
+        return remote.run_cmd(self.target("utility"), cmd, timeout=timeout + 30, as_root=False).ok
 
     def revert(self, snapshot: str, names: list[str] | None = None) -> None:
         for n in names or self.names():

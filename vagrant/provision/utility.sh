@@ -67,6 +67,14 @@ for h in "${hosts[@]}"; do
   read -r ip ip6 fqdn short <<< "$h"
   echo "host-record=$fqdn,$short,$ip,$ip6" >> /etc/dnsmasq.d/autorelabel.conf
 done
+# Start once the lab address is up: dnsmasq listens on that interface only.
+install -d -m 0755 /etc/systemd/system/dnsmasq.service.d
+cat > /etc/systemd/system/dnsmasq.service.d/autorelabel.conf <<EOF
+[Unit]
+Wants=network-online.target
+After=network-online.target
+EOF
+systemctl daemon-reload
 systemctl enable --now dnsmasq >/dev/null
 systemctl restart dnsmasq
 
