@@ -29,7 +29,8 @@ checks:
     covers: [R2]
     desc: "all of {{dir}} is inside"
     run: |
-      want="$(cd / && find "{{dir}}" -type f | sed 's|^/||' | sort)"
+      # every entry but directories: symlinks too (/etc/pam.d and /etc/sysconfig have some)
+      want="$(cd / && find "{{dir}}" ! -type d | sed 's|^/||' | sort)"
       got="$(tar -tjf /root/{{name}}-backup.tar.bz2 | sed 's|^/||' | grep -v '/$' | sort)"
       test -n "$want" && test "$want" = "$got"
 
