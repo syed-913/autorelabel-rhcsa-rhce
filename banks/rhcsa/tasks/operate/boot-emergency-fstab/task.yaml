@@ -35,7 +35,9 @@ checks:
   - id: booted
     covers: [R1]
     desc: node1 reached a normal boot
-    run: systemctl is-system-running | grep -Eq 'running|degraded' && ! systemctl is-active -q emergency.target
+    run: |
+      # --wait: right after the grading reboot, boot may still be finishing ("starting")
+      timeout 50 systemctl is-system-running --wait | grep -Eq 'running|degraded' && ! systemctl is-active -q emergency.target
   - id: mounted
     covers: [R2]
     desc: "/{{mnt}} mounted from {{lab.node1.disk1}} via fstab"

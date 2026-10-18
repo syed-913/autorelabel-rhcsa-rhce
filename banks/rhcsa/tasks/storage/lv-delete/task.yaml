@@ -31,7 +31,8 @@ checks:
     desc: no fstab entry for /scratch and the system is fully booted
     run: |
       ! grep -Eq '^[^#]*[[:space:]]/scratch[[:space:]]' /etc/fstab || exit 1
-      systemctl is-system-running | grep -Eq 'running|degraded'
+      # --wait: right after the grading reboot, boot may still be finishing ("starting")
+      timeout 50 systemctl is-system-running --wait | grep -Eq 'running|degraded'
   - id: vg
     guard: true
     covers: [R3]
