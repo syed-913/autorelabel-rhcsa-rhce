@@ -51,6 +51,11 @@ the facts tasks are rendered with (addresses, disks, URLs, RHCE inventory groups
   stalls. Lab VMs and the Packer build VM use the `minimal` paravirtualization interface instead;
   `providers/virtualbox.py` sets it before every start, because reverting a snapshot brings back
   the settings the snapshot was taken with.
+- **Disk names on VirtualBox:** the extra disks are SATA (`sdb`, `sdc`) and the sd driver numbers
+  disks asynchronously, so names could change from one boot to the next (in a test, 3 boots in
+  40 had them out of order, once with the root disk as `sdc`). Tasks name disks in prompts and
+  checks, so the box boots with RHEL's `sd_mod.probe=sync`: names follow the port order. libvirt
+  disks are virtio (`vdX`) and keep their names anyway.
 - **Provisioning:** the app provisions over SSH (`vagrant/provision/*.sh`, streamed with progress
   markers), not through Vagrant provisioners, so it can retry and verify. The utility VM serves
   the DVD repositories, Flatpaks, DNS, NTP, NFS, and for RHCE a Git server and Ansible content.
