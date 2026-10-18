@@ -309,6 +309,14 @@ if ((INDEX_ENTRIES > 0)); then step "remove autorelabel's entries from Vagrant's
 # Let the private profile's VBoxSVC exit before its directory is deleted.
 [[ -n "$VBOX_PRIVATE" ]] && quiet vbox_wait none private
 
+# Stop the console keeper (it drains VirtualBox serial consoles, and would exit by itself
+# 15 minutes after the last lab VM).
+for d in "${XDG_RUNTIME_DIR:-/nonexistent}/$PREFIX" "/tmp/$PREFIX-$(id -u)"; do
+  pid="$(head -n1 "$d/keeper.lock" 2>/dev/null)"
+  if [[ "$pid" =~ ^[0-9]+$ ]] && tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null | grep -q "$PREFIX\.console_keeper"; then
+    step "stop the serial console keeper (pid $pid)" kill "$pid"
+  fi
+done
 # Close autorelabel's SSH connection-sharing masters before their socket folder goes.
 for sock in "${XDG_RUNTIME_DIR:-/nonexistent}/$PREFIX"/*; do
   [[ -S "$sock" ]] && quiet ssh -o ControlPath="$sock" -O exit "$PREFIX-lab"

@@ -160,7 +160,7 @@ class Lab:
             "mgmt_subnet": self.settings.mgmt_subnet,
             "lab_network": LAB_NETWORK,
             "iso_path": str(Path(self.settings.iso_path).expanduser().resolve()),
-            "console_dir": str(vb.console_socket("x").parent),
+            "console_dir": str(vb.console_dir()),
             "vbox_disk_dir": str(box.storage_layout(self.settings)["vbox_disks"]),
             "vbox_hostonly": "",
             "vms": [{

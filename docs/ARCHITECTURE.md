@@ -40,6 +40,12 @@ the facts tasks are rendered with (addresses, disks, URLs, RHCE inventory groups
   `VBoxManage` call goes to that profile. `providers/virtualbox.py` therefore waits for such a
   service to exit before each call (and refuses if VirtualBox Manager or the user's VMs keep it
   alive), and `conflict.py` reads the process list instead of asking `VBoxManage`.
+- **Serial consoles:** libvirt gives each VM a pty that discards what nobody reads. A VirtualBox
+  serial port in server mode (a Unix socket) holds it back instead, and the guest kernel waits on
+  every character of its console messages, so a VM nobody watches boots at a crawl and never
+  answers SSH. `console_keeper.py` (one per user, started before any VirtualBox VM boots, gone
+  15 minutes after the last one stops) stays connected to each lab VM's console, drops output
+  nobody reads, and relays `autorelabel console` sessions and the grader's probes to the VM.
 - **Provisioning:** the app provisions over SSH (`vagrant/provision/*.sh`, streamed with progress
   markers), not through Vagrant provisioners, so it can retry and verify. The utility VM serves
   the DVD repositories, Flatpaks, DNS, NTP, NFS, and for RHCE a Git server and Ansible content.
@@ -106,7 +112,7 @@ solution, valid alternatives and classic mistakes, each graded after a reboot. S
 |---|---|
 | `.workspace/` | settings, sessions, logs, Vagrant state, history (inside the repository, ignored by git) |
 | `<lab storage>/autorelabel/` | libvirt pool, VirtualBox profile and VMs, Packer cache and boxes, RHCE content, uninstall ledger and a rescue copy of the uninstaller |
-| `$XDG_RUNTIME_DIR/autorelabel/` | SSH control sockets, VirtualBox serial console sockets |
+| `$XDG_RUNTIME_DIR/autorelabel/` | SSH control sockets, VirtualBox serial console sockets, the console keeper's socket and lock |
 
 Outside these, the tools autorelabel drives keep their usual state: the Vagrant box in
 `~/.vagrant.d/boxes/` and entries in Vagrant's machine index, and libvirt's own definitions of the

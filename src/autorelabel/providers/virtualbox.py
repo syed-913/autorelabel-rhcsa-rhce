@@ -4,11 +4,12 @@ power, pause, snapshots, console, and moving VMs into the lab storage folder."""
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
 
-from .. import proc
+from .. import console_keeper, paths, proc
 
 
 class VirtualBoxError(RuntimeError):
@@ -110,6 +111,7 @@ def state(name: str) -> tuple[str, str]:
 
 
 def start(name: str) -> proc.Result:
+    ensure_console_keeper()
     return vbm("startvm", name, "--type", "headless", timeout=180)
 
 
@@ -188,15 +190,38 @@ def snapshots(name: str) -> list[str]:
     return out
 
 
-def console_socket(name: str) -> Path:
+def console_dir() -> Path:
     runtime = os.environ.get("XDG_RUNTIME_DIR")
     base = Path(runtime) / "autorelabel" if runtime else Path(f"/tmp/autorelabel-{os.getuid()}")
     base.mkdir(mode=0o700, parents=True, exist_ok=True)
-    return base / f"console-{name}.sock"
+    return base
+
+
+def console_socket(name: str) -> Path:
+    return console_keeper.vm_socket(console_dir(), name)
+
+
+def ensure_console_keeper(timeout: float = 6) -> None:
+    """Start the console keeper unless it runs: a VM whose serial console nobody drains
+    boots at a crawl (see console_keeper). Call before starting a VM."""
+    sock = console_dir() / "keeper.sock"
+    if console_keeper.alive(sock):
+        return
+    paths.LOGS.mkdir(parents=True, exist_ok=True)
+    with open(paths.LOGS / "console-keeper.log", "ab") as log:
+        subprocess.Popen([sys.executable, "-m", "autorelabel.console_keeper", str(console_dir())],
+                         stdin=subprocess.DEVNULL, stdout=log, stderr=log, cwd="/",
+                         start_new_session=True, close_fds=True)
+    deadline = time.monotonic() + timeout
+    while not console_keeper.alive(sock):
+        if time.monotonic() > deadline:
+            raise VirtualBoxError(f"the console keeper did not start; see {paths.LOGS / 'console-keeper.log'}")
+        time.sleep(0.05)
 
 
 def console_command(name: str) -> list[str]:
-    return [sys.executable, "-m", "autorelabel.console_bridge", str(console_socket(name))]
+    ensure_console_keeper()
+    return [sys.executable, "-m", "autorelabel.console_bridge", str(console_dir() / "keeper.sock"), name]
 
 
 def move(name: str, folder: Path) -> proc.Result:

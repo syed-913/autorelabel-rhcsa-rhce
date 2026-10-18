@@ -1,5 +1,5 @@
-"""Attach the terminal to a VirtualBox serial port (a Unix socket), like
-`virsh console`: raw terminal, Ctrl+] to leave."""
+"""Attach the terminal to a VirtualBox VM's serial console, like `virsh console`: raw
+terminal, Ctrl+] to leave. The console keeper (console_keeper.py) relays it."""
 
 from __future__ import annotations
 
@@ -13,12 +13,29 @@ import tty
 DETACH = b"\x1d"
 
 
-def main(path: str) -> int:
+def _status(sock: socket.socket) -> str:
+    line = b""
+    while not line.endswith(b"\n") and len(line) < 256:
+        chunk = sock.recv(1)
+        if not chunk:
+            break
+        line += chunk
+    return line.decode(errors="replace").strip()
+
+
+def main(keeper: str, vm: str) -> int:
     try:
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.connect(path)
+        sock.connect(keeper)
+        sock.sendall(f"{vm}\n".encode())
+        status = _status(sock)
     except OSError as exc:
-        print(f"cannot connect to the serial console ({exc}). Is the VM running?", file=sys.stderr)
+        print(f"cannot reach the serial console ({exc}).", file=sys.stderr)
+        return 1
+    if status != "OK":
+        print(f"cannot attach to the serial console: {status.removeprefix('ERR ') or 'no answer'}. "
+              "Is the VM running?", file=sys.stderr)
+        sock.close()
         return 1
     stdin = sys.stdin.fileno()
     interactive = os.isatty(stdin)
@@ -49,4 +66,4 @@ def main(path: str) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1]))
+    sys.exit(main(sys.argv[1], sys.argv[2]))

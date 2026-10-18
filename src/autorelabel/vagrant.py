@@ -118,7 +118,12 @@ def status(storage_dir: str | None, env_extra: dict[str, str]) -> dict[str, str]
 def run_stream(args: list[str], storage_dir: str | None, env_extra: dict[str, str], *,
                on_line: Callable[[str], None] | None = None, log_file: Path | None = None,
                cancel: threading.Event | None = None, timeout: float | None = None) -> proc.Result:
-    return proc.stream(["vagrant", *args], env=_env(storage_dir, env_extra), on_line=on_line,
+    env = _env(storage_dir, env_extra)
+    if args[:1] in (["up"], ["reload"]) and env.get("VAGRANT_DEFAULT_PROVIDER") == "virtualbox":
+        from .providers import virtualbox as vb
+
+        vb.ensure_console_keeper()   # the VMs it boots need their serial consoles drained
+    return proc.stream(["vagrant", *args], env=env, on_line=on_line,
                        log_file=log_file, cancel=cancel, timeout=timeout)
 
 
