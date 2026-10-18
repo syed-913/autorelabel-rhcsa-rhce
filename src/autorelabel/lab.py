@@ -161,6 +161,7 @@ class Lab:
             "lab_network": LAB_NETWORK,
             "iso_path": str(Path(self.settings.iso_path).expanduser().resolve()),
             "console_dir": str(vb.console_dir()),
+            "vbox_paravirt": vb.PARAVIRT,
             "vbox_disk_dir": str(box.storage_layout(self.settings)["vbox_disks"]),
             "vbox_hostonly": "",
             "vms": [{

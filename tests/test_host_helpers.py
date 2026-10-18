@@ -103,3 +103,24 @@ def test_running_virtualbox_vms_from_processes(tmp_path):
     _fake_proc(tmp_path, "301", "VirtualBoxVM", cmdline="/usr/lib/virtualbox/VirtualBoxVM --startvm win11")
     _fake_proc(tmp_path, "302", "VBoxSVC", cmdline="/usr/lib/virtualbox/VBoxSVC --auto-shutdown")
     assert conflict.running_virtualbox_vms(tmp_path) == ["autorelabel-rhcsa-node1", "win11"]
+
+
+def test_virtualbox_vms_start_without_the_kvm_clock(monkeypatch):
+    from autorelabel import proc
+    from autorelabel.providers import virtualbox as vb
+
+    calls = []
+    fails = {"modifyvm": 1}           # the first try finds the VM's session still closing
+
+    def fake_vbm(*args, **_kw):
+        calls.append(args)
+        ok = not fails.get(args[0])
+        fails[args[0]] = 0
+        return proc.Result(list(args), 0 if ok else 1, "", "", 0.0)
+
+    monkeypatch.setattr(vb, "vbm", fake_vbm)
+    monkeypatch.setattr(vb, "ensure_console_keeper", lambda: None)
+    monkeypatch.setattr(vb.time, "sleep", lambda _s: None)
+    assert vb.start("autorelabel-rhcsa-node1").ok
+    assert calls == [("modifyvm", "autorelabel-rhcsa-node1", "--paravirt-provider", "minimal")] * 2 + \
+        [("startvm", "autorelabel-rhcsa-node1", "--type", "headless")]

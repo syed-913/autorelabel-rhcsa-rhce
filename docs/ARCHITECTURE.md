@@ -46,6 +46,11 @@ the facts tasks are rendered with (addresses, disks, URLs, RHCE inventory groups
   answers SSH. `console_keeper.py` (one per user, started before any VirtualBox VM boots, gone
   15 minutes after the last one stops) stays connected to each lab VM's console, drops output
   nobody reads, and relays `autorelabel console` sessions and the grader's probes to the VM.
+- **Guest clock on VirtualBox:** VirtualBox offers Linux guests KVM's paravirtual clock, which
+  now and then makes the guest clock jump by centuries right after the boot loader, and the boot
+  stalls. Lab VMs and the Packer build VM use the `minimal` paravirtualization interface instead;
+  `providers/virtualbox.py` sets it before every start, because reverting a snapshot brings back
+  the settings the snapshot was taken with.
 - **Provisioning:** the app provisions over SSH (`vagrant/provision/*.sh`, streamed with progress
   markers), not through Vagrant provisioners, so it can retry and verify. The utility VM serves
   the DVD repositories, Flatpaks, DNS, NTP, NFS, and for RHCE a Git server and Ansible content.

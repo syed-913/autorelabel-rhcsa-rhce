@@ -22,6 +22,7 @@ class ProfileBusy(VirtualBoxError):
 
 
 SERVICE_WAIT = 60   # an idle VBoxSVC exits about 5 s after its last client
+PARAVIRT = "minimal"  # paravirtualization interface of the lab VMs (see start)
 
 
 def service_homes(proc_root: Path = Path("/proc")) -> list[Path | None]:
@@ -112,6 +113,13 @@ def state(name: str) -> tuple[str, str]:
 
 def start(name: str) -> proc.Result:
     ensure_console_keeper()
+    # Not KVM's paravirtual clock: with it, a Linux guest's clock at random jumps by centuries
+    # right after the boot loader and the boot stalls. Set before every start, because reverting
+    # a snapshot brings back the settings the snapshot was taken with.
+    for _ in range(3):
+        if vbm("modifyvm", name, "--paravirt-provider", PARAVIRT, timeout=30).ok:
+            break
+        time.sleep(1)          # the session of a VM that just stopped is still closing
     return vbm("startvm", name, "--type", "headless", timeout=180)
 
 

@@ -119,6 +119,8 @@ source "virtualbox-iso" "rhel10" {
   shutdown_command         = "sudo /usr/sbin/shutdown -P now"
   vboxmanage = [
     ["modifyvm", "{{ .Name }}", "--nat-localhostreachable1", "on"],
+    # Not KVM's paravirtual clock: it at random stalls the boot right after the boot loader.
+    ["modifyvm", "{{ .Name }}", "--paravirt-provider", "minimal"],
     ["modifyvm", "{{ .Name }}", "--uart1", "0x3F8", "4", "--uartmode1", "file", "${var.output_dir}/vbox-serial.log"],
   ]
 }

@@ -82,6 +82,10 @@ Vagrant.configure("2") do |config|
         vb.gui = false
         vb.customize ["modifyvm", :id, "--audio-driver", "none"]
         vb.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+        # KVM's paravirtual clock (VirtualBox's default for Linux) at random makes the guest clock
+        # jump by centuries right after the boot loader, and the boot stalls. The app sets the
+        # same before every start (snapshots keep the settings they were taken with).
+        vb.customize ["modifyvm", :id, "--paravirt-provider", lab.fetch("vbox_paravirt", "minimal")]
         vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4",
                       "--uartmode1", "server", File.join(lab["console_dir"], "console-#{name}.sock")]
         # The box (built by packer virtualbox-iso) has an AHCI controller named "SATA".
