@@ -238,6 +238,15 @@ def move(name: str, folder: Path) -> proc.Result:
     return vbm("movevm", name, "--type", "basic", "--folder", str(folder), timeout=1800)
 
 
+def remove_dhcp_server(ifname: str) -> bool:
+    """VirtualBox gives a new host-only interface a DHCP server (192.168.56.x). The lab network has
+    none, as on libvirt: a lab NIC switched to DHCP must get no address. True if one was removed."""
+    res = vbm("list", "dhcpservers", timeout=30)
+    nets = {line.split(":", 1)[1].strip() for line in res.out.splitlines() if line.startswith("NetworkName:")}
+    net = f"HostInterfaceNetworking-{ifname}"
+    return net in nets and vbm("dhcpserver", "remove", f"--network={net}", timeout=30).ok
+
+
 def hostonly_interfaces() -> set[str]:
     res = vbm("list", "hostonlyifs", timeout=30)
     names = {line.split(":", 1)[1].strip() for line in res.out.splitlines() if line.startswith("Name:")}

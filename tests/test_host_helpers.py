@@ -124,3 +124,22 @@ def test_virtualbox_vms_start_without_the_kvm_clock(monkeypatch):
     assert vb.start("autorelabel-rhcsa-node1").ok
     assert calls == [("modifyvm", "autorelabel-rhcsa-node1", "--paravirt-provider", "minimal")] * 2 + \
         [("startvm", "autorelabel-rhcsa-node1", "--type", "headless")]
+
+
+def test_the_lab_network_gets_no_virtualbox_dhcp(monkeypatch):
+    from autorelabel import proc
+    from autorelabel.providers import virtualbox as vb
+
+    calls = []
+    servers = "NetworkName:    HostInterfaceNetworking-vboxnet0\nDhcpd IP:       192.168.56.100\n"
+
+    def fake_vbm(*args, **_kw):
+        calls.append(args)
+        return proc.Result(list(args), 0, servers if args[:2] == ("list", "dhcpservers") else "", "", 0.0)
+
+    monkeypatch.setattr(vb, "vbm", fake_vbm)
+    assert vb.remove_dhcp_server("vboxnet0")
+    assert calls[-1] == ("dhcpserver", "remove", "--network=HostInterfaceNetworking-vboxnet0")
+    calls.clear()
+    assert not vb.remove_dhcp_server("vboxnet1")      # none there: nothing removed
+    assert calls == [("list", "dhcpservers")]

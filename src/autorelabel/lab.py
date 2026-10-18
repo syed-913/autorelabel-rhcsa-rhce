@@ -221,7 +221,9 @@ class Lab:
 
     def _vbox_after_up(self, names: list[str], before: set[str], step: StepFn) -> None:
         """Ledger host-only interfaces Vagrant created and refresh SSH ports. VMs are created in
-        the private profile's machine folder (lab storage); one found elsewhere is moved there."""
+        the private profile's machine folder (lab storage); one found elsewhere is moved there.
+        The lab network loses the DHCP server VirtualBox gave it (it stops serving once the VMs
+        power off for the baseline snapshot)."""
         for ifname in sorted(vb.hostonly_interfaces() - before):
             ledger.record("vbox-hostonly", ifname, "created by Vagrant", storage_dir=self.settings.storage_dir)
         folder = box.storage_layout(self.settings)["vbox_vms"]
@@ -241,6 +243,9 @@ class Lab:
                 vb.start(dom)
         for name in names:
             remote.wait_reachable(self.target(name), timeout=300)
+        lab_if = vb._info(self.vm(names[0]).domain).get("hostonlyadapter2", "")
+        if lab_if and vb.remove_dhcp_server(lab_if):
+            _log.info("removed VirtualBox's DHCP server from the lab network (%s)", lab_if)
 
     # --- provisioning ----------------------------------------------------------------------
     def _script(self, name: str) -> str:
