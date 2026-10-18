@@ -4,8 +4,11 @@ set -Eeuo pipefail
 trap 'echo "base.sh failed at line $LINENO" >&2' ERR
 
 echo "STEP: kernel and bootloader"
-# No kdump reservation (saves ~192 MB per VM); serial + VGA consoles.
-grubby --update-kernel=ALL --remove-args="crashkernel rhgb quiet" --args="console=tty0 console=ttyS0,115200n8"
+# No kdump reservation (saves ~192 MB per VM); serial + VGA consoles. sd_mod.probe=sync (a RHEL
+# sd_mod option): SATA disks (VirtualBox) keep their names across boots, sdb is always the first
+# extra disk; probed asynchronously, sdb and sdc now and then swap.
+grubby --update-kernel=ALL --remove-args="crashkernel rhgb quiet" \
+  --args="console=tty0 console=ttyS0,115200n8 sd_mod.probe=sync"
 sed -i \
   -e 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=5/' \
   -e 's/^GRUB_TERMINAL_OUTPUT=.*/GRUB_TERMINAL="console serial"/' \
