@@ -71,10 +71,13 @@ systemctl enable --now dnsmasq >/dev/null
 systemctl restart dnsmasq
 
 step "Time server"
+# Both address families: utility.lab.example.com resolves to IPv6 first, and chronyd keeps the
+# first address of a name.
 cat > /etc/chrony.conf <<EOF
 # autorelabel lab time server
 local stratum 8
 allow $AR_LAB_NETWORK
+allow $AR_LAB_NETWORK6
 driftfile /var/lib/chrony/drift
 makestep 1.0 3
 rtcsync

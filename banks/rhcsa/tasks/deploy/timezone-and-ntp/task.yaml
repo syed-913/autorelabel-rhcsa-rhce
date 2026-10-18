@@ -32,8 +32,10 @@ checks:
     run: |
       test "$(timedatectl show -p NTP --value)" = yes
       ! grep -Eq '^[[:space:]]*pool[[:space:]]' /etc/chrony.conf || exit 1
-      for i in $(seq 1 12); do chronyc -n sources 2>/dev/null | grep -qw '{{lab.utility.ip}}' && break; sleep 5; done
-      chronyc -n sources | grep -qw '{{lab.utility.ip}}'
+      # The name resolves to both addresses (IPv6 first); chronyd uses either.
+      lab() { chronyc -n sources 2>/dev/null | grep -qwF -e '{{lab.utility.ip}}' -e '{{lab.utility.ipv6}}'; }
+      for i in $(seq 1 12); do lab && break; sleep 5; done
+      lab
       test "$(chronyc -n sources | grep -Ec '^\^')" = 1
 
 references:

@@ -262,6 +262,7 @@ class Lab:
             "AR_MGMT_MAC": v.mgmt_mac, "AR_LAB_MAC": v.lab_mac, "AR_LAB_IP": v.lab_ip,
             "AR_LAB_PREFIX": str(facts["prefix"]), "AR_GATEWAY": facts["gateway"], "AR_DNS": facts["dns"],
             "AR_DOMAIN": facts["domain"], "AR_IPV6": v.lab_ip6, "AR_LAB_NETWORK": facts["network"],
+            "AR_LAB_NETWORK6": f"{facts['ipv6_prefix']}/{facts['ipv6_prefixlen']}",
             "AR_HOSTS": hosts, "AR_ROOT_PASSWORD": root_password,
             "AR_STUDENT_PASSWORD": self.accounts().get("student", ""),
             "AR_ANSIBLE_PASSWORD": self.accounts().get("ansible", ""),
