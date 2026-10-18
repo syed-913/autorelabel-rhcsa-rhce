@@ -9,7 +9,7 @@ node: node2
 params:
   case:
     choice:
-      - {desc: "allow the FTP server to read and write files in users' home directories", boolean: ftp_home_dir}
+      - {desc: "allow Samba to share users' home directories", boolean: samba_enable_home_dirs}
       - {desc: "allow the Apache HTTP server to send email", boolean: httpd_can_sendmail}
       - {desc: "allow the Apache HTTP server to connect to databases over the network", boolean: httpd_can_network_connect_db}
       - {desc: "allow user home directories to be mounted from NFS", boolean: use_nfs_home_dirs}
