@@ -8,7 +8,7 @@ step "Git server (smart HTTP)"
 dnf -y -q install git httpd-tools >/dev/null
 install -d -m 0755 /var/lib/git
 if [[ ! -d /var/lib/git/ansible.git ]]; then
-  git init -q --bare --shared=group /var/lib/git/ansible.git
+  git init -q --bare /var/lib/git/ansible.git
   git -C /var/lib/git/ansible.git config http.receivepack true
   seed="$(mktemp -d)"
   git -C "$seed" init -q -b main
@@ -21,7 +21,7 @@ if [[ ! -d /var/lib/git/ansible.git ]]; then
 fi
 # A second repository with two branches, for clone/checkout tasks.
 if [[ ! -d /var/lib/git/lab-content.git ]]; then
-  git init -q --bare --shared=group /var/lib/git/lab-content.git
+  git init -q --bare /var/lib/git/lab-content.git
   seed="$(mktemp -d)"
   git -C "$seed" init -q -b main
   g() { git -C "$seed" -c user.name="Lab" -c user.email="lab@lab.example.com" "$@"; }
@@ -39,7 +39,10 @@ if [[ ! -d /var/lib/git/lab-content.git ]]; then
   rm -rf "$seed"
   git -C /var/lib/git/lab-content.git symbolic-ref HEAD refs/heads/main
 fi
+# Plain repositories, only ever written by Apache: no shared (setgid) directories, which
+# httpd.service's RestrictSUIDSGID=yes forbids git to create ("Operation not permitted").
 chown -R apache:apache /var/lib/git
+find /var/lib/git -type d -perm -g+s -exec chmod g-s {} +
 htpasswd -bcB /etc/httpd/git.htpasswd student "$AR_STUDENT_PASSWORD" >/dev/null 2>&1
 cat > /etc/httpd/conf.d/git.conf <<'CONF'
 SetEnv GIT_PROJECT_ROOT /var/lib/git
@@ -58,6 +61,11 @@ restorecon -R /var/lib/git
 semanage fcontext -a -t httpd_sys_script_exec_t /usr/libexec/git-core/git-http-backend 2>/dev/null || true
 restorecon /usr/libexec/git-core/git-http-backend
 setsebool -P httpd_enable_cgi on
+# git-http-backend runs as httpd_sys_script_t, which may read and write the repositories but
+# not memory-map them, and git maps its object files ("fatal: mmap failed: Permission denied").
+printf '(allow httpd_sys_script_t httpd_sys_rw_content_t (file (map)))\n' > /tmp/autorelabel-git.cil
+semodule -i /tmp/autorelabel-git.cil
+rm -f /tmp/autorelabel-git.cil
 systemctl reload httpd
 
 step "Ansible collections and roles"
