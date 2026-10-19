@@ -11,7 +11,7 @@ difficulty_reason: Four kinds of SELinux settings through one role's variable st
 estimated_minutes: 14
 node: control
 params:
-  port: {choice: [8082, 8090, 9443]}
+  port: {choice: [8085, 8090, 9443]}
   dir: {choice: [/srv/web, /srv/content, /srv/portal]}
 
 prompt: |
