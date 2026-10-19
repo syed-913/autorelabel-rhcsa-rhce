@@ -3,7 +3,7 @@
 student_write web-deploy.yml <<'YML'
 ---
 - name: Deploy the web servers
-  hosts: webservers
+  hosts: dev,webservers
   tasks:
     - ansible.builtin.dnf: {name: httpd}
     - ansible.builtin.copy:

@@ -3,7 +3,7 @@
 ```yaml
 ---
 - name: Deploy the web servers
-  hosts: webservers
+  hosts: dev,webservers
   tasks:
     - name: Web server
       block:

@@ -12,7 +12,8 @@ estimated_minutes: 12
 node: control
 
 prompt: |
-  Create `{{lab.project_dir}}/web-deploy.yml` that runs on the **webservers** group:
+  Create `{{lab.project_dir}}/web-deploy.yml` that runs on the hosts in the **dev** and
+  **webservers** groups:
 
   - in a block: install `httpd`, create `/var/www/html/index.html` containing
     `Welcome to <short host name>`, then start and enable `httpd`
@@ -21,38 +22,42 @@ prompt: |
     **stopped and disabled** on that host
   - in every case: create `/root/web-attempted.txt` containing `attempted`
 
-  One of the web servers has a broken Apache configuration. **Don't fix it**; the playbook must
+  One of these hosts has a broken Apache configuration. **Don't fix it**; the playbook must
   handle it and finish without failed hosts.
 
 requirements:
-  R1: "working web servers serve the page with httpd started and enabled"
+  R1: "the working hosts serve the page with httpd started and enabled"
   R2: "on the broken host /root/web-failed.txt holds the error and httpd is stopped and disabled"
-  R3: "/root/web-attempted.txt exists on every web server"
+  R3: "/root/web-attempted.txt exists on every dev and webservers host"
 
 checks:
   - id: working
     covers: [R1]
-    on: "@webservers"
+    on: "@all"
     desc: page served where httpd can start
     run: |
+      case " $LAB_GROUPS_DEV $LAB_GROUPS_WEBSERVERS " in *" $AR_NODE "*) ;; *) exit 0 ;; esac
       if [ -e /etc/httpd/conf.d/zz-legacy.conf ]; then exit 0; fi
       systemctl is-enabled -q httpd
       systemctl is-active -q httpd
       test "$(curl -s http://localhost/)" = "Welcome to $(hostname -s)"
   - id: rescued
     covers: [R2]
-    on: "@webservers"
+    on: "@all"
     desc: failure recorded on the broken host
     run: |
+      case " $LAB_GROUPS_DEV $LAB_GROUPS_WEBSERVERS " in *" $AR_NODE "*) ;; *) exit 0 ;; esac
       if [ ! -e /etc/httpd/conf.d/zz-legacy.conf ]; then exit 0; fi
       test -s /root/web-failed.txt
       ! systemctl is-active -q httpd || exit 1
       ! systemctl is-enabled -q httpd || exit 1
   - id: always
     covers: [R3]
-    on: "@webservers"
+    on: "@all"
     desc: /root/web-attempted.txt
-    run: test "$(cat /root/web-attempted.txt)" = attempted
+    run: |
+      case " $LAB_GROUPS_DEV $LAB_GROUPS_WEBSERVERS " in *" $AR_NODE "*) ;; *) exit 0 ;; esac
+      test "$(cat /root/web-attempted.txt)" = attempted
 
 references:
   - "Ansible docs: Blocks (rescue, always, ansible_failed_result, ansible_failed_task)"
