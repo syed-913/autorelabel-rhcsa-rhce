@@ -112,13 +112,16 @@ disable-workspace-trust: true
 disable-getting-started-override: true
 EOF
   chown student: /home/student/.config/code-server/config.yaml; chmod 0600 /home/student/.config/code-server/config.yaml
-  # Editor defaults: no AI chat (an exam), no welcome page.
+  # Editor defaults: no AI chat or Lightspeed (an exam), the system Python, no welcome page.
   # Playbooks anywhere count as Ansible files (the extension alone only recognises paths such
   # as playbooks/ or roles/), so completion, documentation and linting work for every task.
   install -d -o student -g student /home/student/.local/share/code-server/User
   cat > /home/student/.local/share/code-server/User/settings.json <<'EOF'
 {
     "chat.disableAIFeatures": true,
+    "ansible.lightspeed.enabled": false,
+    "ansible.python.interpreterPath": "/usr/bin/python3",
+    "python.defaultInterpreterPath": "/usr/bin/python3",
     "workbench.startupEditor": "none",
     "telemetry.telemetryLevel": "off",
     "extensions.autoCheckUpdates": false,
