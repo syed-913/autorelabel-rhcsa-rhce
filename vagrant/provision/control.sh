@@ -65,6 +65,8 @@ step "Execution environment image (built offline from the DVD)"
 if ! sudo -u student -i podman image exists "$IMAGE" 2>/dev/null; then
   root=/var/tmp/ee-root
   rm -rf "$root"; mkdir -p "$root"
+  # The image root has its own rpm database: import the key there too (see common.sh).
+  rpm --root "$root" --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
   dnf -y -q --installroot="$root" --releasever=10 --setopt=install_weak_deps=False --nodocs \
       --setopt=reposdir=/etc/yum.repos.d install python3 python3-pip ansible-core git-core openssh-clients \
       sudo tar findutils rsync >/dev/null
