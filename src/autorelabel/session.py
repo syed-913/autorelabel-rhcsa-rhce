@@ -89,6 +89,7 @@ class Session:
     box: dict[str, Any] = field(default_factory=dict)
     incidents: list[dict[str, Any]] = field(default_factory=list)
     broken_nodes: list[str] = field(default_factory=list)         # nodes a task leaves unbootable
+    code_port: int = 0                                            # RHCE: local port of the code-server tunnel
     schema: int = SCHEMA
 
     # --- files --------------------------------------------------------------------------

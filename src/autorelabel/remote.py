@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import os
 import shlex
+import socket
+import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -117,6 +119,57 @@ def boot_id(t: Target) -> str | None:
 
 def close_master(t: Target) -> None:
     proc.run([*ssh_base(t)[:-1], "-O", "exit", f"{t.user}@{t.host}"], timeout=10)
+
+
+# --- port forwards (code-server on localhost) -------------------------------------------------
+def _tunnel_socket(label: str) -> Path:
+    return _control_dir() / f"tunnel-{label}"
+
+
+def tunnel_alive(label: str) -> bool:
+    sock = _tunnel_socket(label)
+    return sock.exists() and proc.run(["ssh", "-S", str(sock), "-O", "check", "tunnel"], timeout=10).ok
+
+
+def free_local_port(preferred: int, tries: int = 50) -> int:
+    for port in range(preferred, preferred + tries):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("127.0.0.1", port))
+            except OSError:
+                continue
+            return port
+    raise OSError(f"no free local port in {preferred}-{preferred + tries - 1}")
+
+
+def open_tunnel(t: Target, label: str, local_port: int, remote_port: int) -> bool:
+    """A background ssh forwarding 127.0.0.1:<local_port> on this host to the guest's
+    127.0.0.1:<remote_port>. It outlives the caller (own session) until close_tunnel, or until
+    the guest goes away (keepalives)."""
+    if tunnel_alive(label):
+        return True
+    sock = _tunnel_socket(label)
+    sock.unlink(missing_ok=True)
+    opts: list[str] = []   # the shared options minus multiplexing: this ssh is its own master
+    for flag, value in zip(SSH_OPTS[::2], SSH_OPTS[1::2], strict=True):
+        if not value.startswith(("ControlMaster", "ControlPersist")):
+            opts += [flag, value]
+    cmd = ["ssh", *opts, "-o", "ExitOnForwardFailure=yes", "-M", "-S", str(sock), "-f", "-N",
+           "-L", f"127.0.0.1:{local_port}:127.0.0.1:{remote_port}",
+           "-i", str(t.key), "-p", str(t.port), f"{t.user}@{t.host}"]
+    try:
+        # ssh -f keeps running in the background: it must not hold our pipes open
+        res = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL, timeout=30, start_new_session=True)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return res.returncode == 0
+
+
+def close_tunnel(label: str) -> None:
+    sock = _tunnel_socket(label)
+    if sock.exists():
+        proc.run(["ssh", "-S", str(sock), "-O", "exit", "tunnel"], timeout=10)
 
 
 def copy_to(t: Target, local: Path, remote_path: str, timeout: float = 600) -> proc.Result:

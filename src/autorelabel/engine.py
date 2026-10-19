@@ -29,6 +29,7 @@ LineFn = Callable[[str], None]
 BASELINE = "baseline"
 EXAM_START = "exam-start"
 SETUP_REPO = "/etc/yum.repos.d/zz-autorelabel-setup.repo"
+CODE_SERVER_LOCAL_PORT = 18080        # first port tried for the code-server tunnel on this host
 
 
 class EngineError(RuntimeError):
@@ -289,6 +290,7 @@ class Engine:
             return
         sess.ended = time.time()
         sess.transition(S.LOCKED, reason=reason)
+        self.close_code_server(sess)
         lab = self.lab(sess.exam)
         lab.pause_all()
 
@@ -320,6 +322,7 @@ class Engine:
         self.lock(sess, reason="submitted")
 
     def abandon(self, sess: S.Session) -> None:
+        self.close_code_server(sess)
         if sess.state != S.ABANDONED:
             sess.transition(S.ABANDONED)
         S.set_current(None)
@@ -329,7 +332,7 @@ class Engine:
         lab = self.lab(sess.exam)
         new = S.Session(**{**{k: getattr(sess, k) for k in S.Session.__dataclass_fields__},
                            "id": S.new_id(), "created": time.time(), "state": S.NEW, "marks": {},
-                           "started": None, "ended": None, "incidents": []})
+                           "started": None, "ended": None, "incidents": [], "code_port": 0})
         new.save()
         new.event("retake_of", session=sess.id)
         new.transition(S.PROVISIONING)
@@ -430,8 +433,34 @@ class Engine:
                                "project_dir": facts["project_dir"]}
             info["inventory_md"] = facts["inventory_md"]
             info["git_url"] = facts["git_url"]
-            info["code_server"] = f"http://{ctl.lab_ip}:8080" if self.settings.code_server else ""
+            info["code_server"] = self.code_server_url(sess) if self.settings.code_server else ""
         return info
+
+    def code_server_url(self, sess: S.Session) -> str:
+        """code-server through an SSH tunnel on 127.0.0.1: browsers only give the clipboard,
+        web views and service workers to secure contexts (HTTPS or localhost), and the lab
+        address is plain HTTP. Falls back to the lab address if the tunnel can't be opened."""
+        ctl = self.lab(sess.exam).vm("control")
+        direct = f"http://{ctl.lab_ip}:8080"
+        if sess.state not in (S.READY, S.IN_PROGRESS, S.INTERRUPTED):
+            return direct
+        label = f"code-{sess.id}"
+        try:
+            if not (sess.code_port and remote.tunnel_alive(label)):
+                port = remote.free_local_port(sess.code_port or CODE_SERVER_LOCAL_PORT)
+                if not remote.open_tunnel(self.lab(sess.exam).target("control"), label, port, 8080):
+                    return direct
+                if port != sess.code_port:
+                    sess.code_port = port
+                    sess.save()
+        except OSError:
+            return direct
+        return f"http://127.0.0.1:{sess.code_port}/?folder={labfacts.PROJECT_DIR}"
+
+    @staticmethod
+    def close_code_server(sess: S.Session) -> None:
+        if sess.exam == "rhce":
+            remote.close_tunnel(f"code-{sess.id}")
 
     def solutions(self, sess: S.Session) -> dict[int, str]:
         out = {}
