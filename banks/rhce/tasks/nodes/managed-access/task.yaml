@@ -43,7 +43,8 @@ checks:
     desc: sudoers.d grants ansible NOPASSWD for all commands
     run: |
       visudo -cq
-      grep -rqsE '^[[:space:]]*ansible[[:space:]]+ALL[[:space:]]*=.*NOPASSWD:[[:space:]]*ALL' /etc/sudoers.d/
+      # a rule for ansible itself, or for its group wheel, in a drop-in file
+      grep -rqsE '^[[:space:]]*(ansible|%wheel)[[:space:]]+ALL[[:space:]]*=.*NOPASSWD:[[:space:]]*ALL' /etc/sudoers.d/
       sudo -l -U ansible | grep -q 'NOPASSWD: ALL'
   - id: sudo-from-control
     covers: [R3]
