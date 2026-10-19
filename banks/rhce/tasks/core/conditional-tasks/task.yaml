@@ -28,12 +28,21 @@ checks:
   - id: role
     covers: [R1]
     on: "@all"
-    desc: /etc/lab-role by group
+    desc: /etc/lab-role on the dev and prod hosts
     run: |
       want=""
       for h in $LAB_GROUPS_DEV; do [ "$h" = "$AR_NODE" ] && want=development; done
       for h in $LAB_GROUPS_PROD; do [ "$h" = "$AR_NODE" ] && want=production; done
-      if [ -n "$want" ]; then test "$(cat /etc/lab-role)" = "$want"; else test ! -e /etc/lab-role; fi
+      [ -n "$want" ] || skip_here
+      test "$(cat /etc/lab-role)" = "$want"
+  - id: no-role
+    guard: true
+    covers: [R1]
+    on: "@all"
+    desc: no /etc/lab-role on the other hosts
+    run: |
+      for h in $LAB_GROUPS_DEV $LAB_GROUPS_PROD; do [ "$h" = "$AR_NODE" ] && skip_here; done
+      test ! -e /etc/lab-role
   - id: memory
     covers: [R2]
     on: "@all"

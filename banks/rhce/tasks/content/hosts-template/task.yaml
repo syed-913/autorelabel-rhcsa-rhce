@@ -42,7 +42,7 @@ checks:
     on: "@all"
     desc: no /etc/myhosts outside dev
     run: |
-      for h in $LAB_GROUPS_DEV; do [ "$h" = "$AR_NODE" ] && exit 0; done
+      for h in $LAB_GROUPS_DEV; do [ "$h" = "$AR_NODE" ] && skip_here; done
       test ! -e /etc/myhosts
   - id: template
     covers: [R3]

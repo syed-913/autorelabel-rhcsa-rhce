@@ -36,8 +36,8 @@ checks:
     on: "@all"
     desc: page served where httpd can start
     run: |
-      case " $LAB_GROUPS_DEV $LAB_GROUPS_WEBSERVERS " in *" $AR_NODE "*) ;; *) exit 0 ;; esac
-      if [ -e /etc/httpd/conf.d/zz-legacy.conf ]; then exit 0; fi
+      case " $LAB_GROUPS_DEV $LAB_GROUPS_WEBSERVERS " in *" $AR_NODE "*) ;; *) skip_here ;; esac
+      if [ -e /etc/httpd/conf.d/zz-legacy.conf ]; then skip_here; fi
       systemctl is-enabled -q httpd
       systemctl is-active -q httpd
       test "$(curl -s http://localhost/)" = "Welcome to $(hostname -s)"
@@ -46,8 +46,8 @@ checks:
     on: "@all"
     desc: failure recorded on the broken host
     run: |
-      case " $LAB_GROUPS_DEV $LAB_GROUPS_WEBSERVERS " in *" $AR_NODE "*) ;; *) exit 0 ;; esac
-      if [ ! -e /etc/httpd/conf.d/zz-legacy.conf ]; then exit 0; fi
+      case " $LAB_GROUPS_DEV $LAB_GROUPS_WEBSERVERS " in *" $AR_NODE "*) ;; *) skip_here ;; esac
+      if [ ! -e /etc/httpd/conf.d/zz-legacy.conf ]; then skip_here; fi
       test -s /root/web-failed.txt
       ! systemctl is-active -q httpd || exit 1
       ! systemctl is-enabled -q httpd || exit 1
@@ -56,7 +56,7 @@ checks:
     on: "@all"
     desc: /root/web-attempted.txt
     run: |
-      case " $LAB_GROUPS_DEV $LAB_GROUPS_WEBSERVERS " in *" $AR_NODE "*) ;; *) exit 0 ;; esac
+      case " $LAB_GROUPS_DEV $LAB_GROUPS_WEBSERVERS " in *" $AR_NODE "*) ;; *) skip_here ;; esac
       test "$(cat /root/web-attempted.txt)" = attempted
 
 references:

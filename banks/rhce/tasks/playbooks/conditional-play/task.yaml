@@ -31,7 +31,7 @@ checks:
     on: "@all"
     desc: "{{pkg}} and /etc/lab-maintained where not in maintenance"
     run: |
-      if [ -e /etc/lab-maintenance ]; then exit 0; fi
+      if [ -e /etc/lab-maintenance ]; then skip_here; fi
       rpm -q {{pkg}} >/dev/null
       test "$(cat /etc/lab-maintained)" = done
   - id: skipped
@@ -40,7 +40,7 @@ checks:
     on: "@all"
     desc: maintenance hosts untouched
     run: |
-      if [ ! -e /etc/lab-maintenance ]; then exit 0; fi
+      if [ ! -e /etc/lab-maintenance ]; then skip_here; fi
       test ! -e /etc/lab-maintained
       ! rpm -q {{pkg}} >/dev/null 2>&1 || exit 1
 
