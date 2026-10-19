@@ -79,6 +79,14 @@ def verified(bank: Bank, provider: str = PRIMARY_PROVIDER) -> dict[str, str]:
     return out
 
 
+def essence(output: str, limit: int = 600) -> str:
+    """What explains a failed script: Ansible's fatal/FAILED and error lines if there are any
+    (the tail is usually just the play recap and the shell's ERR trap), else the tail."""
+    key = [ln.strip() for ln in output.splitlines()
+           if any(w in ln for w in ("fatal:", "FAILED!", "ERROR!", "error:", "Error:"))]
+    return ("\n".join(key[-4:]) if key else output.strip())[-limit:]
+
+
 def plan_batches(bank: Bank, tasks: list[Task], max_size: int = 8) -> list[list[Task]]:
     """Group tasks that can share a lab: no shared exclusive groups, disk budgets fit.
     Tasks that break boot run alone, and so do anchors: their alternative and mistake tests
@@ -143,7 +151,7 @@ class SelfTest:
                     fh.write(stamp + str(exc))
                 return False, str(exc)
         res = remote.run_script(self.lab.target(node), self.lib + "\n" + script.read_text(), env=env, timeout=900)
-        return res.ok, (res.out + res.err)[-800:]
+        return res.ok, res.out + res.err
 
     def _scripts_for(self, task: Task, kind: str, index: int = 0) -> dict[str, Path]:
         """kind: solution | alt | mistake. Returns {node: script}."""
@@ -177,7 +185,7 @@ class SelfTest:
                                  for n in labfacts.script_nodes(target, facts)]:
                 ok, out = self._run_on(sess, e, script, node)
                 if not ok:
-                    msg = f"{script.name} failed on {node}: {out.strip()[-300:]}"
+                    msg = f"{script.name} failed on {node}: {essence(out)}"
                     if task.anchor:
                         raise EngineError("self-test script failed", f"{task.id} (anchor): {msg}")
                     failed.setdefault(task.id, msg)
