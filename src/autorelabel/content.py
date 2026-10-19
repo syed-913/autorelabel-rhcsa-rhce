@@ -125,11 +125,15 @@ def download(settings: Settings, *, on_line: LineFn | None = None, on_step: Line
     files: dict[str, str] = {}
 
     step("Downloading ansible-navigator (Python wheels for the control node)")
+    # ansible-lint (a navigator dependency) pulls in ansible-core; pin it to the DVD's version
+    # so the resolver picks releases that work with it (the control node uses the RPM's copy).
+    constraints = root / "constraints.txt"
+    constraints.write_text(f"ansible-core=={'.'.join(map(str, ANSIBLE_CORE_VERSION))}\n")
     res = proc.stream([sys.executable, "-m", "pip", "download", "--disable-pip-version-check", "--no-cache-dir",
                        "--dest", str(root / "wheels"), "--only-binary=:all:", "--python-version", "3.12",
                        "--implementation", "cp", "--platform", "manylinux_2_28_x86_64",
                        "--platform", "manylinux_2_17_x86_64", "--platform", "manylinux2014_x86_64",
-                       *PIP_PACKAGES], on_line=line, timeout=1800, env=paths.tool_env())
+                       "-c", str(constraints), *PIP_PACKAGES], on_line=line, timeout=1800, env=paths.tool_env())
     if not res.ok:
         raise ContentError("pip download failed", "Check your internet connection (pypi.org) and retry.")
 

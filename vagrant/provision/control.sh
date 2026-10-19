@@ -53,7 +53,9 @@ dnf -y -q install ansible-core rhel-system-roles git podman python3-pip vim-enha
 
 step "ansible-navigator"
 if [[ ! -x /opt/ansible-navigator/bin/ansible-navigator ]]; then
-  python3 -m venv /opt/ansible-navigator
+  # System site packages: navigator (and ansible-lint) use the DVD's ansible-core, the same
+  # ansible-playbook the candidate runs, instead of a second copy from PyPI.
+  python3 -m venv --system-site-packages /opt/ansible-navigator
   /opt/ansible-navigator/bin/pip install -q --no-index --find-links "$C/wheels" ansible-navigator
 fi
 ln -sfn /opt/ansible-navigator/bin/ansible-navigator /usr/local/bin/ansible-navigator
