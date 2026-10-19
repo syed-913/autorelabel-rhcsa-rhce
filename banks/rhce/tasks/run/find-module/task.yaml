@@ -31,7 +31,8 @@ checks:
     desc: "dummy loaded with numdummies={{num}}"
     run: |
       grep -qw '^dummy' /proc/modules
-      test "$(cat /sys/module/dummy/parameters/numdummies)" = "{{num}}"
+      # numdummies isn't exposed in /sys/module (permission 0): count the interfaces it created
+      test "$(ip -o link show type dummy | wc -l)" -eq {{num}}
       grep -qx 'dummy' /etc/modules-load.d/*.conf
   - id: playbook
     covers: [R2]
