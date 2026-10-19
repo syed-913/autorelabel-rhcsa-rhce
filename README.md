@@ -159,8 +159,11 @@ subscription.
 | `node1`… | Managed nodes with an `ansible` user (3 in *lite*, 5 in *standard*), each with a spare disk | 768 MB / 1 GB |
 
 The inventory groups (`dev`, `test`, `prod`, `balancers`, and `webservers` with `prod` as a child)
-are shown in the exam instructions. The first RHCE session downloads its Ansible content once
-(PyPI, Ansible Galaxy, and for code-server GitHub and Open VSX); after that everything is offline.
+are shown in the exam instructions. VS Code opens at `http://127.0.0.1:18080` in your browser:
+the app forwards it from `control` over SSH, because browsers only allow the clipboard and editor
+web views on `localhost` or HTTPS. The first RHCE session downloads its Ansible content once
+(PyPI, Ansible Galaxy, and for code-server GitHub and Open VSX), at the exact versions the tasks
+were tested with; after that everything is offline.
 
 ## FAQ
 

@@ -98,14 +98,43 @@ if [[ "${AR_CODE_SERVER:-yes}" == "yes" ]] && compgen -G "$C/code-server/code-se
   step "code-server (VS Code in the browser) with the Red Hat Ansible extension"
   dnf -y -q install "$C"/code-server/code-server-*.rpm >/dev/null
   install -d -o student -g student /home/student/.config/code-server
+  # The app reaches it through an SSH tunnel on the host's 127.0.0.1 (a secure context for the
+  # browser); the lab address works too, without clipboard and web views. No workspace-trust
+  # prompt (Restricted Mode would disable the Ansible extension) and nothing phoning home.
   cat > /home/student/.config/code-server/config.yaml <<EOF
 bind-addr: 0.0.0.0:8080
 auth: password
 password: $AR_STUDENT_PASSWORD
 cert: false
+disable-telemetry: true
+disable-update-check: true
+disable-workspace-trust: true
+disable-getting-started-override: true
 EOF
   chown student: /home/student/.config/code-server/config.yaml; chmod 0600 /home/student/.config/code-server/config.yaml
-  for v in "$C"/code-server/*.vsix; do sudo -u student -i code-server --install-extension "$v" >/dev/null 2>&1 || true; done
+  # Editor defaults: no AI chat (an exam), no welcome page.
+  # Playbooks anywhere count as Ansible files (the extension alone only recognises paths such
+  # as playbooks/ or roles/), so completion, documentation and linting work for every task.
+  install -d -o student -g student /home/student/.local/share/code-server/User
+  cat > /home/student/.local/share/code-server/User/settings.json <<'EOF'
+{
+    "chat.disableAIFeatures": true,
+    "workbench.startupEditor": "none",
+    "telemetry.telemetryLevel": "off",
+    "extensions.autoCheckUpdates": false,
+    "extensions.autoUpdate": false,
+    "files.associations": {"*.yml": "ansible", "*.yaml": "ansible"}
+}
+EOF
+  chown student: /home/student/.local/share/code-server/User/settings.json
+  # Dependencies first (extensions.txt lists them in install order): offline, code-server can't
+  # fetch a missing dependency, and the Ansible extension won't activate without them.
+  while read -r v; do
+    [[ -n "$v" ]] || continue
+    sudo -u student -i code-server --install-extension "$C/code-server/$v" >/dev/null 2>&1 \
+      || sudo -u student -i code-server --install-extension "$C/code-server/$v"
+  done < "$C/code-server/extensions.txt"
+  sudo -u student -i code-server --list-extensions | grep -qx redhat.ansible
   systemctl enable --now code-server@student >/dev/null
   firewall-cmd -q --permanent --add-port=8080/tcp; firewall-cmd -q --reload
 fi
