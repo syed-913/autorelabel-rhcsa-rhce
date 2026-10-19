@@ -23,7 +23,7 @@ student_write banner-legacy.yml <<'YML'
   handlers:
     - name: Record the update
       ansible.builtin.file:
-        path: /var/lib/lab-banner/updated
+        path: /var/log/lab-banner.updated
         state: touch
         mode: "0644"
 YML

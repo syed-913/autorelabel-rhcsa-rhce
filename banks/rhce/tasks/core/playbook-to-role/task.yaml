@@ -50,7 +50,8 @@ checks:
       import sys, yaml
       plays = yaml.safe_load(open("/home/student/ansible/banner.yml"))
       text = yaml.safe_dump(plays)
-      ok = any(p.get("hosts") == "test" for p in plays) and "lab_banner" in text and sys.argv[1] in text
+      hosts = lambda p: set(h.strip() for h in (p.get("hosts") if isinstance(p.get("hosts"), list) else str(p.get("hosts")).split(",")))
+      ok = any(hosts(p) == {"test"} for p in plays) and "lab_banner" in text and sys.argv[1] in text
       sys.exit(0 if ok else 1)' "{{text}}"
   - id: applied
     covers: [R3]
@@ -58,7 +59,7 @@ checks:
     desc: banner deployed and the handler ran
     run: |
       grep -qx '{{text}}' /etc/issue.d/lab-banner.issue
-      test -f /var/lib/lab-banner/updated
+      test -f /var/log/lab-banner.updated
 
 references:
   - "Ansible docs: Roles (directory structure, defaults vs vars, handlers)"
