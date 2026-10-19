@@ -55,7 +55,9 @@ checks:
     desc: nothing ahead of origin
     run: |
       d=/home/{{lab.control_user}}/git/ansible
-      test -z "$(as_student git -C "$d" log --oneline origin/main..main)"
+      test -d "$d/.git"
+      ahead="$(as_student git -C "$d" log --oneline origin/main..main)"
+      test -z "$ahead"
       test -z "$(as_student git -C "$d" status --porcelain playbooks)"
 
 references:
