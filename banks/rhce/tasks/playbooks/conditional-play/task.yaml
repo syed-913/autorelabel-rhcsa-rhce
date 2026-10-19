@@ -35,6 +35,7 @@ checks:
       rpm -q {{pkg}} >/dev/null
       test "$(cat /etc/lab-maintained)" = done
   - id: skipped
+    guard: true
     covers: [R2]
     on: "@all"
     desc: maintenance hosts untouched

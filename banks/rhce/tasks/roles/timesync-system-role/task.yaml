@@ -28,6 +28,7 @@ checks:
     desc: "server {{lab.ntp_server}} iburst in chrony.conf"
     run: grep -Eq '^(server|pool)[[:space:]]+{{lab.ntp_server}}([[:space:]].*)?[[:space:]]iburst' /etc/chrony.conf
   - id: running
+    guard: true
     covers: [R2]
     on: "@all"
     desc: chronyd running and enabled

@@ -57,6 +57,7 @@ checks:
     desc: lv.yml
     run: playbook_ok lv.yml
   - id: no-vg
+    guard: true
     covers: [R3]
     on: node3
     desc: nothing created on node3 (no volume group)

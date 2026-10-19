@@ -37,6 +37,7 @@ checks:
       test "$got" = "$want"
       test "$(stat -c '%U %a' /etc/myhosts)" = "root 644"
   - id: only-dev
+    guard: true
     covers: [R2]
     on: "@all"
     desc: no /etc/myhosts outside dev

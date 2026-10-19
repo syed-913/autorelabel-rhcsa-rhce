@@ -47,6 +47,7 @@ checks:
       done
       ! firewall-cmd --permanent --list-ports | grep -qw {{rport}}/tcp || exit 1
   - id: running
+    guard: true
     covers: [R3]
     on: "@dev"
     desc: firewalld running and enabled

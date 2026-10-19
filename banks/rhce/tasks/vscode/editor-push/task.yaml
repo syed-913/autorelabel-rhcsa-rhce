@@ -44,6 +44,7 @@ checks:
       sys.exit(0 if ok else 1)
       PY
   - id: main-untouched
+    guard: true
     covers: [R2]
     on: utility
     desc: "main has no {{feat}}.yml"
