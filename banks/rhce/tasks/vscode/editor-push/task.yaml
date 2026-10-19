@@ -38,7 +38,9 @@ checks:
       import sys, yaml
       plays = yaml.safe_load(open("/tmp/ar-check-feat.yml"))
       text = yaml.safe_dump(plays)
-      ok = plays[0].get("hosts") == "all" and "{{svc}}" in text and "started" in text and "enabled" in text
+      p = plays[0]
+      hosts = set(h.strip() for h in (p.get("hosts") if isinstance(p.get("hosts"), list) else str(p.get("hosts")).split(",")))
+      ok = hosts == {"all"} and "{{svc}}" in text and "started" in text and "enabled" in text
       sys.exit(0 if ok else 1)
       PY
   - id: main-untouched

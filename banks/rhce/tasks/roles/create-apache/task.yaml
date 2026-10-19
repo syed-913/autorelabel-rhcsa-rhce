@@ -67,7 +67,8 @@ checks:
       python3 -c '
       import sys, yaml
       plays = yaml.safe_load(open("/home/student/ansible/apache.yml"))
-      sys.exit(0 if any(p.get("hosts") == "webservers" and "apache" in yaml.safe_dump(p) for p in plays) else 1)'
+      hosts = lambda p: set(h.strip() for h in (p.get("hosts") if isinstance(p.get("hosts"), list) else str(p.get("hosts")).split(",")))
+      sys.exit(0 if any(hosts(p) == {"webservers"} and "apache" in yaml.safe_dump(p) for p in plays) else 1)'
 
 references:
   - "ansible-galaxy role init --help; Ansible docs: Roles"

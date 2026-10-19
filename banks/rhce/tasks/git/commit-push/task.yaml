@@ -39,7 +39,8 @@ checks:
       import sys, yaml
       plays = yaml.safe_load(open("/tmp/ar-check-play.yml"))
       p = plays[0]
-      ok = p.get("hosts") == "all" and any("ansible.builtin.ping" in t or "ping" in t for t in p.get("tasks", []))
+      hosts = set(h.strip() for h in (p.get("hosts") if isinstance(p.get("hosts"), list) else str(p.get("hosts")).split(",")))
+      ok = hosts == {"all"} and any("ansible.builtin.ping" in t or "ping" in t for t in p.get("tasks", []))
       sys.exit(0 if ok else 1)
       PY
   - id: commit
