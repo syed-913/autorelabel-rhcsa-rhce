@@ -97,7 +97,7 @@ install -d -o student -g student /home/student/ansible
 if [[ "${AR_CODE_SERVER:-yes}" == "yes" ]] && compgen -G "$C/code-server/code-server-*.rpm" >/dev/null; then
   step "code-server (VS Code in the browser) with the Red Hat Ansible extension"
   dnf -y -q install "$C"/code-server/code-server-*.rpm >/dev/null
-  install -d -o student -g student /home/student/.config/code-server
+  runuser -u student -- mkdir -p /home/student/.config/code-server
   # The app reaches it through an SSH tunnel on the host's 127.0.0.1 (a secure context for the
   # browser); the lab address works too, without clipboard and web views. No workspace-trust
   # prompt (Restricted Mode would disable the Ansible extension) and nothing phoning home.
@@ -115,7 +115,8 @@ EOF
   # Editor defaults: no AI chat or Lightspeed (an exam), the system Python, no welcome page.
   # Playbooks anywhere count as Ansible files (the extension alone only recognises paths such
   # as playbooks/ or roles/), so completion, documentation and linting work for every task.
-  install -d -o student -g student /home/student/.local/share/code-server/User
+  # Created as student: install -d would leave the parent directories it creates to root.
+  runuser -u student -- mkdir -p /home/student/.local/share/code-server/User
   cat > /home/student/.local/share/code-server/User/settings.json <<'EOF'
 {
     "chat.disableAIFeatures": true,
