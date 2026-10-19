@@ -72,7 +72,7 @@ class Engine:
 
     # --- session creation -------------------------------------------------------------------
     def create(self, exam: str, *, mode: str = "exam", seed: int | None = None,
-               task_ids: list[str] | None = None, timed: bool = True) -> S.Session:
+               task_ids: list[str] | None = None, timed: bool = True, sweep: int | None = None) -> S.Session:
         if not self.settings.configured:
             raise EngineError("setup is not complete", "Run ./autorelabel to finish the setup wizard.")
         bank = self.bank(exam)
@@ -82,7 +82,7 @@ class Engine:
         else:
             if not task_ids:
                 raise EngineError("no tasks chosen for practice")
-            selected = practice(bank, task_ids, seed)
+            selected = practice(bank, task_ids, seed, sweep=sweep)
         sess = S.Session(id=S.new_id(), exam=exam, mode=mode, seed=seed, created=time.time(),
                          profile=self.settings.profile, provider=self.settings.provider,
                          scoring=self.settings.scoring,

@@ -169,10 +169,17 @@ def future_date(args: Any, rng: random.Random, today: datetime.date) -> str:
     return f"{day} {rng.choice(times)}" if times else day
 
 
+def sweep_draws(task: Task) -> int:
+    """Draws a parameter sweep needs so that every choice value of the task comes up once."""
+    return max((len(spec.args) for spec in task.params.values() if spec.kind == "choice"), default=1)
+
+
 def resolve_params(tasks: list[Task], pools: dict[str, list[Any]], rng: random.Random,
-                   today: datetime.date | None = None) -> list[dict[str, Any]]:
+                   today: datetime.date | None = None, sweep: int | None = None) -> list[dict[str, Any]]:
     """Draw parameters. Pool draws are without replacement across the whole exam
-    so two tasks never collide on a username, port, path, ..."""
+    so two tasks never collide on a username, port, path, ...
+    `sweep` (self-test parameter sweep): draw number i takes every choice's value i mod n
+    instead of a random one, so draws 0..sweep_draws-1 cover all values."""
     today = today or datetime.date.today()
     remaining = {name: list(values) for name, values in pools.items()}
     for values in remaining.values():
@@ -182,7 +189,7 @@ def resolve_params(tasks: list[Task], pools: dict[str, list[Any]], rng: random.R
         p: dict[str, Any] = {}
         for name, spec in t.params.items():
             if spec.kind == "choice":
-                p[name] = rng.choice(spec.args)
+                p[name] = rng.choice(spec.args) if sweep is None else spec.args[sweep % len(spec.args)]
             elif spec.kind == "range":
                 p[name] = rng.randint(int(spec.args[0]), int(spec.args[1]))
             elif spec.kind == "token":
@@ -217,9 +224,9 @@ def generate(bank: Bank, seed: int, recency: dict[str, float] | None = None) -> 
     )
 
 
-def practice(bank: Bank, task_ids: list[str], seed: int) -> list[SelectedTask]:
+def practice(bank: Bank, task_ids: list[str], seed: int, sweep: int | None = None) -> list[SelectedTask]:
     """Practice set: the given tasks, in bank order, no blueprint constraints."""
     tasks = [bank.tasks[t] for t in task_ids]
-    params = resolve_params(tasks, bank.pools, random.Random(f"{bank.exam}:{seed}:practice"))
+    params = resolve_params(tasks, bank.pools, random.Random(f"{bank.exam}:{seed}:practice"), sweep=sweep)
     return [SelectedTask(i + 1, t, p, bank.blueprint.points_for(t.difficulty))
             for i, (t, p) in enumerate(zip(tasks, params, strict=True))]

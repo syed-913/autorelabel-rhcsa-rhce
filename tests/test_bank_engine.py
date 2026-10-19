@@ -14,7 +14,7 @@ import pytest
 from autorelabel.bank import coverage, lint, render
 from autorelabel.bank.loader import Bank, load_blueprint, load_objectives
 from autorelabel.bank.model import Check, ParamSpec, Task
-from autorelabel.bank.select import SelectionError, _matches, generate, resolve_params
+from autorelabel.bank.select import SelectionError, _matches, generate, resolve_params, sweep_draws
 
 EXAMS = ("rhcsa", "rhce")
 
@@ -185,6 +185,20 @@ def test_future_dates_are_relative_to_the_exam():
         (p,) = resolve_params([task], {}, random.Random(seed), today=today)
         assert 20 <= (datetime.date.fromisoformat(p["day"]) - today).days <= 30
         assert p["at"] == "2026-12-31 06:15"
+
+
+def test_sweep_covers_every_choice_value():
+    task = Task(id="x.y.z", exam="rhce", domain="y", path=Path("/nonexistent"), title="t", primary="p",
+                objectives=(), facets=(), difficulty="easy", estimated_minutes=1, node="control", prompt="",
+                requirements={}, checks=(), references=(),
+                params={"a": ParamSpec("a", "choice", [1, 2, 3, 4]), "b": ParamSpec("b", "choice", ["x", "y"]),
+                        "n": ParamSpec("n", "range", [5, 9])})
+    assert sweep_draws(task) == 4
+    drawn = [resolve_params([task], {}, random.Random(i), sweep=i)[0] for i in range(sweep_draws(task))]
+    assert [p["a"] for p in drawn] == [1, 2, 3, 4]
+    assert [p["b"] for p in drawn] == ["x", "y", "x", "y"]
+    assert all(5 <= p["n"] <= 9 for p in drawn)            # other kinds stay random
+    assert sweep_draws(replace(task, params={})) == 1
 
 
 @pytest.mark.parametrize("args,ok", [

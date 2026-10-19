@@ -6,6 +6,9 @@ For each task:
   3. alternative: each tests/alt-*.sh, then a reboot → full marks (valid methods aren't punished)
   4. mistakes:    each tests/mistake-*.sh, then a reboot → NOT full marks (classic errors are caught)
 
+The parameter sweep (`selftest --sweep`) runs the same suites once per choice value: draw i
+gives every choice parameter its value i mod n, so each value is verified at least once.
+
 Compatible tasks run together in batches (one reboot per round) to keep this fast.
 Results are stored per task with a digest of the task's files, so edited tasks
 are re-tested and the coverage report can mark verified tasks. Each provider keeps its own
@@ -25,7 +28,7 @@ from . import box, console, labfacts, paths, remote
 from . import session as S
 from .bank import Bank, render
 from .bank.model import Task
-from .bank.select import _disk_capacity_mib
+from .bank.select import _disk_capacity_mib, sweep_draws
 from .engine import EXAM_START, Engine, EngineError
 from .fsutil import atomic_write_json, read_json
 
@@ -53,6 +56,16 @@ def results_file(exam: str, provider: str = PRIMARY_PROVIDER) -> Path:
 
 def load_results(exam: str, provider: str = PRIMARY_PROVIDER) -> dict[str, Any]:
     return read_json(results_file(exam, provider), default={}) or {}
+
+
+def sweep_file(exam: str, provider: str = PRIMARY_PROVIDER) -> Path:
+    name = "selftest-sweep.json" if provider == PRIMARY_PROVIDER else f"selftest-sweep-{provider}.json"
+    return paths.BANKS / exam / name
+
+
+def load_sweep(exam: str, provider: str = PRIMARY_PROVIDER) -> dict[str, Any]:
+    """task id -> {draw number (str): {status, detail, params, digest, box, date}}"""
+    return read_json(sweep_file(exam, provider), default={}) or {}
 
 
 def verified(bank: Bank, provider: str = PRIMARY_PROVIDER) -> dict[str, str]:
@@ -102,6 +115,7 @@ class SelfTest:
         self.lab = engine.lab(exam)
         self.say = on_line or (lambda s: None)
         self.lib = (paths.BANKS / "lib" / "setup-lib.sh").read_text()
+        self.last_params: dict[str, dict[str, Any]] = {}   # parameters of the last batch's tasks
 
     # --- helpers --------------------------------------------------------------------------------
     def _run_on(self, sess: S.Session, entry: dict[str, Any], script: Path, node: str) -> tuple[bool, str]:
@@ -225,15 +239,50 @@ class SelfTest:
             atomic_write_json(results_file(self.exam, provider), results)
         return results
 
-    def _run_batch(self, batch: list[Task]) -> dict[str, tuple[str, str]]:
+    def run_sweep(self, task_ids: list[str] | None = None, *, only_changed: bool = False) -> dict[str, Any]:
+        """Every choice value of every task: draw i runs the tasks that have more than i values.
+        only_changed: skip draws that already passed with the task's current files (resume)."""
+        provider = self.engine.settings.provider
+        tasks = [self.bank.tasks[t] for t in (task_ids or sorted(self.bank.tasks))]
+        tasks = [t for t in tasks if sweep_draws(t) > 1]
+        results = load_sweep(self.exam, provider)
+        manifest = box.manifest(self.engine.settings, provider) or {}
+        stamp = {"box": f"RHEL {manifest.get('rhel_version', '?')} {manifest.get('version', '')}".strip(),
+                 "date": time.strftime("%Y-%m-%d")}
+        rounds = max((sweep_draws(t) for t in tasks), default=0)
+        self.say(f"parameter sweep: {len(tasks)} task(s), {sum(sweep_draws(t) for t in tasks)} draw(s)")
+        for i in range(rounds):
+            todo = [t for t in tasks if sweep_draws(t) > i]
+            if only_changed:
+                todo = [t for t in todo if not (results.get(t.id, {}).get(str(i), {}).get("status") == "pass"
+                                                and results[t.id][str(i)].get("digest") == task_digest(t))]
+            if not todo:
+                continue
+            batches = plan_batches(self.bank, todo)
+            for n, batch in enumerate(batches, 1):
+                self.say(f"--- draw {i + 1}/{rounds}, batch {n}/{len(batches)}: "
+                         f"{', '.join(t.id.split('.', 1)[1] for t in batch)}")
+                outcome = self._run_batch(batch, sweep=i)
+                for tid, (status, detail) in outcome.items():
+                    results.setdefault(tid, {})[str(i)] = {
+                        "status": status, "detail": detail, "params": self.last_params.get(tid, {}),
+                        "digest": task_digest(self.bank.tasks[tid]), **stamp}
+                    self.say(f"    {status.upper():4} {tid} {json.dumps(self.last_params.get(tid, {}))} {detail}")
+                atomic_write_json(sweep_file(self.exam, provider), results)
+        return results
+
+    def _run_batch(self, batch: list[Task], sweep: int | None = None) -> dict[str, tuple[str, str]]:
         outcome: dict[str, tuple[str, str]] = {t.id: ("pass", "") for t in batch}
+        self.last_params = {}
 
         def fail(tid: str, why: str) -> None:
             if outcome[tid][0] == "pass":
                 outcome[tid] = ("fail", why)
 
         try:
-            sess = self.engine.create(self.exam, mode="practice", task_ids=[t.id for t in batch], timed=False)
+            sess = self.engine.create(self.exam, mode="practice", task_ids=[t.id for t in batch], timed=False,
+                                      sweep=sweep)
+            self.last_params = {e["task"]: e["params"] for e in sess.tasks}
             sess.mode = "selftest"
             sess.scoring = "partial"   # judge every check, whatever the user's scoring setting
             sess.save()
