@@ -4,6 +4,7 @@ snapshots, console. All objects we create are ledgered first."""
 from __future__ import annotations
 
 import ipaddress
+import re
 import time
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -58,7 +59,8 @@ def network_active(name: str) -> bool:
                           for line in res.out.splitlines())
 
 
-def ensure_network(name: str, xml: str, tmpdir: Path, storage_dir: str | None) -> None:
+def ensure_network(name: str, xml: str, tmpdir: Path, storage_dir: str | None,
+                   dhcp_hosts: list[tuple[str, str]] | None = None) -> None:
     if not network_exists(name):
         ledger.record("libvirt-network", name, "lab network", storage_dir=storage_dir)
         f = tmpdir / f"{name}.xml"
@@ -67,6 +69,29 @@ def ensure_network(name: str, xml: str, tmpdir: Path, storage_dir: str | None) -
         f.unlink(missing_ok=True)
     if not network_active(name):
         virsh("net-start", name, check=True)
+    if dhcp_hosts:
+        sync_dhcp_hosts(name, dhcp_hosts)
+
+
+def sync_dhcp_hosts(name: str, hosts: list[tuple[str, str]]) -> None:
+    """Make an existing network reserve each (MAC, IP): a network created earlier (older
+    version, other profile) can lack reservations or give an address to another MAC."""
+    res = virsh("net-dumpxml", name, "--inactive", timeout=20)
+    if not res.ok:
+        return
+    current = dict(re.findall(r"<host mac='([0-9a-fA-F:]+)' ip='([0-9.]+)'/>", res.out))
+    owner = {ip: mac for mac, ip in current.items()}
+    for mac, ip in hosts:
+        if current.get(mac) == ip:
+            continue
+        for stale in {mac, owner.get(ip)} - {None}:
+            if stale in current:
+                virsh("net-update", name, "delete", "ip-dhcp-host",
+                      f"<host mac='{stale}' ip='{current[stale]}'/>", "--live", "--config", check=True)
+                owner.pop(current.pop(stale), None)
+        virsh("net-update", name, "add", "ip-dhcp-host", f"<host mac='{mac}' ip='{ip}'/>",
+              "--live", "--config", check=True)
+        current[mac], owner[ip] = ip, mac
 
 
 def remove_network(name: str) -> None:

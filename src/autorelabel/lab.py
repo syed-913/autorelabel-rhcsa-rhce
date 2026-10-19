@@ -21,6 +21,9 @@ from .providers import virtualbox as vb
 
 _log = log.get("lab")
 EXAM_IDS = {"rhcsa": 1, "rhce": 2}
+# Management addresses differ per exam (both labs share the management network, and dnsmasq
+# won't hand out an address still leased to the other lab's VM of the same role).
+MGMT_OFFSET = {"rhcsa": 0, "rhce": 40}
 MGMT_NETWORK = "autorelabel-mgmt"
 LAB_NETWORK = "autorelabel-lab"
 POOL = "autorelabel"
@@ -72,7 +75,7 @@ class Lab:
             o = vm.host_octet
             self.vms.append(LabVM(
                 spec=vm,
-                mgmt_ip=str(mgmt.network_address + o),
+                mgmt_ip=str(mgmt.network_address + o + MGMT_OFFSET[exam]),
                 lab_ip=str(labnet.network_address + o),
                 lab_ip6=facts[vm.name]["ipv6"],
                 mgmt_mac=f"52:54:00:fa:{xid:02x}:{o:02x}",
@@ -133,9 +136,10 @@ class Lab:
             layout["vbox_disks"].mkdir(parents=True, exist_ok=True)
             return
         lv.ensure_pool(POOL, layout["pool"], sd)
+        reservations = [(v.mgmt_mac, v.mgmt_ip) for v in self._all_exam_vms()]
         lv.ensure_network(MGMT_NETWORK, lv.network_xml(
-            MGMT_NETWORK, "arbr-mgmt", self.settings.mgmt_subnet,
-            dhcp_hosts=[(v.mgmt_mac, v.mgmt_ip) for v in self._all_exam_vms()]), paths.TMP, sd)
+            MGMT_NETWORK, "arbr-mgmt", self.settings.mgmt_subnet, dhcp_hosts=reservations),
+            paths.TMP, sd, dhcp_hosts=reservations)
         lv.ensure_network(LAB_NETWORK, lv.network_xml(
             LAB_NETWORK, "arbr-lab", self.settings.lab_subnet, ipv6=self.ipv6_prefix), paths.TMP, sd)
 
