@@ -1,714 +1,714 @@
 {
   "rhcsa.deploy.at-job": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "a245c73a1f4e",
     "status": "pass"
   },
   "rhcsa.deploy.chrony-client": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "b42aa38b76d0",
     "status": "pass"
   },
   "rhcsa.deploy.cron-system": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "1339f592cd7a",
     "status": "pass"
   },
   "rhcsa.deploy.cron-user": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-13",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "fc2e8b3d24d3",
     "status": "pass"
   },
   "rhcsa.deploy.default-target": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "73c6c6a3f011",
     "status": "pass"
   },
   "rhcsa.deploy.graphical-target": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "bf7f4d6d298b",
     "status": "pass"
   },
   "rhcsa.deploy.grub-timeout": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "995c66839556",
     "status": "pass"
   },
   "rhcsa.deploy.install-local-rpm": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "c354eddeb4ed",
     "status": "pass"
   },
   "rhcsa.deploy.kernel-args": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "c92e97ce1d73",
     "status": "pass"
   },
   "rhcsa.deploy.services-enable": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "a1d341442975",
     "status": "pass"
   },
   "rhcsa.deploy.systemd-timer": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "c7ad7ffa90d1",
     "status": "pass"
   },
   "rhcsa.deploy.timezone-and-ntp": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
-    "digest": "9095af60826b",
+    "digest": "adb9aa261ad0",
     "status": "pass"
   },
   "rhcsa.deploy.update-from-repo": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "221a6842bbd1",
     "status": "pass"
   },
   "rhcsa.filesystems.acl-access": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "5664279068c2",
     "status": "pass"
   },
   "rhcsa.filesystems.autofs-direct": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "a28b28e1ab38",
     "status": "pass"
   },
   "rhcsa.filesystems.autofs-home-wildcard": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "ad73a2a6eafb",
     "status": "pass"
   },
   "rhcsa.filesystems.autofs-indirect": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "1ae5b6e48de8",
     "status": "pass"
   },
   "rhcsa.filesystems.collaborative-dir": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "db066b56b03c",
     "status": "pass"
   },
   "rhcsa.filesystems.extend-ext4": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "19a443b0cb09",
     "status": "pass"
   },
   "rhcsa.filesystems.extend-xfs": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "27b55161deca",
     "status": "pass"
   },
   "rhcsa.filesystems.fix-home-access": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "d41434b3b9cc",
     "status": "pass"
   },
   "rhcsa.filesystems.nfs-mount": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "a1d1a5c99bd1",
     "status": "pass"
   },
   "rhcsa.filesystems.vfat-uuid": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "e5b31d71aee5",
     "status": "pass"
   },
   "rhcsa.filesystems.xfs-and-ext4": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "b5eb86b8f5b6",
     "status": "pass"
   },
   "rhcsa.networking.configure-node1": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "f578f4e71881",
     "status": "pass"
   },
   "rhcsa.networking.connection-autoconnect": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "e024cfec8563",
     "status": "pass"
   },
   "rhcsa.networking.dns-client": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "caf389a49e3e",
     "status": "pass"
   },
   "rhcsa.networking.firewall-remove-services": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "112093671972",
     "status": "pass"
   },
   "rhcsa.networking.firewall-rich-rule": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "383815762f39",
     "status": "pass"
   },
   "rhcsa.networking.hosts-file": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "35d4b119f1d1",
     "status": "pass"
   },
   "rhcsa.networking.ipv6-address": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "0cbf9ae7468a",
     "status": "pass"
   },
   "rhcsa.operate.boot-emergency-fstab": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
-    "digest": "4ae37c278110",
+    "digest": "ee700f35578d",
     "status": "pass"
   },
   "rhcsa.operate.boot-emergency-kernel-arg": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "aa9b39130f72",
     "status": "pass"
   },
   "rhcsa.operate.cpu-hog": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "cbcc4818052e",
     "status": "pass"
   },
   "rhcsa.operate.find-log-messages": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "d1e251f4ae54",
     "status": "pass"
   },
   "rhcsa.operate.journal-size-limit": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-13",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "4f6d36fe90de",
     "status": "pass"
   },
   "rhcsa.operate.memory-hog-respawn": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "addbbd51b036",
     "status": "pass"
   },
   "rhcsa.operate.network-service-control": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "6c49a114f3d0",
     "status": "pass"
   },
   "rhcsa.operate.nice-cron-job": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "f1cfb9498b12",
     "status": "pass"
   },
   "rhcsa.operate.persistent-journal": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-13",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "607314376dd1",
     "status": "pass"
   },
   "rhcsa.operate.process-priority": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "521e9c2f24e9",
     "status": "pass"
   },
   "rhcsa.operate.root-account-expired": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "f71055e197d9",
     "status": "pass"
   },
   "rhcsa.operate.root-password-reset": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "83a7eddf9a1e",
     "status": "pass"
   },
   "rhcsa.operate.rsync-mirror": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "a394e001f862",
     "status": "pass"
   },
   "rhcsa.operate.secure-copy": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "dc9ef36f1bae",
     "status": "pass"
   },
   "rhcsa.operate.tuned-profile": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "19dcf4a4b1f4",
     "status": "pass"
   },
   "rhcsa.operate.tuned-recommended": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "4080f8872d7b",
     "status": "pass"
   },
   "rhcsa.scripts.arg-loop": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "5f8b82deaa21",
     "status": "pass"
   },
   "rhcsa.scripts.file-loop": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "66d986fe2e27",
     "status": "pass"
   },
   "rhcsa.scripts.path-type": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "ba32a83a5175",
     "status": "pass"
   },
   "rhcsa.scripts.system-report": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "5f2ae6024e27",
     "status": "pass"
   },
   "rhcsa.scripts.user-lookup": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "d0a2314cf968",
     "status": "pass"
   },
   "rhcsa.security.firewall-services": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "4c8b05637449",
     "status": "pass"
   },
   "rhcsa.security.firewall-zone": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "38426d40049a",
     "status": "pass"
   },
   "rhcsa.security.selinux-boolean": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "7c8b4f1f117f",
     "status": "pass"
   },
   "rhcsa.security.selinux-contexts": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "a3fd70bff428",
     "status": "pass"
   },
   "rhcsa.security.selinux-enforcing": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "00f3925f646d",
     "status": "pass"
   },
   "rhcsa.security.selinux-enforcing-kernel-arg": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "551ad859837e",
     "status": "pass"
   },
   "rhcsa.security.selinux-fcontext-web": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "48f61912ca5d",
     "status": "pass"
   },
   "rhcsa.security.selinux-find-boolean": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
-    "digest": "acedbaf0cd9b",
+    "digest": "e31673f8a1d4",
     "status": "pass"
   },
   "rhcsa.security.selinux-permissive": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "ff5b92f8051e",
     "status": "pass"
   },
   "rhcsa.security.selinux-port-web": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "2315ea9b5e72",
     "status": "pass"
   },
   "rhcsa.security.selinux-ssh-port": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "7498b4e1d607",
     "status": "pass"
   },
   "rhcsa.security.ssh-key-only-user": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "6bbba4ff83c4",
     "status": "pass"
   },
   "rhcsa.security.ssh-keys": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "eaf6a7106648",
     "status": "pass"
   },
   "rhcsa.security.umask-system": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "0feab6851f82",
     "status": "pass"
   },
   "rhcsa.security.umask-user": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "9fe2ef3b8705",
     "status": "pass"
   },
   "rhcsa.software.configure-repos": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "21443a83d225",
     "status": "pass"
   },
   "rhcsa.software.flatpak-ref-swap": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "293427c8a819",
     "status": "pass"
   },
   "rhcsa.software.flatpak-remote-install": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "a854989cde27",
     "status": "pass"
   },
   "rhcsa.software.flatpak-user-remote": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "e276978f2e01",
     "status": "pass"
   },
   "rhcsa.software.install-remove-packages": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "64581d33130f",
     "status": "pass"
   },
   "rhcsa.software.package-group": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "9d5ecbcb1818",
     "status": "pass"
   },
   "rhcsa.storage.gpt-partitions": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "94162e42a465",
     "status": "pass"
   },
   "rhcsa.storage.lv-delete": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
-    "digest": "72546df9517e",
+    "digest": "75413836a925",
     "status": "pass"
   },
   "rhcsa.storage.lvm-create": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "be7e334b2951",
     "status": "pass"
   },
   "rhcsa.storage.mount-label": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "fd41e65e395d",
     "status": "pass"
   },
   "rhcsa.storage.pv-remove": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "e0402be3adf7",
     "status": "pass"
   },
   "rhcsa.storage.swap-lv": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "ffbbaf520ca7",
     "status": "pass"
   },
   "rhcsa.storage.swap-partition": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "88a2d1459bb6",
     "status": "pass"
   },
   "rhcsa.storage.vg-extend": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "53a98b183d2f",
     "status": "pass"
   },
   "rhcsa.tools.archive-bzip2": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
-    "digest": "fe68886e8e01",
+    "digest": "f77345e4f1ba",
     "status": "pass"
   },
   "rhcsa.tools.archive-gzip-extract": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "7ad26e4e6ba9",
     "status": "pass"
   },
   "rhcsa.tools.compress-files": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "3ddabe004de4",
     "status": "pass"
   },
   "rhcsa.tools.edit-as-user": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "05efacd9ab79",
     "status": "pass"
   },
   "rhcsa.tools.find-copy-files": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "87b5c0abd3a0",
     "status": "pass"
   },
   "rhcsa.tools.fix-broken-link": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "2126cf0cadbb",
     "status": "pass"
   },
   "rhcsa.tools.grep-regex": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "a43559a568b2",
     "status": "pass"
   },
   "rhcsa.tools.grep-save-lines": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "ef9ab756d190",
     "status": "pass"
   },
   "rhcsa.tools.info-date-format": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "cf2ad21c8f9a",
     "status": "pass"
   },
   "rhcsa.tools.links": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "94dbd1b1b144",
     "status": "pass"
   },
   "rhcsa.tools.man-search": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "0b24b46487a7",
     "status": "pass"
   },
   "rhcsa.tools.permissions": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "021042cadcc6",
     "status": "pass"
   },
   "rhcsa.tools.redirection": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "ddd8a431a843",
     "status": "pass"
   },
   "rhcsa.tools.ssh-remote-command": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "f48bf5ca6aac",
     "status": "pass"
   },
   "rhcsa.tools.sudo-as-user": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "7b50b4ef218b",
     "status": "pass"
   },
   "rhcsa.tools.tidy-files": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "ead58cf072b9",
     "status": "pass"
   },
   "rhcsa.users.create-users": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "3fefee92c01e",
     "status": "pass"
   },
   "rhcsa.users.group-management": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "390d253c8738",
     "status": "pass"
   },
   "rhcsa.users.modify-delete-users": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "48cd03d8e7a5",
     "status": "pass"
   },
   "rhcsa.users.password-aging": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "62f3bd75a41a",
     "status": "pass"
   },
   "rhcsa.users.sudo-access": {
-    "box": "RHEL 10.0 20261012.2257",
-    "date": "2026-10-12",
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-19",
     "detail": "",
     "digest": "f5552e79c1c3",
     "status": "pass"
