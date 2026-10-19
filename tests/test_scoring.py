@@ -46,3 +46,33 @@ def test_guards_only_score_with_the_work(tmp_path, statuses, points):
 def test_strict_scoring_is_unchanged(tmp_path):
     assert _score(tmp_path, {"work": "pass", "more": "pass", "keep": "pass"}, "strict") == 30
     assert _score(tmp_path, {"work": "pass", "more": "pass", "keep": "fail"}, "strict") == 0
+
+
+def _score_hosts(tmp_path, statuses: dict[str, str]) -> float:
+    """One check on a group of three hosts (weight shared) plus one single-host check."""
+    checks = [Check("role", "role file", "true", ("R1",)), Check("other", "other work", "true", ("R1",))]
+    task = _task(tmp_path, checks)
+    g = Grader.__new__(Grader)
+    g.bank = SimpleNamespace(tasks={task.id: task}, blueprint=SimpleNamespace(total_points=30, pass_mark=21))
+    g.facts = {}
+    g.s = SimpleNamespace(id="s", exam="rhce", mode="exam", scoring="partial", incidents=[], duration_s=0,
+                          elapsed=lambda: 0, tasks=[{"number": 1, "task": task.id, "params": {}, "points": 30}])
+    expanded = [(Check(f"role@{h}", "role file", "true", ("R1",), weight=1 / 3), h)
+                for h in ("node1", "node2", "node3")] + [(checks[1], "node1")]
+    g._expanded = lambda t: expanded
+    post = {f"1:{c.id}": {"id": c.id, "desc": c.desc, "node": n, "status": statuses[c.id], "weight": c.weight,
+                          "covers": ["R1"], "detail": "", "guard": False} for c, n in expanded}
+    return g.score({"post": post})["tasks"][0]["points"]
+
+
+@pytest.mark.parametrize("statuses, points", [
+    # untouched: the host the check doesn't apply to (n/a) earns nothing
+    ({"role@node1": "fail", "role@node2": "n/a", "role@node3": "fail", "other": "fail"}, 0),
+    # the two applicable hosts share the check's whole weight: one of them right = a quarter
+    ({"role@node1": "pass", "role@node2": "n/a", "role@node3": "fail", "other": "fail"}, 7.5),
+    ({"role@node1": "pass", "role@node2": "n/a", "role@node3": "pass", "other": "pass"}, 30),
+    # applies nowhere: the task is scored on its other checks alone
+    ({"role@node1": "n/a", "role@node2": "n/a", "role@node3": "n/a", "other": "pass"}, 30),
+])
+def test_checks_that_do_not_apply_to_a_host(tmp_path, statuses, points):
+    assert _score_hosts(tmp_path, statuses) == points

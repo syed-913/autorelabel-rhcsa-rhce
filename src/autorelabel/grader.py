@@ -35,7 +35,7 @@ class CheckResult:
     id: str
     desc: str
     node: str
-    status: str              # pass | fail | error | unreachable
+    status: str              # pass | fail | error | unreachable | n/a (doesn't apply to this host)
     weight: float
     covers: list[str]
     detail: str = ""
@@ -58,6 +58,25 @@ class TaskResult:
 
 
 EventFn = Callable[[str, dict[str, Any]], None]
+
+
+SKIP_RC = 77      # skip_here in check-lib.sh: the check doesn't apply to this host
+NA = "n/a"
+
+
+def effective_weights(post: list[CheckResult]) -> dict[str, float]:
+    """A check on an inventory group runs once per host (`<id>@<host>`), sharing its weight.
+    Hosts where it doesn't apply (n/a) drop out and the others share the whole weight; a check
+    that applies nowhere drops out of the task."""
+    base: dict[str, float] = {}
+    hosts: dict[str, int] = {}
+    for c in post:
+        b = c.id.split("@")[0]
+        base[b] = base.get(b, 0.0) + c.weight
+        if c.status != NA:
+            hosts[b] = hosts.get(b, 0) + 1
+    return {c.id: base[c.id.split("@")[0]] / hosts[c.id.split("@")[0]]
+            for c in post if c.status != NA}
 
 
 def check_script(lib: str, check: str) -> str:
@@ -160,6 +179,8 @@ class Grader:
             status, detail = "unreachable", res.err.strip()[-200:]
         elif res.rc == 0:
             status, detail = "pass", ""
+        elif res.rc == SKIP_RC:
+            status, detail = NA, ""
         else:
             status, detail = "fail", (res.out.strip() or res.err.strip())[-300:]
         return CheckResult(chk.id, desc, node, status, chk.weight, list(chk.covers), detail, chk.guard)
@@ -298,15 +319,17 @@ class Grader:
                     tr.pre.append(CheckResult(**pre))
                 if post:
                     tr.post.append(CheckResult(**post))
-                if pre and post and pre["status"] == "pass" and post["status"] != "pass":
+                if pre and post and pre["status"] == "pass" and post["status"] not in ("pass", NA):
                     tr.not_persistent.append(chk.id)
-            total_w = sum(c.weight for c in tr.post) or 1.0
-            ok_w = sum(c.weight for c in tr.post if c.status == "pass")
+            weight = effective_weights(tr.post)
+            counted = [c for c in tr.post if c.status != NA]
+            total_w = sum(weight[c.id] for c in counted) or 1.0
+            ok_w = sum(weight[c.id] for c in counted if c.status == "pass")
             # Guards (things not to break) are true before any work: they only count once a
             # check of the work itself passes, so an untouched task scores nothing.
-            started = any(c.status == "pass" and not c.guard for c in tr.post)
+            started = any(c.status == "pass" and not c.guard for c in counted)
             if strict:
-                tr.points = float(tr.points_possible) if ok_w == total_w and tr.post else 0.0
+                tr.points = float(tr.points_possible) if ok_w == total_w and counted else 0.0
             elif not started:
                 tr.points = 0.0
             else:
@@ -410,6 +433,8 @@ def write_report(session: Session, bank: Bank, results: dict[str, Any]) -> str:
         lines.append(f"### {mark} Task {t['number']}: {t['title']} — {t['points']:g}/{t['points_possible']} "
                      f"({t['difficulty']})")
         for c in t["post"]:
+            if c["status"] == NA:
+                continue
             sym = {"pass": "✔", "fail": "✘", "error": "!", "unreachable": "⨯"}[c["status"]]
             extra = " — **worked before the reboot but not after (not persistent)**" \
                 if c["id"] in t["not_persistent"] else ""

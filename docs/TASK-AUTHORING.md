@@ -85,6 +85,15 @@ A task scores nothing until at least one of its other checks passes. After that,
 any other check, so breaking one still costs points. Every task needs at least one check that is
 not a guard. The self-test enforces this: an untouched task must score 0 (see below).
 
+### Checks on a group of hosts (RHCE)
+
+`on: "@group"` runs a check once per host of the group, and the hosts share its weight (partial
+credit per host). When a check concerns only some of those hosts (the web servers but not the
+broken one, the hosts without a maintenance flag), call `skip_here` on the others instead of
+`exit 0`: the grader records *n/a*, the applicable hosts share the whole weight, and an untouched
+task can't collect points from hosts the check never meant to grade. What the other hosts must
+*not* get (no role file outside dev and prod) is a separate check, marked `guard: true`.
+
 ### Placeholders
 
 - `{{name}}` (no spaces) is an autorelabel placeholder: a parameter, `{{param.field}}` for dict

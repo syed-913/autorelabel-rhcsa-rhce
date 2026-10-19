@@ -189,11 +189,13 @@ class SelfTest:
 
     @staticmethod
     def _full(t: dict[str, Any]) -> bool:
-        return bool(t["post"]) and all(c["status"] == "pass" for c in t["post"])
+        counted = [c for c in t["post"] if c["status"] != "n/a"]
+        return bool(counted) and all(c["status"] == "pass" for c in counted)
 
     @staticmethod
     def _failures(t: dict[str, Any]) -> str:
-        return "; ".join(f"{c['id']}={c['status']} {c['detail'][:120]}" for c in t["post"] if c["status"] != "pass")
+        return "; ".join(f"{c['id']}={c['status']} {c['detail'][:120]}" for c in t["post"]
+                         if c["status"] not in ("pass", "n/a"))
 
     @staticmethod
     def _infra_trouble(graded: dict[str, dict[str, Any]]) -> bool:

@@ -18,6 +18,11 @@ grep() {
   command grep "$@"
 }
 
+# skip_here: this check doesn't apply to this host (a check on an inventory group that only
+# concerns some of its hosts). Not a pass and not a fail: the hosts where the check applies
+# share its weight. (Exit status 77, the grader's "n/a".)
+skip_here() { exit 77; }
+
 # as_student <command> [args...]: run a command as the RHCE candidate, in the project
 # directory, with a login-like environment (so ansible.cfg in that directory applies).
 as_student() {

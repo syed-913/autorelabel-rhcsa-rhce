@@ -540,6 +540,8 @@ class ResultsScreen(Screen[None]):
         md = [f"## Task {number}: {t['title']}",
               f"*{t['difficulty']} · {t['points']:g} of {t['points_possible']} points*", ""]
         for c in t["post"]:
+            if c["status"] == "n/a":          # doesn't apply to that host
+                continue
             sym = {"pass": "✔", "fail": "✘", "error": "!", "unreachable": "⨯"}[c["status"]]
             line = f"- {sym} {c['desc']}"
             if c.get("guard"):
