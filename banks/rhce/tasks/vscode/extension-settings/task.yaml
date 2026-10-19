@@ -40,7 +40,7 @@ checks:
       ok = (s.get("ansible.executionEnvironment.enabled") is True
             and s.get("ansible.executionEnvironment.image") == "{{lab.ee_image}}"
             and s.get("ansible.executionEnvironment.containerEngine") == "podman"
-            and s.get("ansible.executionEnvironment.pull.policy") == "missing")
+            and s.get("ansible.executionEnvironment.pull.policy", "missing") == "missing")   # the default
       sys.exit(0 if ok else 1)
       PY
   - id: navigator-path
