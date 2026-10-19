@@ -39,9 +39,12 @@ checks:
     run: |
       python3 - <<'PY'
       import json, sys
-      raw = open("/home/student/ansible/artifacts/ee-run.json").read()
-      a = json.loads(raw)
-      ok = a.get("status") == "successful" and "{{lab.ee_image}}" in raw and "ee-run.yml" in raw
+      a = json.load(open("/home/student/ansible/artifacts/ee-run.json"))
+      nav = a.get("settings_entries", {}).get("ansible-navigator", {})   # the settings in force
+      ee = nav.get("execution-environment", {})
+      book = str(nav.get("ansible", {}).get("playbook", {}).get("path", ""))
+      ok = (a.get("status") == "successful" and ee.get("enabled") is True
+            and ee.get("image") == "{{lab.ee_image}}" and book.endswith("ee-run.yml"))
       sys.exit(0 if ok else 1)
       PY
 
