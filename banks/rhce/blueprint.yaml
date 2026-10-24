@@ -33,4 +33,4 @@ anchors: [ansible-setup, managed-access, collections, repos]
 # task can be drilled on its own. (Repositories are handled like RHCSA: lab.repo is provided.)
 practice_prereqs: [ansible-setup, managed-access, collections]
 
-coverage_gate: none
+coverage_gate: full

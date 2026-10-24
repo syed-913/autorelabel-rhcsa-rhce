@@ -4,6 +4,7 @@ objectives: [rhce.git.clone, rhce.nodes.deploy-files]
 facets:
   - rhce.git.clone:git-clone
   - rhce.nodes.deploy-files:copy-files
+exclusive: [lab-content]
 difficulty: easy
 difficulty_reason: Clone with credentials, switch branch, and deploy a file from the working copy.
 estimated_minutes: 7

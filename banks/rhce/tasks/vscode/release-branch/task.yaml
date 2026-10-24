@@ -1,0 +1,51 @@
+title: Change a file on a release branch in VS Code and push it
+primary: rhce.vscode.push
+objectives: [rhce.vscode.push, rhce.git.add, rhce.git.clone]
+facets:
+  - rhce.vscode.push:editor-push
+  - rhce.git.add:git-add-push
+  - rhce.git.clone:git-clone
+exclusive: [lab-content]
+difficulty: medium
+difficulty_reason: An existing remote branch must be checked out, changed, committed and pushed without touching main.
+estimated_minutes: 8
+node: control
+params:
+  ver: {choice: ["2.5", "2.6", "3.0"]}
+
+prompt: |
+  In **VS Code** (code-server), work in a clone of **`{{lab.git_content_url}}`** at
+  `/home/{{lab.control_user}}/git/lab-content` (clone it if it isn't there yet; Git identity
+  `Lab Student` / `student@lab.example.com`):
+
+  1. Switch to the existing branch **`release`**.
+  2. Change `site/index.html` so that it contains exactly one line: `lab-content release {{ver}}`
+  3. Commit it with the message **`Release {{ver}}`** and push the `release` branch to the server.
+     Leave `main` as it is.
+
+requirements:
+  R1: "release on the server has the new site/index.html, committed as 'Release {{ver}}'"
+  R2: "main on the server is unchanged"
+
+checks:
+  - id: release
+    covers: [R1]
+    on: utility
+    desc: "release: index.html and the commit message"
+    run: |
+      page="$(git -c safe.directory='*' --git-dir=/var/lib/git/lab-content.git show release:site/index.html)"
+      test "$page" = "lab-content release {{ver}}"
+      msg="$(git -c safe.directory='*' --git-dir=/var/lib/git/lab-content.git log -1 --format=%s release)"
+      test "$msg" = "Release {{ver}}"
+  - id: main
+    guard: true
+    covers: [R2]
+    on: utility
+    desc: main unchanged
+    run: |
+      page="$(git -c safe.directory='*' --git-dir=/var/lib/git/lab-content.git show main:site/index.html)"
+      test "$page" = "lab-content development snapshot (next)"
+
+references:
+  - "VS Code docs: Using Git source control (switch branch, commit, sync / push)"
+  - "man git-switch(1), git-commit(1), git-push(1)"
