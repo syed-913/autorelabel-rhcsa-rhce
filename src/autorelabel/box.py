@@ -21,10 +21,11 @@ PACKER_SOURCE = {"libvirt": "qemu.rhel10", "virtualbox": "virtualbox-iso.rhel10"
 
 
 class BoxError(RuntimeError):
-    def __init__(self, message: str, hint: str = "", log_file: Path | None = None):
+    def __init__(self, message: str, hint: str = "", log_file: Path | None = None, user_fixable: bool = False):
         super().__init__(message)
         self.hint = hint
         self.log_file = log_file
+        self.user_fixable = user_fixable   # the user's situation, not a failure: no problem report
 
 
 def storage_layout(settings: Settings) -> dict[str, Path]:
@@ -111,17 +112,18 @@ def build(
     step = on_step or (lambda s: None)
     iso = Path(settings.iso_path).expanduser()
     if not iso.is_file():
-        raise BoxError(f"ISO not found: {iso}", "Choose the RHEL 10 DVD ISO in Settings.", log_file)
+        raise BoxError(f"ISO not found: {iso}", "Choose the RHEL 10 DVD ISO in Settings.", log_file, True)
     vol = hostinfo.iso_volume_id(iso)
     rhel = hostinfo.rhel_version_from_iso(vol)
     if not rhel or not rhel.startswith("10."):
-        raise BoxError(f"{iso.name} is not a RHEL 10 DVD ISO", "Download the RHEL 10 'Binary DVD' ISO.", log_file)
+        raise BoxError(f"{iso.name} is not a RHEL 10 DVD ISO", "Download the RHEL 10 'Binary DVD' ISO.", log_file,
+                       True)
 
     layout = ensure_storage(settings)
     free_gb = disk_free_bytes(layout["root"]) / 1e9
     if free_gb < BUILD_MIN_FREE_GB:
         raise BoxError(f"only {free_gb:.0f} GB free in {layout['root']}",
-                       f"The build needs about {BUILD_MIN_FREE_GB} GB free.", log_file)
+                       f"The build needs about {BUILD_MIN_FREE_GB} GB free.", log_file, True)
 
     env = paths.tool_env(settings.storage_dir)
     if os.environ.get("AUTORELABEL_DEBUG"):
@@ -148,7 +150,7 @@ def build(
     res = proc.stream(["packer", "init", str(paths.PACKER_DIR)], env=env, cwd=paths.PACKER_DIR,
                       on_line=on_line, log_file=log_file, cancel=cancel, timeout=900)
     if res.cancelled:
-        raise BoxError("cancelled", log_file=log_file)
+        raise BoxError("cancelled", log_file=log_file, user_fixable=True)
     if not res.ok:
         raise BoxError("packer init failed", "Packer downloads its plugins once; check your internet connection.",
                        log_file)
@@ -181,7 +183,7 @@ def build(
                       cancel=cancel, timeout=3 * 3600)
     if res.cancelled:
         shutil.rmtree(out_dir, ignore_errors=True)
-        raise BoxError("cancelled", log_file=log_file)
+        raise BoxError("cancelled", log_file=log_file, user_fixable=True)
     if not res.ok:
         hint = "See the build log. If the installer never started, check the serial log in the build directory."
         if "Timeout waiting for SSH" in res.out:

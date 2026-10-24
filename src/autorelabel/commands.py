@@ -16,6 +16,22 @@ def _err(msg: str, hint: str = "") -> int:
     return 1
 
 
+def _fail(exc: BaseException, what: str, exam: str = "") -> int:
+    """An operation failed: show the error and its hint and, unless it is the user's to fix,
+    write a problem report and say where to post it."""
+    from . import report
+
+    hint = getattr(exc, "hint", "") or ""
+    log_file = getattr(exc, "log_file", None)
+    if log_file:
+        print(f"log: {log_file}", file=sys.stderr)
+    _err(report.describe(exc), hint)
+    if report.reportable(exc):
+        path = report.write(what, report.describe(exc), hint=hint, log_file=log_file, exc=exc, exam=exam)
+        report.print_notice(path, has_hint=bool(hint))
+    return 1
+
+
 def cmd_box_build(args: argparse.Namespace) -> int:
     from . import box
 
@@ -36,8 +52,7 @@ def cmd_box_build(args: argparse.Namespace) -> int:
     try:
         log_file = box.build(settings, provider, on_line=line, on_step=step)
     except box.BoxError as exc:
-        print(f"log: {exc.log_file}", file=sys.stderr)
-        return _err(str(exc), exc.hint)
+        return _fail(exc, f"Building the {provider} box")
     print(f"Box ready. Log: {log_file}")
     return 0
 
@@ -137,8 +152,7 @@ def cmd_lab_up(args: argparse.Namespace) -> int:
         log_file = lab.up(root_passwords=pw, on_step=lambda s: print(f"==> {s}", flush=True),
                           on_line=(lambda s: print(f"    {s}", flush=True)) if args.verbose else None)
     except LabError as exc:
-        print(f"log: {exc.log_file}", file=sys.stderr)
-        return _err(str(exc), exc.hint)
+        return _fail(exc, f"Bringing up the {args.exam.upper()} lab", args.exam)
     print(f"Lab is up. Log: {log_file}")
     return 0
 
@@ -243,7 +257,7 @@ def cmd_exam_start(args: argparse.Namespace) -> int:
         eng.prepare(sess, on_step=lambda s: print(f"==> {s}", flush=True),
                     on_line=(lambda s: print(f"    {s}", flush=True)) if args.verbose else None)
     except (EngineError, LabError) as exc:
-        return _err(str(exc), getattr(exc, "hint", ""))
+        return _fail(exc, f"Preparing an {args.exam.upper()} exam", args.exam)
     if args.no_start:
         print("Lab ready. Start the timer with: ./autorelabel exam begin")
         return 0
@@ -488,7 +502,7 @@ def cmd_content_download(args: argparse.Namespace) -> int:
                                 on_step=lambda s: print(f"==> {s}", flush=True),
                                 with_code_server=st.code_server and not args.no_code_server)
     except content.ContentError as exc:
-        return _err(str(exc), exc.hint)
+        return _fail(exc, "Downloading the RHCE content", "rhce")
     print(f"RHCE content ready in {root}")
     return 0
 

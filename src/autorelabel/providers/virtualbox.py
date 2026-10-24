@@ -17,6 +17,7 @@ class VirtualBoxError(RuntimeError):
 
 
 class ProfileBusy(VirtualBoxError):
+    user_fixable = True
     hint = ("Close VirtualBox Manager and shut down your own VirtualBox VMs, then retry. VirtualBox "
             "serves one settings profile at a time, and autorelabel keeps its lab VMs out of yours.")
 

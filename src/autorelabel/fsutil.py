@@ -56,7 +56,7 @@ def append_line(path: Path, line: str) -> None:
 
 
 class LockBusy(RuntimeError):
-    pass
+    user_fixable = True   # another autorelabel holds it: no problem report
 
 
 @contextlib.contextmanager

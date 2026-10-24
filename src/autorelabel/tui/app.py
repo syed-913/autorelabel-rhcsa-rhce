@@ -6,7 +6,7 @@ from pathlib import Path
 
 from textual.app import App
 
-from .. import box, config, doctor
+from .. import box, config, doctor, report
 from .. import session as S
 from ..engine import Engine
 from .common import Confirm, Message, OperationScreen
@@ -201,5 +201,12 @@ class AutorelabelApp(App[None]):
 
 
 def run_tui(start: str | None = None) -> int:
-    AutorelabelApp(start).run()
+    app = AutorelabelApp(start)
+    app.run()
+    # Textual keeps the exception that stopped the app (and prints its traceback on exit).
+    exc = getattr(app, "_exception", None)
+    if exc is not None:
+        if report.reportable(exc):
+            report.print_notice(report.write("The TUI stopped", report.describe(exc), exc=exc))
+        return 1
     return 0

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import subprocess
 import time
+from pathlib import Path
 from typing import Any
 
 from rich.text import Text
@@ -26,6 +27,7 @@ from textual.widgets import (
 )
 from textual.widgets.option_list import Option
 
+from .. import report
 from .. import session as S
 from ..engine import Engine
 from ..fsutil import read_json
@@ -452,7 +454,10 @@ class GradingScreen(Screen[None]):
                 self.engine.grade(sess, on_event)
                 atomic_write_json(progress, {"ts": time.time(), "kind": "done"})
             except Exception as exc:
-                atomic_write_json(progress, {"ts": time.time(), "kind": "error", "message": str(exc)})
+                path = (report.write(f"Grading the {sess.exam.upper()} exam", report.describe(exc), exc=exc,
+                                     exam=sess.exam) if report.reportable(exc) else None)
+                atomic_write_json(progress, {"ts": time.time(), "kind": "error", "message": report.describe(exc),
+                                             "report": str(path) if path else ""})
 
     def poll(self) -> None:
         sess = S.load(self.sess.id)
@@ -470,8 +475,11 @@ class GradingScreen(Screen[None]):
             self.query_one("#grade-detail", Static).update(f"{p.get('node')}: {p.get('stage')} "
                                                            f"{p.get('message', '')}")
         elif kind == "error":
-            phase.update(Text(f"✘ Grading stopped: {p.get('message')}. It will resume where it stopped "
-                              "when you open this screen again.", style="red"))
+            msg = Text(f"✘ Grading stopped: {p.get('message')}. It will resume where it stopped "
+                       "when you open this screen again.", style="red")
+            if p.get("report"):
+                msg.append("\n\n" + report.notice(Path(p["report"])), style="cyan")
+            phase.update(msg)
         if sess.state == S.GRADED:
             self.app.switch_screen(ResultsScreen(sess))
 

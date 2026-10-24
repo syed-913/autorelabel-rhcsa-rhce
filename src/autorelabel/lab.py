@@ -31,10 +31,11 @@ STATE_FILE = paths.WORKSPACE / "lab.json"
 
 
 class LabError(RuntimeError):
-    def __init__(self, message: str, hint: str = "", log_file: Path | None = None):
+    def __init__(self, message: str, hint: str = "", log_file: Path | None = None, user_fixable: bool = False):
         super().__init__(message)
         self.hint = hint
         self.log_file = log_file
+        self.user_fixable = user_fixable   # the user's situation, not a failure: no problem report
 
 
 @dataclass(frozen=True)
@@ -186,12 +187,12 @@ class Lab:
         """Refuse to start VMs while the other hypervisor runs some (see providers.conflict)."""
         clash = conflict.check(self.provider)
         if clash:
-            raise LabError(*clash)
+            raise LabError(*clash, user_fixable=True)
         if self.provider == "virtualbox":
             try:
                 vb.wait_for_own_service(paths.vbox_home(self.settings.storage_dir))
             except vb.ProfileBusy as exc:
-                raise LabError(str(exc), exc.hint) from exc
+                raise LabError(str(exc), exc.hint, user_fixable=True) from exc
 
     def _vagrant_up(self, names: list[str], step: StepFn, line: LineFn | None, log_file: Path,
                     cancel: threading.Event | None) -> None:
@@ -204,7 +205,7 @@ class Lab:
             res = self.vagrant(["up", "--no-provision", f"--provider={self.provider}", *names],
                                on_line=line, log_file=log_file, cancel=cancel)
             if res.cancelled:
-                raise LabError("cancelled", log_file=log_file)
+                raise LabError("cancelled", log_file=log_file, user_fixable=True)
             if res.ok:
                 if self.provider == "virtualbox":
                     self._vbox_after_up(names, before_hostonly, step)
@@ -323,7 +324,7 @@ class Lab:
         ok, msg = content.status(self.settings)
         if not ok:
             raise LabError(f"RHCE content is missing: {msg}",
-                           "Run once (needs internet): ./autorelabel content download")
+                           "Run once (needs internet): ./autorelabel content download", user_fixable=True)
         return {"wheels": root / "wheels", "collections": root / "collections",
                 "code-server": root / "code-server", "roles": paths.VAGRANT_DIR / "content" / "roles"}
 
@@ -373,7 +374,8 @@ class Lab:
         log_file = log.operation_log(f"lab-up-{self.exam}")
         ok, msg = box.box_status(self.settings, self.provider)
         if not ok:
-            raise LabError(f"RHEL 10 box not ready: {msg}", "Build the box first (Lab → Build box).", log_file)
+            raise LabError(f"RHEL 10 box not ready: {msg}", "Build the box first (Lab → Build box).", log_file,
+                           user_fixable=True)
         step("Preparing host networks and storage")
         self.prepare_host()
         self.write_env()

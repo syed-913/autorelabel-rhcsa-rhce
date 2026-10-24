@@ -8,6 +8,7 @@ import json
 import os
 import sys
 from dataclasses import asdict
+from pathlib import Path
 
 from . import __version__, banner, config, doctor, log, paths
 
@@ -48,6 +49,16 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     else:
         print_checks(checks)
     return 1 if doctor.blocking(checks) else 0
+
+
+def cmd_report(args: argparse.Namespace) -> int:
+    from . import report
+
+    log_file = Path(args.log).expanduser() if args.log else None
+    path = report.write("Reported by the user", args.message or "something went wrong", log_file=log_file,
+                        exam=args.exam or "")
+    report.print_notice(path, asked=True)
+    return 0
 
 
 def cmd_banner(_args: argparse.Namespace) -> int:
@@ -99,6 +110,12 @@ def build_parser() -> argparse.ArgumentParser:
     d.add_argument("--json", action="store_true")
     d.set_defaults(func=cmd_doctor)
 
+    r = sub.add_parser("report", help="write a problem report to post on the issue tracker")
+    r.add_argument("message", nargs="?", help="what went wrong, in a few words")
+    r.add_argument("--log", help="the log to include (default: the app log)")
+    r.add_argument("--exam", choices=("rhcsa", "rhce"))
+    r.set_defaults(func=cmd_report)
+
     b = sub.add_parser("banner", help="print the banner")
     b.set_defaults(func=cmd_banner)
 
@@ -132,3 +149,10 @@ def main(argv: list[str]) -> int:
     except KeyboardInterrupt:
         print("\ninterrupted", file=sys.stderr)
         return 130
+    except Exception as exc:
+        if args.debug:
+            raise
+        from .commands import _fail
+
+        log.get().exception("./autorelabel %s failed", " ".join(argv))
+        return _fail(exc, f"./autorelabel {' '.join(argv)}", getattr(args, "exam", "") or "")

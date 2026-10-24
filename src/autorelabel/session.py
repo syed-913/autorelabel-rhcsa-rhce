@@ -56,6 +56,10 @@ class SessionError(RuntimeError):
     pass
 
 
+class UnknownSession(SessionError):
+    user_fixable = True
+
+
 def boot_id() -> str:
     try:
         return Path("/proc/sys/kernel/random/boot_id").read_text().strip()
@@ -201,7 +205,7 @@ def new_id() -> str:
 def load(session_id: str) -> Session:
     raw = read_json(paths.SESSIONS / session_id / "session.json")
     if raw is None:
-        raise SessionError(f"no such session: {session_id}")
+        raise UnknownSession(f"no such session: {session_id}")
     known = {f for f in Session.__dataclass_fields__}
     return Session(**{k: v for k, v in raw.items() if k in known})
 

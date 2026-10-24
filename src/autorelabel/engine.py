@@ -33,9 +33,12 @@ CODE_SERVER_LOCAL_PORT = 18080        # first port tried for the code-server tun
 
 
 class EngineError(RuntimeError):
-    def __init__(self, message: str, hint: str = ""):
+    """`user_fixable`: the user's situation, not a failure (no problem report is written)."""
+
+    def __init__(self, message: str, hint: str = "", user_fixable: bool = False):
         super().__init__(message)
         self.hint = hint
+        self.user_fixable = user_fixable
 
 
 def fresh_checkpoint(directory: Path) -> Path:
@@ -75,14 +78,15 @@ class Engine:
     def create(self, exam: str, *, mode: str = "exam", seed: int | None = None,
                task_ids: list[str] | None = None, timed: bool = True, sweep: int | None = None) -> S.Session:
         if not self.settings.configured:
-            raise EngineError("setup is not complete", "Run ./autorelabel to finish the setup wizard.")
+            raise EngineError("setup is not complete", "Run ./autorelabel to finish the setup wizard.",
+                              user_fixable=True)
         bank = self.bank(exam)
         seed = seed if seed is not None else random.SystemRandom().randrange(1, 10**9)
         if mode == "exam":
             selected = generate(bank, seed, objective_recency(exam))
         else:
             if not task_ids:
-                raise EngineError("no tasks chosen for practice")
+                raise EngineError("no tasks chosen for practice", user_fixable=True)
             selected = practice(bank, task_ids, seed, sweep=sweep)
         sess = S.Session(id=S.new_id(), exam=exam, mode=mode, seed=seed, created=time.time(),
                          profile=self.settings.profile, provider=self.settings.provider,
@@ -245,7 +249,7 @@ class Engine:
     # --- the exam itself -----------------------------------------------------------------------
     def start(self, sess: S.Session) -> None:
         if sess.state != S.READY:
-            raise EngineError(f"cannot start from state {sess.state}")
+            raise EngineError(f"cannot start from state {sess.state}", user_fixable=True)
         sess.started = time.time()
         sess.transition(S.IN_PROGRESS)
         sess.tick()
@@ -302,7 +306,7 @@ class Engine:
             if sess.state == S.LOCKED or sess.state == S.GRADING_INTERRUPTED:
                 sess.transition(S.GRADING)
             elif sess.state != S.GRADING:
-                raise EngineError(f"cannot grade from state {sess.state}")
+                raise EngineError(f"cannot grade from state {sess.state}", user_fixable=True)
         try:
             g = Grader(sess, lab, bank, on_event)
             if not official:

@@ -1,0 +1,33 @@
+name: Problem report
+description: Something failed (box build, lab, exam, grading) or a task looks wrong
+labels: [problem-report]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! When autorelabel hits an error it can't solve, it saves a problem
+        report in `.workspace/reports/` and prints its path. You can also write one yourself with
+        `./autorelabel report "what went wrong"`. Please read it before you paste it: the home
+        directory, user name and host name are replaced and passwords are masked.
+  - type: textarea
+    id: report
+    attributes:
+      label: Problem report
+      description: Paste the whole report file here.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: doing
+    attributes:
+      label: What were you doing?
+      description: For example "starting a new RHCE exam on VirtualBox", or the task number and what you expected.
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Hypervisor
+      options: [libvirt/KVM, VirtualBox]
+    validations:
+      required: true

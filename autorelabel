@@ -22,6 +22,15 @@ fi
 say()  { printf '%s\n' "${C_DIM}autorelabel:${C_OFF} $*" >&2; }
 warn() { printf '%s\n' "${C_YEL}autorelabel:${C_OFF} $*" >&2; }
 die()  { printf '%s\n' "${C_RED}autorelabel: error:${C_OFF} $*" >&2; exit 1; }
+# For failures the user can't be expected to fix (a tool or package changed upstream...).
+ISSUES_URL="https://github.com/syed-913/autorelabel-rhcsa-rhce/issues/new?template=problem-report.yml"  # = report.py
+die_report() {
+  printf '%s\n' "${C_RED}autorelabel: error:${C_OFF} $*" >&2
+  printf '%s\n' "If it keeps failing, please report it so it can be fixed for everyone: open" \
+    "  $ISSUES_URL" \
+    "and paste the output above with your distribution (/etc/os-release) and Python version." >&2
+  exit 1
+}
 
 # --- Platform gate (v1 supports Linux x86_64 hosts only) ---------------------
 check_platform() {
@@ -90,7 +99,7 @@ ensure_venv() {
 
   say "setting up the private Python environment (first run, ~30 s)..."
   rm -rf -- "$VENV"
-  "$py" -m venv "$VENV" || { rm -rf -- "$VENV"; die "could not create $VENV"; }
+  "$py" -m venv "$VENV" || { rm -rf -- "$VENV"; die_report "could not create $VENV"; }
 
   export PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_INPUT=1
   local attempt
@@ -104,7 +113,7 @@ ensure_venv() {
     sleep $((attempt * 5))
   done
   rm -rf -- "$VENV"
-  die "could not install Python dependencies from PyPI. Check your internet connection and re-run."
+  die_report "could not install Python dependencies from PyPI. Check your internet connection and re-run."
 }
 
 main() {

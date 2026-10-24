@@ -14,7 +14,7 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen, Screen
 from textual.widgets import Button, Footer, Label, RichLog, Static
 
-from .. import banner, log
+from .. import banner, log, report
 
 _log = log.get("tui")
 
@@ -87,6 +87,17 @@ class Message(ModalScreen[None]):
         self.dismiss(None)
 
 
+def copy_report(app, path) -> None:
+    """Put a problem report on the clipboard (OSC 52: most terminals support it)."""
+    try:
+        app.copy_to_clipboard(path.read_text(encoding="utf-8"))
+    except OSError:
+        app.notify(f"Could not read {path}", severity="error")
+        return
+    app.notify("Problem report copied. If pasting doesn't work in your terminal, open the file: "
+               f"{report.display_path(path)}", timeout=12)
+
+
 OpFn = Callable[[Callable[[str], None], Callable[[str], None], threading.Event], Any]
 
 
@@ -94,7 +105,8 @@ class OperationScreen(Screen[Any]):
     """Runs a long operation in a worker thread with a step label, a live log and Cancel.
 
     `fn(step, line, cancel)` does the work. On success the screen dismisses with the result.
-    On failure it shows the error (with hint and log path) and offers Retry / Back.
+    On failure it shows the error (with hint and log path) and offers Retry / Back; unless the
+    error is the user's to fix, it also writes a problem report and offers to copy it.
     """
 
     BINDINGS = [("escape", "back", "Back")]
@@ -107,6 +119,7 @@ class OperationScreen(Screen[Any]):
         self.show_log = show_log
         self.cancel = threading.Event()
         self.running = False
+        self.report_path = None
 
     def compose(self) -> ComposeResult:
         yield Static(self.op_title, id="op-title")
@@ -115,12 +128,14 @@ class OperationScreen(Screen[Any]):
         with Horizontal(id="op-buttons"):
             yield Button("Cancel", id="cancel", variant="warning", disabled=not self.cancellable)
             yield Button("Retry", id="retry", variant="primary", classes="hidden")
+            yield Button("Copy problem report", id="copy-report")
             yield Button("Back", id="back")
         yield Footer()
 
     def on_mount(self) -> None:
         self.query_one("#retry").display = False
         self.query_one("#back").display = False
+        self.query_one("#copy-report").display = False
         if not self.show_log:
             self.query_one("#op-log").display = False
         self.start()
@@ -147,7 +162,11 @@ class OperationScreen(Screen[Any]):
             _log.error("operation %r failed: %s\n%s", self.op_title, exc, traceback.format_exc())
             hint = getattr(exc, "hint", "")
             log_file = getattr(exc, "log_file", None)
-            self.app.call_from_thread(self._failed, str(exc), hint, str(log_file) if log_file else "")
+            path = None
+            if report.reportable(exc) and not self.cancel.is_set():
+                path = report.write(self.op_title, report.describe(exc), hint=hint, log_file=log_file, exc=exc)
+            self.app.call_from_thread(self._failed, report.describe(exc), hint, str(log_file) if log_file else "",
+                                      path)
             return
         self.app.call_from_thread(self._done, result)
 
@@ -162,8 +181,9 @@ class OperationScreen(Screen[Any]):
         self.running = False
         self.dismiss(result)
 
-    def _failed(self, message: str, hint: str, log_file: str) -> None:
+    def _failed(self, message: str, hint: str, log_file: str, report_path=None) -> None:
         self.running = False
+        self.report_path = report_path
         msg = Text()
         msg.append("✘ ", style="bold red")
         msg.append(message, style="bold")
@@ -171,9 +191,12 @@ class OperationScreen(Screen[Any]):
             msg.append(f"\n  {hint}", style="yellow")
         if log_file:
             msg.append(f"\n  Full log: {log_file}", style="dim")
+        if report_path:
+            msg.append("\n\n" + report.notice(report_path, has_hint=bool(hint)).replace("\n", "\n  "), style="cyan")
         self.query_one("#op-step", Static).update(msg)
         self.query_one("#cancel").display = False
         self.query_one("#retry").display = True
+        self.query_one("#copy-report").display = bool(report_path)
         self.query_one("#back").display = True
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -181,7 +204,10 @@ class OperationScreen(Screen[Any]):
             self.cancel.set()
             self.query_one("#op-step", Static).update("Cancelling… (cleaning up child processes)")
         elif event.button.id == "retry":
+            self.query_one("#copy-report").display = False
             self.start()
+        elif event.button.id == "copy-report" and self.report_path:
+            copy_report(self.app, self.report_path)
         elif event.button.id == "back":
             self.dismiss(None)
 
