@@ -10,7 +10,7 @@ difficulty_reason: A per-host decision from a registered stat result that ends t
 estimated_minutes: 9
 node: control
 params:
-  pkg: {choice: [tree, zip, lsof, mtr]}
+  pkg: {choice: [dos2unix, traceroute, iperf3, lftp]}   # no other task installs these (see test_real_banks)
 
 prompt: |
   Hosts under maintenance have a file `/etc/lab-maintenance`. Create

@@ -12,7 +12,7 @@ difficulty_reason: Running inside the execution environment with a named artifac
 estimated_minutes: 10
 node: control
 params:
-  pkg: {choice: [tree, lsof, strace, zip]}
+  pkg: {choice: [nmap, telnet, whois, expect]}
 
 prompt: |
   Create `{{lab.project_dir}}/ee-run.yml` that, on the hosts in the **test** group, installs

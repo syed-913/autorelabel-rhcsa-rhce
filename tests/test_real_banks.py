@@ -95,3 +95,18 @@ def test_check_targets_survive_yaml(bank):
         raw = yaml.safe_load((task.path / "task.yaml").read_text())
         written = [c.get(True) for c in raw.get("checks", [])]
         assert [c.on for c in task.checks] == written, task.id
+
+
+def test_package_choices_never_overlap_between_tasks(bank):
+    """Two tasks of one exam must not draw the same package: one task's check that a package is
+    absent (or present) would then depend on the other task. RHCE's conditional-play once drew
+    zip while vars-files installed zip on the same host."""
+    owners: dict[str, str] = {}
+    for task in bank.tasks.values():
+        for name, spec in task.params.items():
+            if spec.kind != "choice" or not name.startswith(("pkg", "remove")):
+                continue
+            for value in spec.args:
+                for pkg in (value if isinstance(value, list) else str(value).split()):
+                    assert owners.setdefault(pkg, task.id) == task.id, \
+                        f"{pkg} is a choice of both {owners[pkg]} and {task.id}"
