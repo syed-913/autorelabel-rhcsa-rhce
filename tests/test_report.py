@@ -45,6 +45,7 @@ def test_user_situations_are_not_reported():
     assert not report.reportable(LockBusy("busy"))
     assert not report.reportable(UnknownSession("no such session: x"))
     assert not report.reportable(KeyboardInterrupt())
+    assert not report.reportable(BrokenPipeError())
     assert report.reportable(LabError("vagrant up failed for utility"))
     assert report.reportable(EngineError("setup of task 3 failed on node1"))
     assert report.reportable(KeyError("disk1"))

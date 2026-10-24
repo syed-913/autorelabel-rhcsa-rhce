@@ -31,7 +31,7 @@ DOCTOR_TIMEOUT = 45
 def reportable(exc: BaseException) -> bool:
     """Everything except interruptions and errors marked as the user's to fix (`user_fixable`:
     the exam is locked, another instance holds the lab, VirtualBox Manager is open...)."""
-    if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+    if isinstance(exc, (KeyboardInterrupt, SystemExit, BrokenPipeError)):
         return False
     return not getattr(exc, "user_fixable", False)
 

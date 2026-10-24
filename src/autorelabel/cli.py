@@ -149,6 +149,9 @@ def main(argv: list[str]) -> int:
     except KeyboardInterrupt:
         print("\ninterrupted", file=sys.stderr)
         return 130
+    except BrokenPipeError:            # output piped into head, less...: not a problem
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        return 141
     except Exception as exc:
         if args.debug:
             raise
