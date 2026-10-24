@@ -66,6 +66,7 @@ def check(task, script: Path, facts: dict) -> list[str]:
             shutil.copytree(r, roles / r.name)
         shutil.copytree(LAB_ROLES / "lab_webserver", roles / "webserver")
         shutil.copytree(LAB_ROLES / "lab_balancer", roles / "balancer")
+        shutil.copytree(LAB_ROLES / "lab_motd", roles / "motd")
         for name in ("rhel-system-roles.timesync", "rhel-system-roles.selinux"):
             (roles / name / "tasks").mkdir(parents=True)
             (roles / name / "tasks/main.yml").write_text("---\n[]\n")
