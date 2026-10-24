@@ -8,6 +8,9 @@ difficulty: medium
 difficulty_reason: The facts.d location, INI format and the ansible_local path (file name → section → key) must all line up.
 estimated_minutes: 8
 node: control
+# ansible-cfg-tuning turns on smart gathering with a fact cache: use-facts.yml would then see
+# the facts cached before lab.fact existed. Independent tasks must not depend on each other.
+exclusive: [fact-cache]
 params:
   svc: {choice: [webapp, inventory, ledger, billing]}
   port: {choice: [8081, 8443, 9090, 5150]}

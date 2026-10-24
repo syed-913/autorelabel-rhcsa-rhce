@@ -8,6 +8,7 @@ difficulty: medium
 difficulty_reason: Several option names (and the section they belong to) must be found with ansible-config; the existing settings must survive.
 estimated_minutes: 8
 node: control
+exclusive: [fact-cache]      # see custom-facts
 params:
   forks: {choice: [8, 10, 12, 15]}
   timeout: {choice: [3600, 7200, 86400]}
