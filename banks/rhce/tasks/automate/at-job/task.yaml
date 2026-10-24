@@ -1,0 +1,66 @@
+title: Schedule a one-time job with a module found with ansible-navigator
+primary: rhce.automate.scheduling
+objectives: [rhce.automate.scheduling, rhce.run.find-modules, rhce.automate.packages, rhce.automate.services]
+facets:
+  - rhce.automate.scheduling:scheduling
+  - rhce.run.find-modules:navigator-collections
+  - rhce.automate.packages:packages-repos
+  - rhce.automate.services:services
+difficulty: medium
+difficulty_reason: The module must be found in a collection, and it must not queue a second job when the playbook runs again.
+estimated_minutes: 9
+node: control
+params:
+  days: {choice: [2, 3, 5]}
+  word: {choice: [alpha, bravo, delta, sierra]}
+
+prompt: |
+  Use **ansible-navigator** to find the module in the **ansible.posix** collection that schedules
+  one-time jobs with `at`.
+
+  Create `{{lab.project_dir}}/at-job.yml` that, on the hosts in the **dev** group:
+
+  - installs the package `at`, and starts and enables the `atd` service
+  - uses that module to schedule the command `logger lab-at-{{word}}` to run **once**,
+    **{{days}} days** from now
+
+  Running the playbook again must not queue a second job.
+
+requirements:
+  R1: "at is installed; atd is running and enabled"
+  R2: "exactly one at job runs logger lab-at-{{word}}, {{days}} days after it was scheduled"
+  R3: "at-job.yml uses the ansible.posix at module"
+
+checks:
+  - id: atd
+    covers: [R1]
+    on: "@dev"
+    desc: at installed, atd running and enabled
+    run: |
+      rpm -q at >/dev/null
+      systemctl is-enabled -q atd
+      systemctl is-active -q atd
+  - id: job
+    covers: [R2]
+    on: "@dev"
+    desc: "one job: logger lab-at-{{word}} in {{days}} days"
+    run: |
+      ids=()
+      for id in $(atq | awk '{print $1}'); do
+        if at -c "$id" | grep -q 'logger lab-at-{{word}}'; then ids+=("$id"); fi
+      done
+      test "${#ids[@]}" -eq 1
+      when="$(atq | awk -v id="${ids[0]}" '$1 == id {print $2, $3, $4, $5, $6}')"
+      hours=$(( ($(date -d "$when" +%s) - $(date +%s)) / 3600 ))
+      # scheduled at most a few hours before grading
+      test "$hours" -ge $(( {{days}} * 24 - 6 )) -a "$hours" -le $(( {{days}} * 24 ))
+  - id: playbook
+    covers: [R3]
+    desc: at-job.yml uses ansible.posix.at
+    run: |
+      playbook_ok at-job.yml
+      grep -Eq '^[[:space:]]*(- )?(ansible\.posix\.)?at:' {{lab.project_dir}}/at-job.yml
+
+references:
+  - "ansible-navigator collections -m stdout; ansible-navigator doc ansible.posix.at -m stdout"
+  - "man at(1), man atq(1)"
