@@ -81,15 +81,17 @@ def cmd_bank_coverage(args: argparse.Namespace) -> int:
 
     bank = load_bank(args.exam)
     text = coverage.markdown(bank)
+    out = paths.ROOT / "docs" / f"COVERAGE-{args.exam.upper()}.md"
+    readme = paths.ROOT / "README.md"
     if args.write:
-        out = paths.ROOT / "docs" / f"COVERAGE-{args.exam.upper()}.md"
         out.write_text(text, encoding="utf-8")
-        print(f"wrote {out}")
+        readme.write_text(coverage.update_readme(readme.read_text(encoding="utf-8"), bank), encoding="utf-8")
+        print(f"wrote {out} and the {args.exam.upper()} objectives in {readme.name}")
     elif args.check:
-        out = paths.ROOT / "docs" / f"COVERAGE-{args.exam.upper()}.md"
-        if not out.exists() or out.read_text(encoding="utf-8") != text:
-            return _err(f"{out.name} is stale", f"run ./autorelabel bank coverage {args.exam} --write")
-        print(f"{out.name} is up to date")
+        for f, want in ((out, text), (readme, coverage.update_readme(readme.read_text(encoding="utf-8"), bank))):
+            if not f.exists() or f.read_text(encoding="utf-8") != want:
+                return _err(f"{f.name} is stale", f"run ./autorelabel bank coverage {args.exam} --write")
+        print(f"{out.name} and the {args.exam.upper()} objectives in {readme.name} are up to date")
     else:
         print(text)
     return 0

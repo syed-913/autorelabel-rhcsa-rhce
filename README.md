@@ -172,39 +172,250 @@ web views on `localhost` or HTTPS. The first RHCE session downloads its Ansible 
 (PyPI, Ansible Galaxy, and for code-server GitHub and Open VSX), at the exact versions the tasks
 were tested with; after that everything is offline.
 
+## Exam objectives covered
+
+Every objective line from Red Hat's current exam pages, verbatim. Each one is practised by at
+least two tasks; the coverage reports ([RHCSA](docs/COVERAGE-RHCSA.md), [RHCE](docs/COVERAGE-RHCE.md))
+split each line into what can be tested and name the tasks.
+
+<!-- objectives:rhcsa -->
+<details>
+<summary><b>RHCSA (EX200): 62 of 62 objective lines covered, 102 tasks</b></summary>
+
+**Understand and use essential tools**
+
+- ✅ Access a shell prompt and issue commands with correct syntax
+- ✅ Use input-output redirection (>, >>, |, 2>, etc.)
+- ✅ Use grep and regular expressions to analyze text
+- ✅ Access remote systems using SSH
+- ✅ Log in and switch users in multi-user targets
+- ✅ Archive, compress, unpack, and uncompress files using tar, gzip, and bzip2
+- ✅ Create and edit text files
+- ✅ Create, delete, copy, and move files and directories
+- ✅ Create hard and soft links
+- ✅ List, set, and change standard ugo/rwx permissions
+- ✅ Locate, read, and use system documentation including man, info, and files in /usr/share/doc
+
+**Manage software**
+
+- ✅ Configure access to RPM repositories
+- ✅ Install and remove RPM software packages
+- ✅ Configure access to Flatpak repositories
+- ✅ Install and remove Flatpak software packages
+
+**Create simple shell scripts**
+
+- ✅ Conditionally execute code (use of: if, test, [], etc.)
+- ✅ Use Looping constructs (for, etc.) to process file, command line input
+- ✅ Process script inputs ($1, $2, etc.)
+- ✅ Processing output of shell commands within a script
+
+**Operate running systems**
+
+- ✅ Boot, reboot, and shut down a system normally
+- ✅ Boot systems into different targets manually
+- ✅ Interrupt the boot process in order to gain access to a system
+- ✅ Identify CPU/memory intensive processes and kill processes
+- ✅ Adjust  process scheduling
+- ✅ Manage tuning profiles
+- ✅ Locate and interpret system log files and journals
+- ✅ Preserve system journals
+- ✅ Start, stop, and check the status of network services
+- ✅ Securely transfer files between systems
+
+**Configure local storage**
+
+- ✅ List, create, and delete partitions on GPT disks
+- ✅ Create and remove physical volumes
+- ✅ Assign physical volumes to volume groups
+- ✅ Create and delete logical volumes
+- ✅ Configure systems to mount file systems at boot by universally unique ID (UUID) or label
+- ✅ Add new partitions and logical volumes, and swap to a system non-destructively
+
+**Create and configure file systems**
+
+- ✅ Create, mount, unmount, and use VFAT, ext4, and XFS file systems
+- ✅ Mount and unmount network file systems using NFS
+- ✅ Configure autofs
+- ✅ Extend existing logical volumes
+- ✅ Diagnose and correct file permission problems
+
+**Deploy, configure, and maintain systems**
+
+- ✅ Schedule tasks using at, cron and systemd timer units
+- ✅ Start and stop services and configure services to start automatically at boot
+- ✅ Configure systems to boot into a specific target automatically
+- ✅ Configure time service clients
+- ✅ Install and update software packages from Red Hat Content Delivery Network, a remote repository, or from the local file system
+- ✅ Modify the system bootloader
+
+**Manage basic networking**
+
+- ✅ Configure IPv4 and IPv6 addresses
+- ✅ Configure hostname resolution
+- ✅ Configure network services to start automatically at boot
+- ✅ Restrict network access using firewalld and firewall-cmd
+
+**Manage users and groups**
+
+- ✅ Create, delete, and modify local user accounts
+- ✅ Change passwords and adjust password aging for local user accounts
+- ✅ Create, delete, and modify local groups and group memberships
+- ✅ Configure privileged access
+
+**Manage security**
+
+- ✅ Configure firewall settings using firewall-cmd/firewalld
+- ✅ Manage default file permissions
+- ✅ Configure key-based authentication for SSH
+- ✅ Set enforcing and permissive modes for SELinux
+- ✅ List and identify SELinux file and process context
+- ✅ Restore default file contexts
+- ✅ Manage SELinux port labels
+- ✅ Use Boolean settings to modify system SELinux settings
+
+</details>
+<!-- /objectives:rhcsa -->
+
+<!-- objectives:rhce -->
+<details>
+<summary><b>RHCE (EX294): 57 of 57 objective lines covered, 55 tasks</b></summary>
+
+**Be able to perform all tasks expected of a Red Hat Certified System Administrator**
+
+- ✅ Understand and use essential tools
+- ✅ Operate running systems
+- ✅ Configure local storage
+- ✅ Create and configure file systems
+- ✅ Deploy, configure, and maintain systems
+- ✅ Manage users and groups
+- ✅ Manage security
+- ✅ Be able to analyze simple shell scripts
+
+**Understand core components of Ansible**
+
+- ✅ Inventories
+- ✅ Modules
+- ✅ Variables
+- ✅ Facts
+- ✅ Loops
+- ✅ Conditional tasks
+- ✅ Plays
+- ✅ Handling task failure
+- ✅ Playbooks
+- ✅ Configuration files
+- ✅ Roles
+- ✅ Use provided documentation to look up specific information about Ansible modules and commands
+
+**Configure Ansible**
+
+- ✅ Create and modify ansible.cfg
+- ✅ Modify ansible-navigator.yml
+- ✅ Create a static host inventory file
+- ✅ Create and use static inventories to define groups of hosts
+
+**Configure Ansible managed nodes**
+
+- ✅ Configure Ansible managed nodes
+- ✅ Create and distribute SSH keys to managed nodes
+- ✅ Configure privilege escalation on managed nodes
+- ✅ Deploy files to managed nodes
+
+**Run playbooks**
+
+- ✅ Know how to run playbooks with ansible-navigator and ansible-playbook
+- ✅ Use ansible-navigator to find new modules in available Ansible Content Collections and use them
+- ✅ Use ansible-navigator to create inventories and configure the Ansible environment
+
+**Perform basic source control operations using Git**
+
+- ✅ Clone a Git repository
+- ✅ Add files to a Git repository
+
+**Be familiar with Visual Studio Code (VS Code) and be able to perform the following tasks from within the editor:**
+
+- ✅ Create playbooks and push them to a Git repository
+- ✅ Configure ansible-navigator
+- ✅ Run playbooks using an Ansible development container
+
+**Create Ansible plays and playbooks**
+
+- ✅ Know how to work with commonly used Ansible modules
+- ✅ Use variables to retrieve the results of running a command
+- ✅ Use conditionals to control play execution
+- ✅ Configure error handling
+- ✅ Create playbooks to configure systems to a specified state
+
+**Use roles and Ansible Content Collections**
+
+- ✅ Create and work with roles
+- ✅ Install roles and use them in playbooks
+- ✅ Install Content Collections and use them in playbooks
+- ✅ Obtain a set of related roles, supplementary modules, and other content from content collections, and use them in a playbook.
+
+**Automate standard RHCSA tasks using Ansible modules that work with:**
+
+- ✅ Software packages and repositories
+- ✅ Services
+- ✅ Firewall rules
+- ✅ File systems
+- ✅ Storage devices
+- ✅ File content
+- ✅ Archiving
+- ✅ Task scheduling
+- ✅ Security
+- ✅ Users and groups
+
+**Manage content**
+
+- ✅ Create and use templates to create customized configuration files
+- ✅ Use Ansible Vault in playbooks to protect sensitive data
+
+</details>
+<!-- /objectives:rhce -->
+
 ## FAQ
 
-**Is there a free RHCSA practice exam for RHEL 10?**
+### Is there a free RHCSA practice exam for RHEL 10?
+
 Yes, this project. Exams are generated from a bank covering every current EX200 objective, run on
 real RHEL 10 VMs, and are graded automatically after a reboot.
 
-**How do I practice the RHCSA on RHEL 10 at home?**
+### How do I practice the RHCSA on RHEL 10 at home?
+
 Install libvirt (or VirtualBox), download the RHEL 10 DVD with a free developer account, clone this
 repository and run `./autorelabel`.
 
-**Does it cover the new RHEL 10 objectives (Flatpak, systemd timers…)?**
+### Does it cover the new RHEL 10 objectives (Flatpak, systemd timers…)?
+
 Yes. The bank follows the current EX200 objectives verbatim, including Flatpak repositories and
 applications.
 
-**Do I need a Red Hat subscription?**
+### Do I need a Red Hat subscription?
+
 No. Only a free Red Hat Developer account to download the ISO. The box is installed offline and
 never registered.
 
-**Is there an RHCE practice exam for RHEL 10 and Ansible?**
+### Is there an RHCE practice exam for RHEL 10 and Ansible?
+
 Yes. RHCE exams use `ansible-core` 2.16 and the RHEL system roles from the RHEL 10.0 DVD, plus
 `ansible-navigator` with an execution environment and VS Code, as in the current EX294 objectives.
 
-**Can I use AlmaLinux or Rocky Linux instead of RHEL?**
+### Can I use AlmaLinux or Rocky Linux instead of RHEL?
+
 Not in v1: the exam is on RHEL 10, and so is the simulator.
 
-**Does it work on Windows?**
+### Does it work on Windows?
+
 Not yet. Windows (VirtualBox) support is planned for v2.
 
-**How close is the grading to Red Hat's?**
+### How close is the grading to Red Hat's?
+
 Red Hat's grader is secret. autorelabel checks the final state after a reboot, accepts any valid
 method, and awards partial credit per check (switch to all-or-nothing in Settings).
 
-**Where do the tasks come from?**
+### Where do the tasks come from?
+
 Only from Red Hat's published objectives and RHEL 10 documentation, never from real exam content.
 
 ## Project layout

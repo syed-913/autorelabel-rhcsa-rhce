@@ -73,6 +73,35 @@ def summary(bank: Bank) -> dict[str, int]:
     }
 
 
+def readme_objectives(bank: Bank) -> str:
+    """The objective list for README.md: every line verbatim with its coverage mark."""
+    cov = compute(bank)
+    covered = sum(1 for c in cov if c.primary_tasks or (c.implicit and c.tasks))
+    code = {"rhcsa": "EX200", "rhce": "EX294"}.get(bank.exam, "")
+    lines = ["<details>",
+             f"<summary><b>{bank.exam.upper()} ({code}): {covered} of {len(cov)} objective lines covered,"
+             f" {len(bank.tasks)} tasks</b></summary>", ""]
+    for d in bank.objectives.domains:
+        lines += [f"**{d.title}**", ""]
+        for c in cov:
+            if c.domain == d.id:
+                mark = "✅" if c.primary_tasks or (c.implicit and c.tasks) else "⬜"
+                lines.append(f"- {mark} {c.text}")
+        lines.append("")
+    lines.append("</details>")
+    return "\n".join(lines)
+
+
+def update_readme(readme: str, bank: Bank) -> str:
+    """README.md with the objective list between `<!-- objectives:<exam> -->` markers replaced."""
+    start, end = f"<!-- objectives:{bank.exam} -->", f"<!-- /objectives:{bank.exam} -->"
+    if start not in readme or end not in readme:
+        raise ValueError(f"README.md has no {start} ... {end} markers")
+    head, rest = readme.split(start, 1)
+    _old, tail = rest.split(end, 1)
+    return f"{head}{start}\n{readme_objectives(bank)}\n{end}{tail}"
+
+
 def markdown(bank: Bank, verified: dict[str, str] | None = None) -> str:
     """Render docs/COVERAGE.md. `verified` maps task id -> self-test stamp."""
     verified = verified or {}
