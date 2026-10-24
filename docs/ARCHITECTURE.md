@@ -118,6 +118,11 @@ new → provisioning → ready → in_progress → locked → grading → graded
 - **A node that doesn't come back** after the grading reboot is diagnosed (emergency mode, GRUB
   prompt, kernel panic, SELinux relabel in progress, login prompt but no SSH) and reported; its
   checks score 0, like on the real exam.
+- **Problem reports:** a failure that isn't the user's situation (errors marked `user_fixable` are)
+  makes `report.py` write `.workspace/reports/<time>-<error>.md`: the error and hint, versions, the
+  doctor's checks, the traceback and the end of the operation's log, with the home directory, user and
+  host names replaced and secrets masked. The CLI and TUI then point to the repository's issue form.
+  Nothing is sent anywhere by the app.
 - **Host safety:** autorelabel never runs `sudo`, never edits host files outside its directories,
   and records everything it creates in a ledger (`ledger.py`), which `scripts/uninstall.sh` (pure
   bash) uses to remove it all again.
