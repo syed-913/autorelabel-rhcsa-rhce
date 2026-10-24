@@ -1,0 +1,57 @@
+title: Archive a directory on the managed nodes and collect the archives on control
+primary: rhce.automate.archiving
+objectives: [rhce.automate.archiving, rhce.rhcsa.essential-tools, rhce.playbooks.common-modules]
+facets:
+  - rhce.automate.archiving:archiving
+  - rhce.rhcsa.essential-tools:tools
+  - rhce.playbooks.common-modules:common-modules
+difficulty: medium
+difficulty_reason: A compression format other than the default, then fetch with one flat file per host named after the host.
+estimated_minutes: 9
+node: control
+params:
+  src: {choice: [{dir: /etc/ssh, file: sshd_config}, {dir: /etc/security, file: limits.conf}, {dir: /etc/sysconfig, file: chronyd}]}
+  fmt: {choice: [{name: bz2, ext: tar.bz2, tool: bzip2}, {name: xz, ext: tar.xz, tool: xz}]}
+
+prompt: |
+  Create `{{lab.project_dir}}/collect.yml` that:
+
+  - on the hosts in the **test** group, creates `/root/config.{{fmt.ext}}`: a tar archive of the
+    directory `{{src.dir}}`, compressed with **{{fmt.tool}}**
+  - copies each host's archive to control as `{{lab.project_dir}}/collected/<short host name>.{{fmt.ext}}`
+    (one file per host, directly in that directory)
+
+requirements:
+  R1: "/root/config.{{fmt.ext}} on the test hosts is a {{fmt.tool}}-compressed tar archive of {{src.dir}}"
+  R2: "control holds collected/<host>.{{fmt.ext}}, an archive of {{src.dir}}, for every test host"
+
+checks:
+  - id: archive
+    covers: [R1]
+    on: "@test"
+    desc: "/root/config.{{fmt.ext}}: {{fmt.tool}}, holds {{src.dir}}"
+    run: |
+      f=/root/config.{{fmt.ext}}
+      case {{fmt.name}} in
+        bz2) test "$(head -c3 "$f")" = BZh ;;
+        xz) test "$(head -c6 "$f" | od -An -tx1 | tr -d ' \n')" = fd377a585a00 ;;
+      esac
+      list="$(tar -tf "$f")"
+      grep -Eq '(^|/){{src.file}}$' <<<"$list"
+  - id: collected
+    covers: [R2]
+    desc: "collected/<host>.{{fmt.ext}} on control for every test host"
+    run: |
+      for h in $LAB_GROUPS_TEST; do
+        f={{lab.project_dir}}/collected/$h.{{fmt.ext}}
+        case {{fmt.name}} in
+          bz2) test "$(head -c3 "$f")" = BZh || exit 1 ;;
+          xz) test "$(head -c6 "$f" | od -An -tx1 | tr -d ' \n')" = fd377a585a00 || exit 1 ;;
+        esac
+        list="$(tar -tf "$f")"
+        grep -Eq '(^|/){{src.file}}$' <<<"$list" || exit 1
+      done
+
+references:
+  - "ansible-doc community.general.archive (format); ansible-doc ansible.builtin.fetch (flat, dest)"
+  - "Ansible docs: Special variables (inventory_hostname_short)"
