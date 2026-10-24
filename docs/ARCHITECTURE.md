@@ -59,6 +59,19 @@ the facts tasks are rendered with (addresses, disks, URLs, RHCE inventory groups
 - **Provisioning:** the app provisions over SSH (`vagrant/provision/*.sh`, streamed with progress
   markers), not through Vagrant provisioners, so it can retry and verify. The utility VM serves
   the DVD repositories, Flatpaks, DNS, NTP, NFS, and for RHCE a Git server and Ansible content.
+- **RHCE content:** `content.py` downloads, once and on the host (the only step that needs
+  internet), the Python wheels for `ansible-navigator`, the `ansible.posix` and `community.general`
+  collections, code-server and the VS Code extensions. Every version is pinned (the wheels in
+  `vagrant/content/rhce-wheels.txt`), so an upstream release can't change the lab under the
+  self-tested tasks; changing a pin invalidates the cached content. The execution environment is
+  built inside the lab from the DVD's packages and these wheels, so no registry is ever needed.
+- **VS Code (code-server):** it listens on `control`'s loopback only. The app opens an SSH
+  tunnel (`ssh -L`, its own control socket) to `127.0.0.1:18080` on the host, because browsers
+  allow the clipboard and the editor's web views only on `localhost` or HTTPS. The tunnel closes
+  when the exam locks or is abandoned.
+- **Management addresses:** both exams share the management network, so each exam's VMs get
+  their own fixed addresses (RHCE's start 40 above RHCSA's) and DHCP reservations; a lab left
+  behind by the other exam can't take a VM's address.
 - **Snapshots:** `baseline` (a freshly provisioned lab) and `exam-start` (after the task setups).
   *Retake* and *Reset node* revert to `exam-start`.
 - **One hypervisor at a time:** `providers/conflict.py` refuses to start lab VMs while the other
@@ -79,7 +92,10 @@ the facts tasks are rendered with (addresses, disks, URLs, RHCE inventory groups
    into a clean reboot even in emergency mode, before a reset; boot problems are diagnosed from the
    serial console), then the
    post-reboot pass, which is the only one that counts. Checks are bash scripts run as root over
-   the management network with `set -e` and `pipefail`.
+   the management network with `set -e` and `pipefail`. An RHCE check can run on an inventory
+   group (`on: "@webservers"`): it becomes one check per host, sharing its weight, and a host where
+   it doesn't apply exits 77 (*n/a*) and is left out of the score instead of counting as passed.
+   Guard checks (nothing else broken) only score once a real check of the task passes.
 5. **Report:** points per task (partial or strict), per domain and difficulty, checks that worked
    only before the reboot, incidents, and the solution guides.
 
@@ -113,8 +129,10 @@ new → provisioning → ready → in_progress → locked → grading → graded
 `tasks/`. `bank/lint.py` enforces scope (every task maps to official objectives), traceability
 (every requirement has a check), valid placeholders and test suites; `bank/coverage.py` reports and
 gates objective coverage. `selftest.py` runs every task on real VMs: pre-state, reference
-solution, valid alternatives and classic mistakes, each graded after a reboot. See
-[TASK-AUTHORING.md](TASK-AUTHORING.md).
+solution, valid alternatives and classic mistakes, each graded after a reboot. It records a
+digest of each task with its result, per provider (`banks/<exam>/selftest[-virtualbox].json`),
+so `--changed` re-tests only what changed; `--sweep` runs the suites again once per value of each
+task's choice parameters, so every value is verified at least once. See [TASK-AUTHORING.md](TASK-AUTHORING.md).
 
 ## Files
 
