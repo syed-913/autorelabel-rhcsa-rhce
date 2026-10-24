@@ -1,0 +1,387 @@
+{
+  "rhce.automate.archive": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "423a721ced8e",
+    "status": "pass"
+  },
+  "rhce.automate.archive-fetch": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "3520b579eafc",
+    "status": "pass"
+  },
+  "rhce.automate.at-job": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "384f6730c2a8",
+    "status": "pass"
+  },
+  "rhce.automate.cron-job": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "6e96731b496d",
+    "status": "pass"
+  },
+  "rhce.automate.edit-config-lines": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "a28dffa3e784",
+    "status": "pass"
+  },
+  "rhce.automate.firewall-rules": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "90e3159f4911",
+    "status": "pass"
+  },
+  "rhce.automate.issue-per-group": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "10755415f18a",
+    "status": "pass"
+  },
+  "rhce.automate.lvm-storage": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "746a056c8dac",
+    "status": "pass"
+  },
+  "rhce.automate.packages-groups": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "fc83bf486f0a",
+    "status": "pass"
+  },
+  "rhce.automate.partition-mount": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "685c1ef5c781",
+    "status": "pass"
+  },
+  "rhce.automate.repos": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "93c5224805ab",
+    "status": "pass"
+  },
+  "rhce.automate.selinux-modules": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "8f5538d4d5c9",
+    "status": "pass"
+  },
+  "rhce.automate.services-targets": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "83eabeaddaac",
+    "status": "pass"
+  },
+  "rhce.automate.users-groups": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "aa12a104100d",
+    "status": "pass"
+  },
+  "rhce.configure.ansible-cfg-tuning": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "5b6c0a2f0aea",
+    "status": "pass"
+  },
+  "rhce.configure.ansible-setup": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "7c1a90bdecf0",
+    "status": "pass"
+  },
+  "rhce.configure.navigator-yml": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "78ef88a3a42f",
+    "status": "pass"
+  },
+  "rhce.content.hosts-template": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "76c98a104ed0",
+    "status": "pass"
+  },
+  "rhce.content.template-conditionals": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "3ced7c33b47d",
+    "status": "pass"
+  },
+  "rhce.content.vault-rekey": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "5dc892fca5ab",
+    "status": "pass"
+  },
+  "rhce.content.vault-users": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "ca2e1194db91",
+    "status": "pass"
+  },
+  "rhce.core.ansible-doc": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "a782987abf03",
+    "status": "pass"
+  },
+  "rhce.core.block-rescue-lvm": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "6784713d2814",
+    "status": "pass"
+  },
+  "rhce.core.conditional-tasks": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "5777e3774c17",
+    "status": "pass"
+  },
+  "rhce.core.custom-facts": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "cbfa4662832f",
+    "status": "pass"
+  },
+  "rhce.core.failed-when": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "54925aa3445d",
+    "status": "pass"
+  },
+  "rhce.core.group-vars": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "e4d4e849576b",
+    "status": "pass"
+  },
+  "rhce.core.hardware-report": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "b77822139bdf",
+    "status": "pass"
+  },
+  "rhce.core.loops-dirs": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "f5bf74b37ef7",
+    "status": "pass"
+  },
+  "rhce.core.multi-play": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "55be12aa553f",
+    "status": "pass"
+  },
+  "rhce.core.playbook-to-role": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "92366f5dfde3",
+    "status": "pass"
+  },
+  "rhce.core.vars-files": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "fc8337860419",
+    "status": "pass"
+  },
+  "rhce.git.clone-branch": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "8302924c94df",
+    "status": "pass"
+  },
+  "rhce.git.commit-push": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "014021ef6b04",
+    "status": "pass"
+  },
+  "rhce.nodes.authorized-key": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "2972b252bc6c",
+    "status": "pass"
+  },
+  "rhce.nodes.deploy-files": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "0a78bdb76170",
+    "status": "pass"
+  },
+  "rhce.nodes.managed-access": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "08ac4002a0c8",
+    "status": "pass"
+  },
+  "rhce.playbooks.conditional-play": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "e17e7ac86896",
+    "status": "pass"
+  },
+  "rhce.playbooks.register-report": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "1fbd3e607cd8",
+    "status": "pass"
+  },
+  "rhce.playbooks.web-rescue": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "0896ecf12609",
+    "status": "pass"
+  },
+  "rhce.rhcsa.script-fix": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "73e440c2d05c",
+    "status": "pass"
+  },
+  "rhce.rhcsa.script-predict": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "c0a0251e702c",
+    "status": "pass"
+  },
+  "rhce.roles.collections": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "ab52f551e148",
+    "status": "pass"
+  },
+  "rhce.roles.create-apache": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "d3ed6d6f12ae",
+    "status": "pass"
+  },
+  "rhce.roles.motd-role": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "656f5a6910f1",
+    "status": "pass"
+  },
+  "rhce.roles.requirements-balancer": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "8a3dd8238660",
+    "status": "pass"
+  },
+  "rhce.roles.selinux-system-role": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "2b2f847c8f89",
+    "status": "pass"
+  },
+  "rhce.roles.timesync-system-role": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "e78ddfbc8492",
+    "status": "pass"
+  },
+  "rhce.run.find-module": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "f128ab9ad5f3",
+    "status": "pass"
+  },
+  "rhce.run.navigator-inventory": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "b1950acd3ef8",
+    "status": "pass"
+  },
+  "rhce.run.navigator-run": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "fb5a6126fc66",
+    "status": "pass"
+  },
+  "rhce.vscode.devcontainer-run": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "704dc2ca9682",
+    "status": "pass"
+  },
+  "rhce.vscode.editor-push": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "3fa0114b8bd2",
+    "status": "pass"
+  },
+  "rhce.vscode.extension-settings": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "0526a0a28eba",
+    "status": "pass"
+  },
+  "rhce.vscode.release-branch": {
+    "box": "RHEL 10.0 20261019.1805",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "4448f2d86cb8",
+    "status": "pass"
+  }
+}
