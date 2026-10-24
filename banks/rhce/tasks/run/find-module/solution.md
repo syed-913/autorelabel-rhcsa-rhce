@@ -14,12 +14,13 @@ ansible-navigator doc community.general.modprobe -m stdout     # options + examp
   hosts: dev
   tasks:
     - community.general.modprobe:
-        name: dummy
-        params: numdummies={{num}}
+        name: brd
+        params: rd_nr={{num}}
         state: present
-        persistent: present      # writes /etc/modules-load.d/dummy.conf and /etc/modprobe.d/dummy.conf
+        persistent: present      # writes /etc/modules-load.d/brd.conf and /etc/modprobe.d/brd.conf
 ```
 
-`persistent` defaults to `disabled`: the module would be gone after a reboot.
+`persistent` defaults to `disabled`: the module would be gone after a reboot. Check the result
+with `cat /sys/module/brd/parameters/rd_nr` and `ls /dev/ram*`, before and after a reboot.
 
 References: `ansible-doc community.general.modprobe`; `man modules-load.d`, `man modprobe.d`.

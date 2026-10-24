@@ -4,10 +4,10 @@ student_write kmod.yml <<YML
 - name: Kernel module
   hosts: dev
   tasks:
-    - name: Load dummy now and at boot
+    - name: Load brd now and at boot
       community.general.modprobe:
-        name: dummy
-        params: numdummies=$P_NUM
+        name: brd
+        params: rd_nr=$P_NUM
         state: present
         persistent: present
 YML

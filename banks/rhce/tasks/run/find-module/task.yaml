@@ -17,23 +17,22 @@ prompt: |
   **community.general** collection that **loads Linux kernel modules**.
 
   Create `{{lab.project_dir}}/kmod.yml` that uses that module on the hosts in the **dev** group to
-  load the kernel module **`dummy`** with the parameter **`numdummies={{num}}`**, both **now and
+  load the kernel module **`brd`** (RAM disks) with the parameter **`rd_nr={{num}}`**, both **now and
   at every boot** (the module itself must make it persistent).
 
 requirements:
-  R1: "dummy is loaded with numdummies={{num}} after the reboot"
+  R1: "brd is loaded with rd_nr={{num}} after the reboot"
   R2: "kmod.yml uses community.general.modprobe with persistence"
 
 checks:
   - id: loaded
     covers: [R1]
     on: "@dev"
-    desc: "dummy loaded with numdummies={{num}}"
+    desc: "brd loaded with rd_nr={{num}}"
     run: |
-      grep -qw '^dummy' /proc/modules
-      # numdummies isn't exposed in /sys/module (permission 0): count the interfaces it created
-      test "$(ip -o link show type dummy | wc -l)" -eq {{num}}
-      grep -qx 'dummy' /etc/modules-load.d/*.conf
+      grep -qw '^brd' /proc/modules
+      test "$(cat /sys/module/brd/parameters/rd_nr)" = "{{num}}"
+      grep -qx 'brd' /etc/modules-load.d/*.conf
   - id: playbook
     covers: [R2]
     desc: kmod.yml uses community.general.modprobe

@@ -6,8 +6,8 @@ student_write kmod.yml <<YML
   hosts: dev
   tasks:
     - community.general.modprobe:
-        name: dummy
-        params: numdummies=$P_NUM
+        name: brd
+        params: rd_nr=$P_NUM
         state: present
 YML
 as_student ansible-playbook kmod.yml
