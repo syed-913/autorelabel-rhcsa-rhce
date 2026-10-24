@@ -33,4 +33,4 @@ require:
 anchors: [network-node1, repos, root-reset]
 
 # none | wave1 (every objective line has a primary task) | full (every facet, 2+ tasks per line)
-coverage_gate: none
+coverage_gate: full
