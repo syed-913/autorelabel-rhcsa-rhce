@@ -99,9 +99,9 @@
   },
   "rhce.configure.ansible-cfg-tuning": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-20",
+    "date": "2026-10-25",
     "detail": "",
-    "digest": "5b6c0a2f0aea",
+    "digest": "b2b870ccd3a2",
     "status": "pass"
   },
   "rhce.configure.ansible-setup": {
@@ -169,9 +169,9 @@
   },
   "rhce.core.custom-facts": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-20",
+    "date": "2026-10-25",
     "detail": "",
-    "digest": "cbfa4662832f",
+    "digest": "985876be890a",
     "status": "pass"
   },
   "rhce.core.failed-when": {
@@ -260,9 +260,9 @@
   },
   "rhce.playbooks.conditional-play": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-24",
+    "date": "2026-10-25",
     "detail": "",
-    "digest": "e17e7ac86896",
+    "digest": "941b7a3ef705",
     "status": "pass"
   },
   "rhce.playbooks.register-report": {
@@ -351,9 +351,9 @@
   },
   "rhce.run.navigator-run": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-24",
+    "date": "2026-10-25",
     "detail": "",
-    "digest": "fb5a6126fc66",
+    "digest": "18e259d3dc72",
     "status": "pass"
   },
   "rhce.vscode.devcontainer-run": {
