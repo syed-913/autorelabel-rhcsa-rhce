@@ -6,6 +6,20 @@
     "digest": "423a721ced8e",
     "status": "pass"
   },
+  "rhce.automate.archive-fetch": {
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "3520b579eafc",
+    "status": "pass"
+  },
+  "rhce.automate.at-job": {
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "384f6730c2a8",
+    "status": "pass"
+  },
   "rhce.automate.cron-job": {
     "box": "RHEL 10.0 20261019.2036",
     "date": "2026-10-20",
@@ -22,9 +36,9 @@
   },
   "rhce.automate.firewall-rules": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-20",
+    "date": "2026-10-24",
     "detail": "",
-    "digest": "e799eb364d1b",
+    "digest": "90e3159f4911",
     "status": "pass"
   },
   "rhce.automate.issue-per-group": {
@@ -36,9 +50,9 @@
   },
   "rhce.automate.lvm-storage": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-20",
+    "date": "2026-10-24",
     "detail": "",
-    "digest": "6cd8537312c5",
+    "digest": "746a056c8dac",
     "status": "pass"
   },
   "rhce.automate.packages-groups": {
@@ -64,9 +78,9 @@
   },
   "rhce.automate.selinux-modules": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-20",
+    "date": "2026-10-24",
     "detail": "",
-    "digest": "26e828dbe357",
+    "digest": "8f5538d4d5c9",
     "status": "pass"
   },
   "rhce.automate.services-targets": {
@@ -99,9 +113,9 @@
   },
   "rhce.configure.navigator-yml": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-20",
+    "date": "2026-10-24",
     "detail": "",
-    "digest": "a07543e92b90",
+    "digest": "78ef88a3a42f",
     "status": "pass"
   },
   "rhce.content.hosts-template": {
@@ -127,9 +141,9 @@
   },
   "rhce.content.vault-users": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-20",
+    "date": "2026-10-24",
     "detail": "",
-    "digest": "cd5976d3ba5c",
+    "digest": "ca2e1194db91",
     "status": "pass"
   },
   "rhce.core.ansible-doc": {
@@ -192,14 +206,14 @@
     "box": "RHEL 10.0 20261019.2036",
     "date": "2026-10-24",
     "detail": "",
-    "digest": "6169c344a3fb",
+    "digest": "55be12aa553f",
     "status": "pass"
   },
   "rhce.core.playbook-to-role": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-20",
+    "date": "2026-10-24",
     "detail": "",
-    "digest": "3ede7e2dcc8a",
+    "digest": "92366f5dfde3",
     "status": "pass"
   },
   "rhce.core.vars-files": {
@@ -213,7 +227,7 @@
     "box": "RHEL 10.0 20261019.2036",
     "date": "2026-10-24",
     "detail": "",
-    "digest": "8561f4a4ad57",
+    "digest": "8302924c94df",
     "status": "pass"
   },
   "rhce.git.commit-push": {
@@ -225,9 +239,9 @@
   },
   "rhce.nodes.authorized-key": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-20",
+    "date": "2026-10-24",
     "detail": "",
-    "digest": "a6c20c93d0d0",
+    "digest": "2972b252bc6c",
     "status": "pass"
   },
   "rhce.nodes.deploy-files": {
@@ -253,9 +267,9 @@
   },
   "rhce.playbooks.register-report": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-20",
+    "date": "2026-10-24",
     "detail": "",
-    "digest": "b779d98fde9e",
+    "digest": "1fbd3e607cd8",
     "status": "pass"
   },
   "rhce.playbooks.web-rescue": {
@@ -293,11 +307,18 @@
     "digest": "d3ed6d6f12ae",
     "status": "pass"
   },
+  "rhce.roles.motd-role": {
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "656f5a6910f1",
+    "status": "pass"
+  },
   "rhce.roles.requirements-balancer": {
     "box": "RHEL 10.0 20261019.2036",
     "date": "2026-10-24",
     "detail": "",
-    "digest": "a32419e2e21d",
+    "digest": "8a3dd8238660",
     "status": "pass"
   },
   "rhce.roles.selinux-system-role": {
@@ -323,16 +344,16 @@
   },
   "rhce.run.navigator-inventory": {
     "box": "RHEL 10.0 20261019.2036",
-    "date": "2026-10-20",
+    "date": "2026-10-24",
     "detail": "",
-    "digest": "2d51fb088f6b",
+    "digest": "b1950acd3ef8",
     "status": "pass"
   },
   "rhce.run.navigator-run": {
     "box": "RHEL 10.0 20261019.2036",
     "date": "2026-10-24",
     "detail": "",
-    "digest": "84832cad9671",
+    "digest": "fb5a6126fc66",
     "status": "pass"
   },
   "rhce.vscode.devcontainer-run": {
@@ -354,6 +375,13 @@
     "date": "2026-10-24",
     "detail": "",
     "digest": "0526a0a28eba",
+    "status": "pass"
+  },
+  "rhce.vscode.release-branch": {
+    "box": "RHEL 10.0 20261019.2036",
+    "date": "2026-10-24",
+    "detail": "",
+    "digest": "4448f2d86cb8",
     "status": "pass"
   }
 }
