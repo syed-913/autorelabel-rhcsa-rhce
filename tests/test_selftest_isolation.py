@@ -22,7 +22,8 @@ def _task(tmp_path, tid: str, anchor: str | None = None) -> Task:
 
 def _selftest(tasks: dict[str, Task], failing: set[str]) -> SelfTest:
     st = SelfTest.__new__(SelfTest)
-    st.bank = SimpleNamespace(tasks=tasks)
+    st.bank = SimpleNamespace(tasks=tasks, blueprint=SimpleNamespace(
+        anchors=["ansible-setup", "managed-access", "collections", "repos"]))
     st.lab = SimpleNamespace(facts=lambda: {"node1": {}})
     st._run_on = lambda sess, entry, script, node: (entry["task"] not in failing, "boom")
     return st
@@ -41,6 +42,17 @@ def test_failing_anchor_fails_the_round(tmp_path):
     st = _selftest(tasks, failing={"r"})
     with pytest.raises(EngineError):
         st._apply(None, [{"task": t} for t in tasks], "solution", 0)
+
+
+def test_anchors_first_in_blueprint_order_and_none_left_out(tmp_path):
+    # the "collections" anchor was once dropped: only anchors in a hard-coded list were applied
+    tasks = {"x": _task(tmp_path, "x"), "repos": _task(tmp_path, "repos", anchor="repos"),
+             "coll": _task(tmp_path, "coll", anchor="collections"),
+             "setup": _task(tmp_path, "setup", anchor="ansible-setup"),
+             "odd": _task(tmp_path, "odd", anchor="not-in-blueprint")}
+    st = _selftest(tasks, failing=set())
+    who, failed = st._apply(None, [{"task": t} for t in tasks], "solution", 0)
+    assert who == ["setup", "coll", "repos", "odd", "x"] and not failed
 
 
 def test_tasks_without_a_test_this_round_are_solved(tmp_path):

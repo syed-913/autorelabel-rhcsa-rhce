@@ -33,8 +33,6 @@ from .engine import EXAM_START, Engine, EngineError
 from .fsutil import atomic_write_json, read_json
 
 LineFn = Callable[[str], None]
-# Anchors are solved in this order (RHCE: configuration → SSH access → repositories through Ansible).
-ANCHOR_ORDER = ("network-node1", "ansible-setup", "managed-access", "repos", "root-reset")
 
 
 def task_digest(task: Task) -> str:
@@ -170,9 +168,15 @@ class SelfTest:
         failing anchor fails the round (everything else depends on it)."""
         failed: dict[str, str] = {}
         participants: list[str] = []
-        by_anchor = {self.bank.tasks[e["task"]].anchor: e for e in entries if self.bank.tasks[e["task"]].anchor}
-        ordered = [by_anchor[a] for a in ANCHOR_ORDER if a in by_anchor]
-        ordered += [e for e in entries if not self.bank.tasks[e["task"]].anchor]
+        # Anchors first, in the blueprint's order (RHCE: configuration, SSH access, collections,
+        # repositories through Ansible), then the rest. Nothing is ever left out.
+        rank = {a: i for i, a in enumerate(self.bank.blueprint.anchors)}
+
+        def anchor(e: dict[str, Any]) -> str | None:
+            return self.bank.tasks[e["task"]].anchor
+
+        ordered = sorted((e for e in entries if anchor(e)), key=lambda e: rank.get(anchor(e), len(rank)))
+        ordered += [e for e in entries if not anchor(e)]
         for e in ordered:
             task = self.bank.tasks[e["task"]]
             scripts = self._scripts_for(task, kind, index)
