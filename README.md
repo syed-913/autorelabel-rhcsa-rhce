@@ -84,7 +84,7 @@ still open. To look at the lab VMs in the VirtualBox GUI (with VirtualBox Manage
 ## Quick start
 
 ```bash
-git clone https://github.com/<you>/autorelabel-rhcsa-rhce.git
+git clone https://github.com/syed-913/autorelabel-rhcsa-rhce.git
 cd autorelabel-rhcsa-rhce
 ./autorelabel
 ```
@@ -115,8 +115,10 @@ finds it in the repository folder or `~/Downloads`.
   `./autorelabel console node2` (serial console for GRUB, `rd.break`, emergency mode; `Ctrl+]` to
   leave). Or press `n` on a node in the exam screen. In an RHCE exam you work on `control` as
   `student`: `./autorelabel ssh control`, or VS Code in your browser (below).
-- **Time**: warnings at 30/10/5/1 minutes appear in the TUI and **inside your SSH sessions**. At zero
-  the lab is **frozen** and graded automatically, even if you closed the TUI.
+- **Time**: warnings at 30/10/5/1 minutes appear in the TUI and **inside your SSH sessions**. To keep
+  the time left in view while you work, run `./autorelabel exam timer` in a small terminal (big
+  digits; `--compact` for one line, `--once` for a tmux or shell status line). At zero the lab is
+  **frozen** and graded automatically, even if you closed the TUI.
 - **Results**: score out of 300, PASS/FAIL, points per difficulty and objective domain, every check
   with ✔/✘, persistence warnings, and a solution with official-documentation references for each task.
 - **Retake** the same exam from its starting point, or start a new one.
@@ -132,6 +134,7 @@ finds it in the repository folder or `~/Downloads`.
 | A node hangs or you powered it off | Power on / reset it from the exam screen. |
 | You broke a node completely | "Reset to exam start" restores just that node (losing its work). |
 | You changed `mgmt0` or the `vagrant` account | You get a warning within two minutes. They are how your work is graded. |
+| Something fails that autorelabel can't fix by itself (a tool on your host changed, a VM won't start) | It saves a **problem report** (versions, checks and the end of the log, with your home directory, user and host names removed) and asks you to post it on the [issue tracker](https://github.com/syed-913/autorelabel-rhcsa-rhce/issues/new?template=problem-report.yml). `./autorelabel report` writes one on demand. |
 
 ## Removing everything
 
