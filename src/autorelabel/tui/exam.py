@@ -109,6 +109,8 @@ class InstructionsScreen(Screen[bool]):
             how,
             "- From this screen: select a node in the bottom bar and press **s** (SSH) or **c** (console); "
             "you return here when you exit.",
+            *(["- Keep the time left in view in another terminal: `./autorelabel exam timer`."]
+              if self.sess.duration_s else []),
             "",
             "## Rules",
             "",

@@ -302,6 +302,13 @@ def cmd_exam_status(_args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_exam_timer(args: argparse.Namespace) -> int:
+    from . import timer
+
+    sess = _current()
+    return timer.once(sess) if args.once else timer.run(sess.id, compact=args.compact)
+
+
 def cmd_exam_submit(_args: argparse.Namespace) -> int:
     eng = _engine()
     sess = _current()
@@ -437,6 +444,10 @@ def register_exam(sub: argparse._SubParsersAction) -> None:
                           ("abandon", cmd_exam_abandon, "give up this session")):
         p = esub.add_parser(name, help=hlp)
         p.set_defaults(func=fn)
+    et = esub.add_parser("timer", help="the time left, in big digits, for a terminal next to your work")
+    et.add_argument("--compact", action="store_true", help="one line instead of big digits")
+    et.add_argument("--once", action="store_true", help="print the time left once (for a tmux or shell status line)")
+    et.set_defaults(func=cmd_exam_timer)
     er = esub.add_parser("results", help="show the graded report")
     er.add_argument("session", nargs="?")
     er.add_argument("--solutions", action="store_true")
