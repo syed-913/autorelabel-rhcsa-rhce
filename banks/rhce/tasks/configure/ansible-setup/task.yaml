@@ -30,7 +30,8 @@ prompt: |
      - privilege escalation to `root` with `sudo` is **enabled by default**
      - roles are found in `{{lab.project_dir}}/roles` **and** in `/usr/share/ansible/roles`
        (where the RHEL system roles are installed)
-     - collections are installed into and found in `{{lab.project_dir}}/mycollections`
+     - collections are installed into `{{lab.project_dir}}/mycollections` and found there **and** in
+       `/usr/share/ansible/collections` (where the RHEL system roles collection is installed)
      - SSH host keys of the managed nodes are not checked
 
   Create the `roles` and `mycollections` directories too.
@@ -40,7 +41,7 @@ requirements:
   R2: "webservers has prod as a child group"
   R3: "ansible.cfg uses the inventory, remote user ansible and become (sudo to root) by default"
   R4: "roles path includes {{lab.project_dir}}/roles and /usr/share/ansible/roles"
-  R5: "collections path is {{lab.project_dir}}/mycollections; host key checking is off"
+  R5: "collections path is {{lab.project_dir}}/mycollections, then /usr/share/ansible/collections; host key checking is off"
 
 checks:
   - id: groups
@@ -86,7 +87,9 @@ checks:
     desc: collections path and host key checking
     run: |
       cfg="$(as_student ansible-config dump --only-changed)"
-      grep -E '^COLLECTIONS_PATHS\(' <<<"$cfg" | grep -q "{{lab.project_dir}}/mycollections"
+      line="$(grep -E '^COLLECTIONS_PATHS\(' <<<"$cfg")"
+      grep -Eq "'{{lab.project_dir}}/mycollections/?'" <<<"$line"
+      grep -Eq "'/usr/share/ansible/collections/?'" <<<"$line"
       grep -Eq '^HOST_KEY_CHECKING\(.*\) = False$' <<<"$cfg"
       test -d {{lab.project_dir}}/mycollections
 

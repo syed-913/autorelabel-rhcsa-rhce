@@ -28,7 +28,7 @@ prod
 inventory = /home/student/ansible/inventory
 remote_user = ansible
 roles_path = /home/student/ansible/roles:/usr/share/ansible/roles
-collections_path = /home/student/ansible/mycollections
+collections_path = /home/student/ansible/mycollections:/usr/share/ansible/collections
 host_key_checking = False
 
 [privilege_escalation]
@@ -46,6 +46,9 @@ ansible-config dump --only-changed     # verify every setting you changed
 
 **Classic mistakes:** listing the prod hosts under `[webservers]` instead of `[webservers:children]`;
 setting `roles_path` to the project directory only, so `rhel-system-roles.*` are no longer found;
+leaving `/usr/share/ansible/collections` out of `collections_path`: the system roles call modules
+of the `redhat.rhel_system_roles` collection installed there (the selinux role fails with
+"couldn't resolve module/action");
 putting the file in `~/.ansible.cfg`, which is ignored as soon as an `ansible.cfg` exists in the
 current directory (`ANSIBLE_CONFIG` → `./ansible.cfg` → `~/.ansible.cfg` → `/etc/ansible/ansible.cfg`).
 

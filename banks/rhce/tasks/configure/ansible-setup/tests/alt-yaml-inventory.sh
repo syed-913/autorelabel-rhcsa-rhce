@@ -15,7 +15,7 @@ student_write ansible.cfg <<'CFG'
 inventory=./inventory
 remote_user=ansible
 roles_path=/home/student/ansible/roles:/usr/share/ansible/roles
-collections_path=/home/student/ansible/mycollections
+collections_path=./mycollections:/usr/share/ansible/collections
 host_key_checking=false
 [privilege_escalation]
 become=true
