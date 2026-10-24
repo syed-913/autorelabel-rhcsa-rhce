@@ -23,14 +23,17 @@ machines, graded *after a reboot*, just like the real thing.**
 ## What it is
 
 `autorelabel` builds a small RHEL 10 lab on your Linux machine (with libvirt/KVM or VirtualBox),
-gives you a **20-task RHCSA exam** with a **180-minute timer**, then **reboots every node and grades
-your work out of 300** (pass mark 210), the way Red Hat's performance-based exams do.
+gives you a **20-task RHCSA exam** (180 minutes) or **RHCE exam** (240 minutes), then **reboots
+every node and grades your work out of 300** (pass mark 210), the way Red Hat's performance-based
+exams do.
 
 - **Real RHEL 10**: a Vagrant box built *once* from **your own** RHEL 10 DVD ISO (free Red Hat
   Developer account). No subscription is used anywhere; the lab is fully offline like the exam.
 - **Exam-like start**: one node has no network yet (configure it from the console), the other
   node's root password is unknown (interrupt the boot and reset it), and repositories must be
-  configured. That's how most real RHCSA exams begin.
+  configured. That's how most real RHCSA exams begin. An RHCE exam starts from an empty project
+  directory: write the inventory and `ansible.cfg`, set up the `ansible` user's SSH key and sudo
+  on the managed nodes, install the collections and configure the repositories, all with Ansible.
 - **Graded after a reboot**: every node is rebooted before grading, so only persistent configuration
   counts. Work that *"passed before the reboot but not after"* is flagged so you learn exactly what
   wasn't persistent.
@@ -38,9 +41,11 @@ your work out of 300** (pass mark 210), the way Red Hat's performance-based exam
   *or* keyfiles, `parted` *or* `fdisk`…), never at the commands you typed.
 - **Every task self-tested on real VMs**: setup, reference solution, accepted alternatives and
   the classic mistakes (`chcon` instead of `semanage fcontext`, firewall rules without `--permanent`,
-  `setenforce` without the config file…) are all verified on a real RHEL 10 VM before a task ships.
+  `setenforce` without the config file, a vault file left unencrypted, a role default put in
+  `vars/`…) are all verified on a real RHEL 10 VM before a task ships.
 - **Full objective coverage**: the bank maps every task to Red Hat's **current, verbatim
-  objectives**; see [docs/COVERAGE-RHCSA.md](docs/COVERAGE-RHCSA.md).
+  objectives**, with at least two tasks per objective line; see
+  [docs/COVERAGE-RHCSA.md](docs/COVERAGE-RHCSA.md) and [docs/COVERAGE-RHCE.md](docs/COVERAGE-RHCE.md).
 - **Difficulty levels**: every task is *easy* (10 pts), *medium* (15) or *hard* (20) by a written
   rubric; each exam has the same mix, so scores are comparable.
 - **One command, a friendly TUI**: setup wizard, live countdown, node power controls, serial
@@ -92,7 +97,8 @@ That's it. The first run:
 3. asks three questions (hypervisor, where to store VM disks, where your RHEL 10 ISO is),
 4. builds the RHEL 10 box once (about 10–15 minutes),
 
-and then you can start an exam. Afterwards `./autorelabel rhcsa` jumps straight into a new exam.
+and then you can start an exam. Afterwards `./autorelabel rhcsa` (or `./autorelabel rhce`) jumps
+straight into a new exam.
 
 ### Getting the RHEL 10 ISO
 
@@ -107,7 +113,8 @@ finds it in the repository folder or `~/Downloads`.
   (about 2–5 minutes) and the clock starts when you press **Start**.
 - **Working**: use your own terminals: `./autorelabel ssh node1` (root over SSH) and
   `./autorelabel console node2` (serial console for GRUB, `rd.break`, emergency mode; `Ctrl+]` to
-  leave). Or press `n` on a node in the exam screen.
+  leave). Or press `n` on a node in the exam screen. In an RHCE exam you work on `control` as
+  `student`: `./autorelabel ssh control`, or VS Code in your browser (below).
 - **Time**: warnings at 30/10/5/1 minutes appear in the TUI and **inside your SSH sessions**. At zero
   the lab is **frozen** and graded automatically, even if you closed the TUI.
 - **Results**: score out of 300, PASS/FAIL, points per difficulty and objective domain, every check
@@ -183,6 +190,10 @@ applications.
 No. Only a free Red Hat Developer account to download the ISO. The box is installed offline and
 never registered.
 
+**Is there an RHCE practice exam for RHEL 10 and Ansible?**
+Yes. RHCE exams use `ansible-core` 2.16 and the RHEL system roles from the RHEL 10.0 DVD, plus
+`ansible-navigator` with an execution environment and VS Code, as in the current EX294 objectives.
+
 **Can I use AlmaLinux or Rocky Linux instead of RHEL?**
 Not in v1: the exam is on RHEL 10, and so is the simulator.
 
@@ -201,7 +212,7 @@ Only from Red Hat's published objectives and RHEL 10 documentation, never from r
 ```
 autorelabel                  # the one command (bash bootstrap)
 src/autorelabel/             # engine, grader, proctor, TUI, doctor, providers
-banks/rhcsa/                 # objectives (verbatim), blueprint, tasks
+banks/rhcsa/  banks/rhce/    # objectives (verbatim), blueprint, tasks
 vagrant/  packer/            # lab definition and box build
 scripts/uninstall.sh         # pure-bash uninstaller
 docs/                        # coverage reports and architecture
