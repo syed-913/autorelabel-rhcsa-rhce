@@ -1,0 +1,54 @@
+title: Install a role with a requirements file and set its variables
+primary: rhce.roles.install
+objectives: [rhce.roles.install, rhce.core.roles, rhce.core.variables]
+facets:
+  - rhce.roles.install:role-install
+  - rhce.core.roles:role-structure
+  - rhce.core.variables:play-vars
+exclusive: [role-requirements]
+difficulty: medium
+difficulty_reason: A role installed under a new name, then its variables found in the role itself and set from the playbook.
+estimated_minutes: 9
+node: control
+params:
+  msg: {choice: ["Authorized access only", "Scheduled maintenance on Sunday", "Report problems to the help desk"]}
+
+prompt: |
+  1. Create `{{lab.project_dir}}/roles/requirements.yml` and use it to install the role
+     `{{lab.roles_url}}/lab_motd.tar.gz` into `{{lab.project_dir}}/roles` under the name **`motd`**.
+  2. Find out from the role itself which variables it takes, then create
+     `{{lab.project_dir}}/motd.yml` that applies it to **all managed nodes** so that it writes the
+     message **`{{msg}}`** to **`/etc/motd.d/lab-notice`**. Leave `/etc/motd` as it is.
+
+requirements:
+  R1: "roles/requirements.yml installs lab_motd as the role motd"
+  R2: "/etc/motd.d/lab-notice on every managed node starts with {{msg}}, followed by the role's host line"
+  R3: "/etc/motd is unchanged"
+
+checks:
+  - id: installed
+    covers: [R1]
+    desc: role motd installed from roles/requirements.yml
+    run: |
+      r={{lab.project_dir}}/roles
+      grep -q 'lab_motd.tar.gz' $r/requirements.yml
+      test -s $r/motd/tasks/main.yml
+      test -s $r/motd/templates/motd.j2
+  - id: notice
+    covers: [R2]
+    on: "@all"
+    desc: "/etc/motd.d/lab-notice: {{msg}}"
+    run: |
+      f=/etc/motd.d/lab-notice
+      test "$(sed -n 1p "$f")" = "{{msg}}"
+      grep -q "^Host: $(hostname -f) " "$f"
+  - id: motd
+    guard: true
+    covers: [R3]
+    on: "@all"
+    desc: /etc/motd unchanged
+    run: grep -q '^autorelabel RHCE lab node' /etc/motd
+
+references:
+  - "Ansible docs: Galaxy User Guide > Installing multiple roles from a file (src, name)"
+  - "Ansible docs: Roles > Using role variables (defaults/main.yml, role parameters)"

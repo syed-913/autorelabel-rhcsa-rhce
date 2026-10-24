@@ -5,7 +5,7 @@ facets:
   - rhce.roles.install:role-install
   - rhce.core.plays:plays
   - rhce.core.roles:role-structure
-exclusive: [web-content, balancer]
+exclusive: [web-content, balancer, role-requirements]
 difficulty: hard
 difficulty_reason: >
   Roles from URLs under new names, two plays in the right order (the balancer needs the web
