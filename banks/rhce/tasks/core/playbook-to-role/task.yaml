@@ -1,10 +1,11 @@
 title: Turn a playbook into a role
 primary: rhce.core.roles
-objectives: [rhce.core.roles, rhce.content.templates, rhce.core.variables]
+objectives: [rhce.core.roles, rhce.content.templates, rhce.core.variables, rhce.roles.create]
 facets:
   - rhce.core.roles:role-structure
   - rhce.content.templates:jinja-template
   - rhce.core.variables:play-vars
+  - rhce.roles.create:role-create
 difficulty: medium
 difficulty_reason: Splitting tasks, a handler, a default variable and a template into the right role directories, then overriding the default.
 estimated_minutes: 12

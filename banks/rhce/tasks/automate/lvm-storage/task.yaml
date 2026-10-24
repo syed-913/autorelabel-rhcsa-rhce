@@ -1,10 +1,11 @@
 title: LVM storage with Ansible
 primary: rhce.automate.storage
-objectives: [rhce.automate.storage, rhce.automate.filesystems, rhce.rhcsa.storage]
+objectives: [rhce.automate.storage, rhce.automate.filesystems, rhce.rhcsa.storage, rhce.rhcsa.filesystems]
 facets:
   - rhce.automate.storage:storage
   - rhce.automate.filesystems:filesystems
   - rhce.rhcsa.storage:storage
+  - rhce.rhcsa.filesystems:filesystems
 exclusive: [disk-node2]
 resources:
   disk: {node2.disk1: 1600}

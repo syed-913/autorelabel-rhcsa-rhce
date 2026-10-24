@@ -94,7 +94,7 @@ domains:
     objectives:
       - {id: rhce.run.navigator-and-playbook, text: Know how to run playbooks with ansible-navigator and ansible-playbook, facets: [{id: run-both, desc: "run with ansible-navigator and ansible-playbook"}]}
       - {id: rhce.run.find-modules, text: Use ansible-navigator to find new modules in available Ansible Content Collections and use them, facets: [{id: navigator-collections, desc: "find modules with ansible-navigator collections/doc"}]}
-      - {id: rhce.run.navigator-inventory, text: Use ansible-navigator to create inventories and configure the Ansible environment, facets: [{id: navigator-inventory, desc: "ansible-navigator inventory/config"}]}
+      - {id: rhce.run.navigator-inventory, text: Use ansible-navigator to create inventories and configure the Ansible environment, facets: [{id: navigator-inventory, desc: "create and inspect inventories with ansible-navigator"}, {id: navigator-environment, desc: "configure the Ansible environment for ansible-navigator (settings file: image, pull policy, mode, artifacts)"}]}
 
   - id: git
     title: Perform basic source control operations using Git
@@ -123,7 +123,7 @@ domains:
     objectives:
       - {id: rhce.roles.create, text: Create and work with roles, facets: [{id: role-create, desc: "create a role"}]}
       - {id: rhce.roles.install, text: Install roles and use them in playbooks, facets: [{id: role-install, desc: "install roles from requirements.yml"}]}
-      - {id: rhce.roles.collections, text: Install Content Collections and use them in playbooks, facets: [{id: collection-install, desc: "install collections"}]}
+      - {id: rhce.roles.collections, text: Install Content Collections and use them in playbooks, facets: [{id: collection-install, desc: "install collections"}, {id: collection-use, desc: "use modules from installed collections in playbooks (FQCN)"}]}
       - {id: rhce.roles.collection-content, text: "Obtain a set of related roles, supplementary modules, and other content from content collections, and use them in a playbook.", facets: [{id: collection-roles, desc: "use roles from a collection (e.g. system roles)"}]}
 
   - id: automate

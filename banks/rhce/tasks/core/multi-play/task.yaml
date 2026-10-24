@@ -1,11 +1,13 @@
 title: One playbook, two plays with different hosts and privileges
 primary: rhce.core.plays
-objectives: [rhce.core.plays, rhce.automate.services, rhce.automate.firewall, rhce.playbooks.register]
+objectives: [rhce.core.plays, rhce.automate.services, rhce.automate.firewall, rhce.playbooks.register, rhce.core.playbooks, rhce.nodes.privilege]
 facets:
   - rhce.core.plays:plays
   - rhce.automate.services:services
   - rhce.automate.firewall:firewall
   - rhce.playbooks.register:register
+  - rhce.core.playbooks:playbook
+  - rhce.nodes.privilege:become
 exclusive: [web-content]
 difficulty: medium
 difficulty_reason: Two plays with different targets and become settings; the second one consumes the first play's result over HTTP.

@@ -1,10 +1,11 @@
 title: Run a playbook with ansible-navigator and with ansible-playbook
 primary: rhce.run.navigator-and-playbook
-objectives: [rhce.run.navigator-and-playbook, rhce.automate.packages, rhce.playbooks.desired-state]
+objectives: [rhce.run.navigator-and-playbook, rhce.automate.packages, rhce.playbooks.desired-state, rhce.vscode.devcontainer]
 facets:
   - rhce.run.navigator-and-playbook:run-both
   - rhce.automate.packages:packages-repos
   - rhce.playbooks.desired-state:desired-state
+  - rhce.vscode.devcontainer:devcontainer-run
 exclusive: [navigator-settings]
 difficulty: medium
 difficulty_reason: Running inside the execution environment with a named artifact needs the right navigator options (or settings file); the playbook must stay idempotent.

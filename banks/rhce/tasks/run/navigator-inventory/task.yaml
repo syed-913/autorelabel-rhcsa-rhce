@@ -1,11 +1,13 @@
 title: Inventories and environment configuration for ansible-navigator
 primary: rhce.run.navigator-inventory
-objectives: [rhce.run.navigator-inventory, rhce.configure.static-inventory, rhce.core.inventories, rhce.core.variables]
+objectives: [rhce.run.navigator-inventory, rhce.configure.static-inventory, rhce.core.inventories, rhce.core.variables, rhce.configure.inventory-groups]
 facets:
   - rhce.run.navigator-inventory:navigator-inventory
   - rhce.configure.static-inventory:static-inventory
   - rhce.core.inventories:inventory
   - rhce.core.variables:host-group-vars
+  - rhce.configure.inventory-groups:inventory-groups
+  - rhce.run.navigator-inventory:navigator-environment
 exclusive: [navigator-settings]
 difficulty: medium
 difficulty_reason: A YAML inventory with a group variable, combined with the existing inventory through the navigator settings, then verified with navigator.

@@ -1,9 +1,10 @@
 title: SELinux settings with Ansible modules
 primary: rhce.automate.security
-objectives: [rhce.automate.security, rhce.rhcsa.security]
+objectives: [rhce.automate.security, rhce.rhcsa.security, rhce.roles.collections]
 facets:
   - rhce.automate.security:security
   - rhce.rhcsa.security:security
+  - rhce.roles.collections:collection-use
 exclusive: [selinux-test]
 difficulty: medium
 difficulty_reason: Four modules from two collections; the file context rule must also be applied to existing files.

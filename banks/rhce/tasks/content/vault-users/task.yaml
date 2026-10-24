@@ -1,11 +1,12 @@
 title: Create users with passwords from an Ansible Vault
 primary: rhce.content.vault
-objectives: [rhce.content.vault, rhce.automate.users, rhce.core.loops, rhce.core.conditionals]
+objectives: [rhce.content.vault, rhce.automate.users, rhce.core.loops, rhce.core.conditionals, rhce.rhcsa.users]
 facets:
   - rhce.content.vault:vault
   - rhce.automate.users:users-groups
   - rhce.core.loops:loop
   - rhce.core.conditionals:when
+  - rhce.rhcsa.users:users
 difficulty: hard
 difficulty_reason: >
   A vault with a password file, a provided user list filtered by job and by host group, hashed

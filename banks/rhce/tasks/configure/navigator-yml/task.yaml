@@ -1,8 +1,10 @@
 title: Configure ansible-navigator with ansible-navigator.yml
 primary: rhce.configure.navigator-yml
-objectives: [rhce.configure.navigator-yml]
+objectives: [rhce.configure.navigator-yml, rhce.vscode.navigator, rhce.run.navigator-inventory]
 facets:
   - rhce.configure.navigator-yml:navigator-yml
+  - rhce.vscode.navigator:editor-navigator
+  - rhce.run.navigator-inventory:navigator-environment
 exclusive: [navigator-settings]
 difficulty: easy
 difficulty_reason: Four settings in the navigator settings file; the nesting and key names must be exact.

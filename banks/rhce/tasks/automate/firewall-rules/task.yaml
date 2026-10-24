@@ -1,9 +1,10 @@
 title: Firewall rules with Ansible
 primary: rhce.automate.firewall
-objectives: [rhce.automate.firewall, rhce.rhcsa.security]
+objectives: [rhce.automate.firewall, rhce.rhcsa.security, rhce.roles.collections]
 facets:
   - rhce.automate.firewall:firewall
   - rhce.rhcsa.security:security
+  - rhce.roles.collections:collection-use
 difficulty: medium
 difficulty_reason: A service, a port and a rich rule, each permanent and immediate.
 estimated_minutes: 8

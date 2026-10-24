@@ -1,9 +1,10 @@
 title: Create a user and distribute an SSH key with Ansible
 primary: rhce.nodes.ssh-keys
-objectives: [rhce.nodes.ssh-keys, rhce.automate.users]
+objectives: [rhce.nodes.ssh-keys, rhce.automate.users, rhce.nodes.configure]
 facets:
   - rhce.nodes.ssh-keys:ssh-keys
   - rhce.automate.users:users-groups
+  - rhce.nodes.configure:managed-node
 difficulty: medium
 difficulty_reason: A dedicated key pair generated on control, then the public key placed for a different user on the managed nodes with the right module.
 estimated_minutes: 9

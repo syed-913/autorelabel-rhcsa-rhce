@@ -1,9 +1,10 @@
 title: Register command output and use it
 primary: rhce.playbooks.register
-objectives: [rhce.playbooks.register, rhce.automate.file-content]
+objectives: [rhce.playbooks.register, rhce.automate.file-content, rhce.rhcsa.essential-tools]
 facets:
   - rhce.playbooks.register:register
   - rhce.automate.file-content:file-content
+  - rhce.rhcsa.essential-tools:tools
 difficulty: easy
 difficulty_reason: Two commands registered and their stdout written to a file in an exact format.
 estimated_minutes: 6
