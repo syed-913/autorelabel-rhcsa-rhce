@@ -16,6 +16,12 @@ remove_box_connections "$lab_dev"
 # connection, which on VirtualBox is the one carrying this SSH session.
 nmcli connection load "/etc/NetworkManager/system-connections/${lab_dev}.nmconnection"
 nmcli connection up "$lab_dev" >/dev/null
+# Until the reboot, the box's DHCP connection on the management NIC is still active. On
+# VirtualBox it lists NAT's DNS proxy first, which answers "no such domain" for the lab domain,
+# and the steps below need the utility server by name. Drop those DNS servers from the running
+# configuration only (mgmt0, which ignores them anyway, replaces the profile at the reboot).
+mgmt_dev="$(nic_by_mac "$AR_MGMT_MAC")" && nmcli device modify "$mgmt_dev" ipv4.ignore-auto-dns yes \
+  ipv6.ignore-auto-dns yes >/dev/null
 record_fact lab_nic "$lab_dev"
 hostnamectl set-hostname "$AR_FQDN"
 
