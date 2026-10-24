@@ -201,36 +201,40 @@ class Lab:
         for name in names:
             ledger.record(kind, self.vm(name).domain, self.exam, storage_dir=self.settings.storage_dir)
         before_hostonly = vb.hostonly_interfaces() if self.provider == "virtualbox" else set()
-        for attempt in (1, 2):
-            res = self.vagrant(["up", "--no-provision", f"--provider={self.provider}", *names],
-                               on_line=line, log_file=log_file, cancel=cancel)
-            if res.cancelled:
-                raise LabError("cancelled", log_file=log_file, user_fixable=True)
-            if res.ok:
-                if self.provider == "virtualbox":
-                    self._vbox_after_up(names, before_hostonly, step)
-                return
-            if "locked" in res.out.lower() and attempt == 1:
-                step("Vagrant reported a lock; retrying")
-                time.sleep(10)
-                continue
-            # vagrant-libvirt occasionally gives up right after starting a domain ("not ready for
-            # guest communication ... a bug should be reported") and removes it again: retry once.
-            if "not ready for guest communication" in res.out and attempt == 1:
-                step("Vagrant gave up on a VM that was still booting; retrying")
-                time.sleep(10)
-                continue
-            raise LabError(f"vagrant up failed for {', '.join(names)}",
-                           "Open the log for details. Common causes: low memory, the box missing, "
-                           "or a leftover VM from an interrupted run (Lab → Destroy, then retry).", log_file)
+        try:
+            for attempt in (1, 2):
+                res = self.vagrant(["up", "--no-provision", f"--provider={self.provider}", *names],
+                                   on_line=line, log_file=log_file, cancel=cancel)
+                if res.cancelled:
+                    raise LabError("cancelled", log_file=log_file, user_fixable=True)
+                if res.ok:
+                    if self.provider == "virtualbox":
+                        self._vbox_after_up(names, step)
+                    return
+                if "locked" in res.out.lower() and attempt == 1:
+                    step("Vagrant reported a lock; retrying")
+                    time.sleep(10)
+                    continue
+                # vagrant-libvirt occasionally gives up right after starting a domain ("not ready for
+                # guest communication ... a bug should be reported") and removes it again: retry once.
+                if "not ready for guest communication" in res.out and attempt == 1:
+                    step("Vagrant gave up on a VM that was still booting; retrying")
+                    time.sleep(10)
+                    continue
+                raise LabError(f"vagrant up failed for {', '.join(names)}",
+                               "Open the log for details. Common causes: low memory, the box missing, "
+                               "or a leftover VM from an interrupted run (Lab → Destroy, then retry).", log_file)
+        finally:
+            # Vagrant creates the lab's host-only network early in `up`: ledger it even when `up`
+            # then fails or is cancelled, or uninstall would never know it is ours.
+            if self.provider == "virtualbox":
+                for ifname in sorted(vb.hostonly_interfaces() - before_hostonly):
+                    ledger.record("vbox-hostonly", ifname, "created by Vagrant", storage_dir=self.settings.storage_dir)
 
-    def _vbox_after_up(self, names: list[str], before: set[str], step: StepFn) -> None:
-        """Ledger host-only interfaces Vagrant created and refresh SSH ports. VMs are created in
-        the private profile's machine folder (lab storage); one found elsewhere is moved there.
-        The lab network loses the DHCP server VirtualBox gave it (it stops serving once the VMs
-        power off for the baseline snapshot)."""
-        for ifname in sorted(vb.hostonly_interfaces() - before):
-            ledger.record("vbox-hostonly", ifname, "created by Vagrant", storage_dir=self.settings.storage_dir)
+    def _vbox_after_up(self, names: list[str], step: StepFn) -> None:
+        """Refresh SSH ports. VMs are created in the private profile's machine folder (lab
+        storage); one found elsewhere is moved there. The lab network loses the DHCP server
+        VirtualBox gave it (it stops serving once the VMs power off for the baseline snapshot)."""
         folder = box.storage_layout(self.settings)["vbox_vms"]
         st = self.state()
         st.pop("ssh", None)

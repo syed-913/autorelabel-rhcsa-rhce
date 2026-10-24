@@ -44,11 +44,12 @@ LEDGERS=()
 [[ -n "$REPO" && -f "$REPO/.workspace/ledger.tsv" ]] && LEDGERS+=("$REPO/.workspace/ledger.tsv")
 [[ -f "$SELF_DIR/ledger.tsv" ]] && LEDGERS+=("$SELF_DIR/ledger.tsv")
 
-STORAGE_DIR=""
+STORAGE_DIR="" VBOX_LAB_SUBNET=""
 ISO_PATH=""
 if [[ -n "$REPO" && -f "$REPO/.workspace/config.json" ]]; then
   STORAGE_DIR="$(sed -n 's/.*"storage_dir": *"\([^"]*\)".*/\1/p' "$REPO/.workspace/config.json" | head -1)"
   ISO_PATH="$(sed -n 's/.*"iso_path": *"\([^"]*\)".*/\1/p' "$REPO/.workspace/config.json" | head -1)"
+  VBOX_LAB_SUBNET="$(sed -n 's/.*"lab_subnet_virtualbox": *"\([^"]*\)".*/\1/p' "$REPO/.workspace/config.json" | head -1)"
   if [[ -n "$STORAGE_DIR" && -f "$STORAGE_DIR/$PREFIX/ledger.tsv" ]]; then
     LEDGERS+=("$STORAGE_DIR/$PREFIX/ledger.tsv")
   fi
@@ -168,7 +169,16 @@ if ((HAVE_VBOX)); then
       | uniq_lines | while read -r v; do vbm "$prof" showvminfo "$v" >/dev/null 2>&1 && echo "$v"; done)
   done < <(vbox_profiles)
   mapfile -t VBOX_MEDIA < <(ledger_ids vbox-medium | uniq_lines)
-  mapfile -t VBOX_HOSTONLY < <(ledger_ids vbox-hostonly | uniq_lines)
+  # Safety net: Vagrant creates the lab network's host-only interface, with the lab subnet's first
+  # address, early in `vagrant up`; if that run was interrupted, the ledger may not know it.
+  lab_net="${VBOX_LAB_SUBNET:-192.168.60.0/24}"; lab_net="${lab_net%/*}"
+  lab_gw="${lab_net%.*}.$(( ${lab_net##*.} + 1 ))"
+  first_prof="$(vbox_profiles | head -1)"
+  mapfile -t VBOX_HOSTONLY < <({
+    ledger_ids vbox-hostonly
+    [[ -n "$first_prof" ]] && vbm "$first_prof" list hostonlyifs 2>/dev/null \
+      | awk -v gw="$lab_gw" '/^Name:/ { n = $2 } /^IPAddress:/ && $2 == gw { print n }'
+  } | uniq_lines)
 fi
 if have systemctl; then
   mapfile -t UNITS < <(systemctl --user list-units "${PREFIX}-*" --all --plain --no-legend 2>/dev/null | awk '{print $1}' | uniq_lines)
