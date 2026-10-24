@@ -183,8 +183,13 @@ Compatible tasks share a lab (no common `exclusive` tag, disk budgets fit). Anch
 `breaks_boot` tasks always run alone, because their tests break what other tasks need. Results
 go to `banks/<exam>/selftest.json` (libvirt, the primary provider; the coverage report reads this
 one) or `banks/<exam>/selftest-virtualbox.json`, with a digest of the task's files; `--changed`
-re-tests only tasks whose files changed or that never passed on the current provider. Console transcripts and every grading round are
-kept in the session directory under `.workspace/sessions/`.
+re-tests only tasks whose files changed or that never passed on the current provider. Console
+transcripts and every grading round are kept in the session directory under `.workspace/sessions/`.
+
+A normal run draws one value for each parameter. `--sweep` runs the suites again once per value
+of each `choice` parameter (draw *i* gives every choice its value *i* mod *n*), so a value that
+doesn't work on RHEL 10, such as a port that already has an SELinux type, fails before a
+candidate draws it. Results go to `banks/<exam>/selftest-sweep[-virtualbox].json`.
 
 ## Before you open a pull request
 
@@ -197,5 +202,7 @@ kept in the session directory under `.workspace/sessions/`.
 - [ ] RHCE: `scripts/dev/check-rhce-playbooks.py` passes (every playbook your scripts write gets an
       `ansible-playbook --syntax-check` with the lab's ansible-core 2.16; see the script's header).
 - [ ] `./autorelabel selftest --exam <exam> <task id>` passes, including at least one mistake test.
+- [ ] If the task has `choice` parameters: `./autorelabel selftest --exam <exam> --sweep <task id>`
+      passes too.
 - [ ] `solution.md` explains the *why* and the classic mistake, with references to official
       documentation or man pages.
