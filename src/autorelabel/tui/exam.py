@@ -34,6 +34,12 @@ from ..fsutil import read_json
 from .common import Confirm, Message
 
 BADGE = {"easy": ("easy", "green"), "medium": ("medium", "yellow"), "hard": ("hard", "red")}
+TASK_LIST_CELLS = 45        # #task-list in theme.tcss: 46 cells, less its border
+
+
+def fit(text: str, cells: int) -> str:
+    """`text` cut to `cells` characters, ending in "…" when it was shortened."""
+    return text if len(text) <= cells else text[: max(cells - 1, 0)] + "…"
 
 
 def fmt_clock(seconds: float) -> str:
@@ -216,10 +222,12 @@ class ExamScreen(Screen[None]):
         sym = {"done": "✔ ", "flag": "⚑ "}.get(mark, "  ")
         text = Text()
         text.append(sym, style="green" if mark == "done" else "yellow")
-        text.append(f"{t['number']:2}. {t['title']}")
-        if self.sess.show_difficulty:
-            name, color = BADGE[t["difficulty"]]
-            text.append(f"  {name}", style=f"dim {color}")
+        badge = BADGE[t["difficulty"]] if self.sess.show_difficulty else None
+        # a long title must not push the difficulty out of the list
+        room = TASK_LIST_CELLS - len(sym) - 4 - (len(badge[0]) + 2 if badge else 0)
+        text.append(f"{t['number']:2}. {fit(t['title'], room)}")
+        if badge:
+            text.append(f"  {badge[0]}", style=f"dim {badge[1]}")
         return text
 
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
@@ -521,10 +529,10 @@ class ResultsScreen(Screen[None]):
         for d in ("easy", "medium", "hard"):
             v = r.get("by_difficulty", {}).get(d)
             if v:
-                b.append(f"{d} {v['points']:g}/{v['possible']}   ", style=BADGE[d][1])
+                b.append(f"{d} {v['points']:g}/{v['possible']:g}   ", style=BADGE[d][1])
         b.append("\nBy domain: ", style="bold")
         for dom, v in r.get("by_domain", {}).items():
-            b.append(f"{dom} {v['points']:g}/{v['possible']}  ")
+            b.append(f"{dom} {v['points']:g}/{v['possible']:g}  ")
         if r.get("incidents"):
             b.append("\nIncidents: ", style="bold red")
             for inc in r["incidents"]:
@@ -536,7 +544,7 @@ class ResultsScreen(Screen[None]):
             sym, color = ("✔", "green") if full else (("◐", "yellow") if t["points"] else ("✘", "red"))
             label = Text()
             label.append(f"{sym} ", style=color)
-            label.append(f"{t['number']:2}. {t['title'][:34]}  ")
+            label.append(f"{t['number']:2}. {fit(t['title'], 34)}  ")
             label.append(f"{t['points']:g}/{t['points_possible']}", style=color)
             lst.append(ListItem(Label(label), id=f"r{t['number']}"))
         lst.index = 0

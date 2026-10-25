@@ -68,3 +68,11 @@ def test_banner_fits_and_degrades():
     assert len(big) == 6 and max(len(x) for x in big) <= 92
     assert "\x1b[" in banner.render_ansi(width=120, color=True)
     assert "\x1b[" not in banner.render_ansi(width=60, color=False)
+
+
+def test_fit_shortens_with_an_ellipsis():
+    from autorelabel.tui.exam import fit
+
+    assert fit("Install a package group", 30) == "Install a package group"
+    assert fit("Configure software repositories on node1 and node2", 20) == "Configure software …"
+    assert len(fit("x" * 50, 20)) == 20

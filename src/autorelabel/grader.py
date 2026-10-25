@@ -340,10 +340,10 @@ class Grader:
         by_diff: dict[str, list[float]] = {}
         by_domain: dict[str, list[float]] = {}
         for t in results:
-            by_diff.setdefault(t.difficulty, [0.0, 0.0])
+            by_diff.setdefault(t.difficulty, [0.0, 0])        # possible points stay whole
             by_diff[t.difficulty][0] += t.points
             by_diff[t.difficulty][1] += t.points_possible
-            by_domain.setdefault(t.domain, [0.0, 0.0])
+            by_domain.setdefault(t.domain, [0.0, 0])
             by_domain[t.domain][0] += t.points
             by_domain[t.domain][1] += t.points_possible
         possible = sum(t.points_possible for t in results)

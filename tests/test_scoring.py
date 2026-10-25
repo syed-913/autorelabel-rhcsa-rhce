@@ -17,7 +17,7 @@ def _task(tmp_path, checks: list[Check]) -> Task:
                 requirements={"R1": "r"}, checks=tuple(checks), references=())
 
 
-def _score(tmp_path, statuses: dict[str, str], scoring: str = "partial") -> float:
+def _results(tmp_path, statuses: dict[str, str], scoring: str = "partial") -> dict:
     checks = [Check("work", "the work", "true", ("R1",)),
               Check("more", "more work", "true", ("R1",)),
               Check("keep", "SELinux stays enforcing", "true", ("R1",), guard=True)]
@@ -30,7 +30,17 @@ def _score(tmp_path, statuses: dict[str, str], scoring: str = "partial") -> floa
     g._expanded = lambda t: [(c, "node1") for c in t.checks]
     post = {f"1:{c.id}": {"id": c.id, "desc": c.desc, "node": "node1", "status": statuses[c.id],
                           "weight": 1.0, "covers": ["R1"], "detail": "", "guard": c.guard} for c in checks}
-    return g.score({"post": post})["tasks"][0]["points"]
+    return g.score({"post": post})
+
+
+def _score(tmp_path, statuses: dict[str, str], scoring: str = "partial") -> float:
+    return _results(tmp_path, statuses, scoring)["tasks"][0]["points"]
+
+
+def test_possible_points_stay_whole_numbers(tmp_path):
+    r = _results(tmp_path, {"work": "pass", "more": "fail", "keep": "pass"})
+    for v in (r["by_difficulty"]["easy"], r["by_domain"]["x"]):
+        assert v["possible"] == 30 and isinstance(v["possible"], int)     # shown as 20/30, not 20/30.0
 
 
 @pytest.mark.parametrize("statuses, points", [
