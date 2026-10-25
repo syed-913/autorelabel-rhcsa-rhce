@@ -64,6 +64,9 @@ Screen {
 /* Operation (long task) screen */
 #op-title { text-style: bold; padding: 1 2 0 2; }
 #op-step { padding: 0 2; color: $accent; }
+#op-progress { height: 1; margin: 1 2 0 2; }
+#op-progress-text { width: auto; margin-right: 2; color: $text-muted; }
+#op-bar, #op-bar > Horizontal, #op-bar Bar { width: 1fr; }
 #op-log { height: 1fr; margin: 1 2; border: round $panel-lighten-2; }
 #op-buttons { height: auto; padding: 0 2 1 2; }
 #op-buttons Button { margin-right: 2; }

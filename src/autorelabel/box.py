@@ -139,10 +139,10 @@ def build(
     last = [0.0]
 
     def progress(frac: float) -> None:
-        if frac - last[0] >= 0.1:
+        if frac - last[0] >= 0.01:
             last[0] = frac
             if on_line:
-                on_line(f"checksum {frac * 100:.0f}%")
+                on_line(proc.Progress(f"Checksum: {frac * 100:.0f}%"))
 
     digest = iso_sha256(iso, progress)
 

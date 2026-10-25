@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import threading
 import traceback
 from collections.abc import Callable
@@ -12,11 +13,12 @@ from textual import work
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen, Screen
-from textual.widgets import Button, Footer, Label, RichLog, Static
+from textual.widgets import Button, Footer, Label, ProgressBar, RichLog, Static
 
-from .. import banner, log, report
+from .. import banner, log, proc, report
 
 _log = log.get("tui")
+_PERCENT = re.compile(r"(\d{1,3}(?:\.\d+)?)\s?%")
 
 
 class Banner(Static):
@@ -103,6 +105,7 @@ OpFn = Callable[[Callable[[str], None], Callable[[str], None], threading.Event],
 
 class OperationScreen(Screen[Any]):
     """Runs a long operation in a worker thread with a step label, a live log and Cancel.
+    Progress counters in the output (proc.Progress) drive a bar instead of filling the log.
 
     `fn(step, line, cancel)` does the work. On success the screen dismisses with the result.
     On failure it shows the error (with hint and log path) and offers Retry / Back; unless the
@@ -120,10 +123,14 @@ class OperationScreen(Screen[Any]):
         self.cancel = threading.Event()
         self.running = False
         self.report_path = None
+        self.progress = ""          # the progress counter on show, "" if none
 
     def compose(self) -> ComposeResult:
         yield Static(self.op_title, id="op-title")
         yield Static("Starting…", id="op-step")
+        with Horizontal(id="op-progress"):
+            yield Static(id="op-progress-text")
+            yield ProgressBar(id="op-bar", total=100, show_eta=False, show_percentage=False)
         yield RichLog(id="op-log", wrap=True, markup=False, max_lines=2000)
         with Horizontal(id="op-buttons"):
             yield Button("Cancel", id="cancel", variant="warning", disabled=not self.cancellable)
@@ -136,6 +143,7 @@ class OperationScreen(Screen[Any]):
         self.query_one("#retry").display = False
         self.query_one("#back").display = False
         self.query_one("#copy-report").display = False
+        self.query_one("#op-progress").display = False
         if not self.show_log:
             self.query_one("#op-log").display = False
         self.start()
@@ -171,11 +179,36 @@ class OperationScreen(Screen[Any]):
         self.app.call_from_thread(self._done, result)
 
     def _set_step(self, s: str) -> None:
+        self._end_progress()
         self.query_one("#op-step", Static).update(f"▶ {s}")
         self.query_one("#op-log", RichLog).write(Text(f"==> {s}", style="bold cyan"))
 
     def _log_line(self, s: str) -> None:
+        if isinstance(s, proc.Progress):
+            self._show_progress(s.strip())
+            return
+        self._end_progress(s)
         self.query_one("#op-log", RichLog).write(Text(s))
+
+    def _show_progress(self, s: str) -> None:
+        pct = _PERCENT.search(s)
+        bar = self.query_one("#op-bar", ProgressBar)
+        if pct:
+            bar.update(total=100, progress=min(float(pct.group(1)), 100.0))
+        else:
+            bar.update(total=None)          # no percentage: an indeterminate bar
+        self.query_one("#op-progress-text", Static).update(s)
+        self.query_one("#op-progress").display = True
+        self.progress = s
+
+    def _end_progress(self, line: str = "") -> None:
+        """The counter finished (the tool moved on): keep its last value as one log line."""
+        if not self.progress:
+            return
+        if self.progress != line.strip():
+            self.query_one("#op-log", RichLog).write(Text(self.progress, style="dim"))
+        self.progress = ""
+        self.query_one("#op-progress").display = False
 
     def _done(self, result: Any) -> None:
         self.running = False
@@ -183,6 +216,7 @@ class OperationScreen(Screen[Any]):
 
     def _failed(self, message: str, hint: str, log_file: str, report_path=None) -> None:
         self.running = False
+        self._end_progress()
         self.report_path = report_path
         msg = Text()
         msg.append("✘ ", style="bold red")

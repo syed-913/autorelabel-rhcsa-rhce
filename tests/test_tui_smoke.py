@@ -76,3 +76,35 @@ def test_fit_shortens_with_an_ellipsis():
     assert fit("Install a package group", 30) == "Install a package group"
     assert fit("Configure software repositories on node1 and node2", 20) == "Configure software …"
     assert len(fit("x" * 50, 20)) == 20
+
+
+def test_progress_counters_drive_a_bar_not_the_log(configured):
+    from textual.widgets import RichLog
+
+    from autorelabel import proc
+    from autorelabel.tui.common import OperationScreen
+
+    def fn(step, line, cancel):
+        step("Starting the utility server")
+        line("Uploading base box image as volume into Libvirt storage...")
+        for pct in range(0, 101, 5):
+            line(proc.Progress(f"Progress: {pct}%"))
+        cancel.wait(5)                  # still running: the bar is on screen
+
+    async def run() -> None:
+        app = AutorelabelApp()
+        async with app.run_test(size=(120, 30)) as pilot:
+            screen = OperationScreen("Preparing", fn)
+            app.push_screen(screen)
+            await pilot.pause(0.5)
+            assert screen.query_one("#op-progress").display
+            assert screen.query_one("#op-bar").percentage == 1.0
+            log = screen.query_one("#op-log", RichLog)
+            assert len(log.lines) == 2                  # the step and the upload line, no counters
+            screen._log_line("==> utility: Creating image")
+            await pilot.pause()
+            assert not screen.query_one("#op-progress").display
+            assert [s.text for s in log.lines][-2:] == ["Progress: 100%", "==> utility: Creating image"]
+            screen.cancel.set()
+
+    asyncio.run(run())

@@ -284,9 +284,10 @@ class Lab:
         t = self.target(name)
         if not remote.wait_reachable(t, timeout=600):
             raise LabError(f"{name} is not reachable over SSH after boot", log_file=log_file)
+        # type(s): a progress counter (proc.Progress) stays one after the node name is added
         res = remote.stream_script(t, self._script(script), env=self._env_for(v, root_password),
                                    timeout=timeout, log_file=log_file,
-                                   on_line=(lambda s: line(f"[{name}] {s}")) if line else None)
+                                   on_line=(lambda s: line(type(s)(f"[{name}] {s}"))) if line else None)
         if not res.ok:
             raise LabError(f"provisioning {name} failed", res.tail(8), log_file)
 

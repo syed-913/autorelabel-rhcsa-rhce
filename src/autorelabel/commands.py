@@ -32,6 +32,31 @@ def _fail(exc: BaseException, what: str, exam: str = "") -> int:
     return 1
 
 
+def _printer(indent: str = "    "):
+    """Prints a tool's output lines. A progress counter redraws one terminal line instead of
+    adding a line per value (and is left out when the output is not a terminal)."""
+    from . import proc
+
+    tty = sys.stdout.isatty()
+    drawn = [""]                        # the counter value on screen
+
+    def out(s: str) -> None:
+        if isinstance(s, proc.Progress):
+            if tty:
+                print(f"\r\x1b[K{indent}{s}", end="", flush=True)
+                drawn[0] = s
+            return
+        if drawn[0]:
+            print()                     # the counter's last value stays on its line
+            if s == drawn[0]:
+                drawn[0] = ""
+                return
+            drawn[0] = ""
+        print(f"{indent}{s}", flush=True)
+
+    return out
+
+
 def cmd_box_build(args: argparse.Namespace) -> int:
     from . import box
 
@@ -45,12 +70,8 @@ def cmd_box_build(args: argparse.Namespace) -> int:
     def step(s: str) -> None:
         print(f"==> {s}", flush=True)
 
-    def line(s: str) -> None:
-        if args.verbose:
-            print(f"    {s}", flush=True)
-
     try:
-        log_file = box.build(settings, provider, on_line=line, on_step=step)
+        log_file = box.build(settings, provider, on_line=_printer() if args.verbose else None, on_step=step)
     except box.BoxError as exc:
         return _fail(exc, f"Building the {provider} box")
     print(f"Box ready. Log: {log_file}")
@@ -152,7 +173,7 @@ def cmd_lab_up(args: argparse.Namespace) -> int:
     pw = {n: secrets_util.password() for n in lab.names()}
     try:
         log_file = lab.up(root_passwords=pw, on_step=lambda s: print(f"==> {s}", flush=True),
-                          on_line=(lambda s: print(f"    {s}", flush=True)) if args.verbose else None)
+                          on_line=_printer() if args.verbose else None)
     except LabError as exc:
         return _fail(exc, f"Bringing up the {args.exam.upper()} lab", args.exam)
     print(f"Lab is up. Log: {log_file}")
@@ -176,7 +197,7 @@ def cmd_lab_health(args: argparse.Namespace) -> int:
 
 
 def cmd_lab_destroy(args: argparse.Namespace) -> int:
-    _lab(args.exam).destroy(on_line=lambda s: print(f"    {s}", flush=True))
+    _lab(args.exam).destroy(on_line=_printer())
     print("Lab destroyed (networks, pool and box are kept; use uninstall to remove everything).")
     return 0
 
@@ -260,7 +281,7 @@ def _ensure_rhce_content(verbose: bool = False) -> int:
           + (" and code-server (VS Code in the browser)" if st.code_server else "") + ". Downloading them once"
           " (about 60-150 MB); everything after that works offline.", flush=True)
     try:
-        content.download(st, on_line=(lambda s: print(f"    {s}", flush=True)) if verbose else None,
+        content.download(st, on_line=_printer() if verbose else None,
                          on_step=lambda s: print(f"==> {s}", flush=True), with_code_server=st.code_server)
     except content.ContentError as exc:
         return _fail(exc, "Downloading the RHCE content", "rhce")
@@ -278,7 +299,7 @@ def cmd_exam_start(args: argparse.Namespace) -> int:
         sess = eng.create(args.exam, mode="exam", seed=args.seed)
         print(f"Session {sess.id} (seed {sess.seed}): preparing the lab...")
         eng.prepare(sess, on_step=lambda s: print(f"==> {s}", flush=True),
-                    on_line=(lambda s: print(f"    {s}", flush=True)) if args.verbose else None)
+                    on_line=_printer() if args.verbose else None)
     except (EngineError, LabError) as exc:
         return _fail(exc, f"Preparing an {args.exam.upper()} exam", args.exam)
     if args.no_start:
@@ -506,7 +527,7 @@ def register_exam(sub: argparse._SubParsersAction) -> None:
 def cmd_selftest(args: argparse.Namespace) -> int:
     from .selftest import SelfTest
 
-    st = SelfTest(_engine(), args.exam, on_line=lambda s: print(s, flush=True))
+    st = SelfTest(_engine(), args.exam, on_line=_printer(""))
     ids = None
     if args.tasks:
         ids = []
@@ -543,7 +564,7 @@ def cmd_content_download(args: argparse.Namespace) -> int:
 
     st = config.load()
     try:
-        root = content.download(st, on_line=(lambda s: print(f"    {s}", flush=True)) if args.verbose else None,
+        root = content.download(st, on_line=_printer() if args.verbose else None,
                                 on_step=lambda s: print(f"==> {s}", flush=True),
                                 with_code_server=st.code_server and not args.no_code_server)
     except content.ContentError as exc:
