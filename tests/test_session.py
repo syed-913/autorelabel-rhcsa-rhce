@@ -59,3 +59,20 @@ def test_journal_rebuild(sess):
     sess.transition(S.PROVISIONING)
     sess.transition(S.READY)
     assert S.rebuild_from_journal("t1") == S.READY
+
+
+def test_exam_start_refuses_to_replace_an_open_session(tmp_path, monkeypatch, capsys):
+    import argparse
+
+    from autorelabel import commands, paths
+    from autorelabel import session as S
+
+    monkeypatch.setattr(paths, "SESSIONS", tmp_path)
+    open_exam = S.Session(id="20260101-000000-aaaaaa", exam="rhcsa", mode="exam", seed=1, created=0.0,
+                          state=S.IN_PROGRESS)
+    open_exam.save()
+    S.set_current(open_exam)
+    args = argparse.Namespace(exam="rhce", seed=None, no_start=False, verbose=False)
+    assert commands.cmd_exam_start(args) == 1
+    assert "still open" in capsys.readouterr().err
+    assert S.current().id == open_exam.id

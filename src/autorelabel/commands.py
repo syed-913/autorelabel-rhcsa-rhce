@@ -289,9 +289,14 @@ def _ensure_rhce_content(verbose: bool = False) -> int:
 
 
 def cmd_exam_start(args: argparse.Namespace) -> int:
+    from . import session as S
     from .engine import EngineError
     from .lab import LabError
 
+    current = S.current()          # as in the TUI: one session at a time, never replaced silently
+    if current and current.state != S.GRADED:
+        return _err(f"your {current.exam.upper()} session is still open (state: {current.state})",
+                    "finish it, or give it up with: ./autorelabel exam abandon")
     eng = _engine()
     if args.exam == "rhce" and _ensure_rhce_content(args.verbose):
         return 1
