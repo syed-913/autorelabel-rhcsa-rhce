@@ -108,3 +108,15 @@ def test_progress_counters_drive_a_bar_not_the_log(configured):
             screen.cancel.set()
 
     asyncio.run(run())
+
+
+def test_storage_defaults_to_the_xdg_data_directory(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("XDG_DATA_HOME", raising=False)
+    assert config.default_storage_dir() == tmp_path                 # no ~/.local/share: home
+    (tmp_path / ".local" / "share").mkdir(parents=True)
+    assert config.default_storage_dir() == tmp_path / ".local" / "share"
+    monkeypatch.setenv("XDG_DATA_HOME", "relative/ignored")         # the spec: only absolute paths count
+    assert config.default_storage_dir() == tmp_path / ".local" / "share"
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    assert config.default_storage_dir() == tmp_path

@@ -235,11 +235,6 @@ def _iso_candidates() -> list[Path]:
     return seen
 
 
-def _storage_suggestions() -> list[Path]:
-    out = [paths.ROOT.parent, Path.home()]
-    return [p for i, p in enumerate(out) if p not in out[:i]]
-
-
 class SetupScreen(Screen[bool]):
     """One-page setup: provider, lab storage, ISO, profile. Doctor runs before it."""
 
@@ -265,7 +260,7 @@ class SetupScreen(Screen[bool]):
             yield Label("Lab storage directory", classes="field-label")
             yield Static("VM disks and build files go into an 'autorelabel' folder inside this directory "
                          "(~30 GB). Pick a disk with space; /var/lib/libvirt is never used.", classes="field-help")
-            default_storage = st.storage_dir or str(_storage_suggestions()[0])
+            default_storage = st.storage_dir or str(config.default_storage_dir())
             yield Input(value=default_storage, id="storage")
             yield Static(id="storage-info", classes="field-help")
             yield Label("RHEL 10 DVD ISO", classes="field-label")
@@ -369,9 +364,9 @@ class SettingsScreen(Screen[None]):
                 yield RadioButton("lite", value=st.profile == "lite", id="p-lite")
                 yield RadioButton("standard", value=st.profile == "standard", id="p-standard")
             yield Label("Lab storage directory", classes="field-label")
-            yield Input(value=st.storage_dir, id="storage")
+            yield Input(value=st.storage_dir, placeholder=str(config.default_storage_dir()), id="storage")
             yield Label("RHEL 10 ISO", classes="field-label")
-            yield Input(value=st.iso_path, id="iso")
+            yield Input(value=st.iso_path, placeholder="/path/to/rhel-10.x-x86_64-dvd.iso", id="iso")
             yield Label("Networks (change only if they collide with yours)", classes="field-label")
             yield Input(value=st.mgmt_subnet, id="mgmt")
             yield Input(value=st.lab_subnet_libvirt, id="labnet")

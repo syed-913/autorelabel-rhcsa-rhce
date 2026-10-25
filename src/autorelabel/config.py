@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import asdict, dataclass, field, fields
+from pathlib import Path
 
 from . import paths
 from .fsutil import atomic_write_json, read_json
@@ -45,6 +46,14 @@ class Settings:
         if self.scoring not in SCORING:
             problems.append(f"unknown scoring mode {self.scoring!r}")
         return problems
+
+
+def default_storage_dir() -> Path:
+    """The suggested lab storage parent: the XDG data directory, so the lab goes into
+    ~/.local/share/autorelabel unless you pick another disk (home if that doesn't exist)."""
+    xdg = os.environ.get("XDG_DATA_HOME", "")
+    data = Path(xdg) if os.path.isabs(xdg) else Path.home() / ".local" / "share"
+    return data if data.is_dir() else Path.home()
 
 
 def _apply_env(settings: Settings) -> None:
