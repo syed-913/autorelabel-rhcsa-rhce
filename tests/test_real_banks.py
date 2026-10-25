@@ -110,3 +110,21 @@ def test_package_choices_never_overlap_between_tasks(bank):
                 for pkg in (value if isinstance(value, list) else str(value).split()):
                     assert owners.setdefault(pkg, task.id) == task.id, \
                         f"{pkg} is a choice of both {owners[pkg]} and {task.id}"
+
+
+def test_root_passwords_are_given_unless_a_task_resets_them(tmp_path, monkeypatch):
+    """The instructions give every node's root password except where a task resets it."""
+    from autorelabel import config, paths
+    from autorelabel.engine import Engine
+
+    monkeypatch.setattr(paths, "CONFIG_FILE", tmp_path / "config.json")
+    monkeypatch.setattr(paths, "SESSIONS", tmp_path / "sessions")
+    monkeypatch.setenv("VBOX_USER_HOME", "")
+    config.save(config.Settings(provider="libvirt", storage_dir=str(tmp_path), iso_path=str(tmp_path / "x.iso")))
+    eng = Engine()
+    exam = eng.create("rhcsa", seed=7)                  # every exam resets node2's root password
+    assert sorted(exam.given) == ["node1"]
+    assert "password: " + exam.given["node1"] in eng.console_login(exam, "node1")
+    assert "not given" in eng.console_login(exam, "node2")
+    expired = eng.create("rhcsa", mode="practice", task_ids=["rhcsa.operate.root-account-expired"], seed=7)
+    assert sorted(expired.given) == ["node2"]

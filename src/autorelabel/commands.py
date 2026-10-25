@@ -460,8 +460,10 @@ def cmd_console(args: argparse.Namespace) -> int:
     if sess.state in (S.LOCKED, S.GRADING):
         return _err("the exam is locked: time is up")
     _ip, dom = _lab_ip(args.node)
-    print(f"Serial console of {args.node}. Press Enter for a prompt; Ctrl+] to leave.", flush=True)
-    cmd = _engine().lab(sess.exam).hv.console_command(dom)
+    eng = _engine()
+    print(f"Serial console of {args.node}. {eng.console_login(sess, args.node)}\n"
+          "Press Enter for a prompt; Ctrl+] to leave.", flush=True)
+    cmd = eng.lab(sess.exam).hv.console_command(dom)
     os.execvp(cmd[0], cmd)
     return 0
 

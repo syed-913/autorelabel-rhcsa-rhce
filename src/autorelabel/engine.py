@@ -99,14 +99,15 @@ class Engine:
                          bank_digest=bank_digest(exam),
                          box=box.manifest(self.settings, self.settings.provider) or {})
         lab = self.lab(exam)
-        anchors = {bank.tasks[t["task"]].anchor for t in sess.tasks}
+        # A task in the exclusive group "<node>-root-password" (resetting it) keeps it unknown.
+        owned = {g for t in sess.tasks for g in bank.tasks[t["task"]].exclusive}
         for name in lab.names():
             if lab.vm(name).spec.role == "utility":
                 sess.passwords[name] = secrets_util.password()
                 continue
             pw = secrets_util.password()
             sess.passwords[name] = pw
-            if not (name == "node2" and "root-reset" in anchors):
+            if f"{name}-root-password" not in owned:
                 sess.given[name] = pw
         sess.broken_nodes = sorted({bank.tasks[t["task"]].node for t in sess.tasks
                                     if bank.tasks[t["task"]].breaks_boot})
@@ -415,6 +416,11 @@ class Engine:
                 "console_only": s.task.console_only,
             })
         return out
+
+    def console_login(self, sess: S.Session, node: str, markdown: bool = False) -> str:
+        """How to log in on a node's console, as the exam instructions give it."""
+        pw, q = sess.given.get(node), "`" if markdown else ""
+        return f"Log in as {q}root{q}, password: {q}{pw}{q}" if pw else "Its root password is not given: see the tasks"
 
     def candidate_info(self, sess: S.Session) -> dict[str, Any]:
         lab = self.lab(sess.exam)

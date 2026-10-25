@@ -173,6 +173,8 @@ class ExamScreen(Screen[None]):
         Binding("d", "mark('done')", "Done"),
         Binding("f", "mark('flag')", "Flag"),
         Binding("n", "node", "Node actions"),
+        Binding("s", "open('ssh')", "SSH", show=False),
+        Binding("c", "open('console')", "Console", show=False),
         Binding("i", "instructions", "Instructions"),
         Binding("k", "check(False)", "Check now", show=False),
         Binding("r", "check(True)", "Check w/ reboot", show=False),
@@ -243,7 +245,12 @@ class ExamScreen(Screen[None]):
         if t.get("console_only"):
             meta += " · use the console"
         meta += "*\n\n"
-        self.query_one("#task-md", Markdown).update(head + meta + t["prompt"])
+        body = t["prompt"]
+        if t.get("console_only"):
+            body += (f"\n\n> **Console:** select {t['node']} in the bar below and press **c**, or run "
+                     f"`./autorelabel console {t['node']}`. "
+                     f"{self.engine.console_login(self.sess, t['node'], markdown=True)}.")
+        self.query_one("#task-md", Markdown).update(head + meta + body)
 
     def tick(self) -> None:
         sess = self.sess = S.load(self.sess.id)
@@ -285,7 +292,7 @@ class ExamScreen(Screen[None]):
             sel = i == self.node_index
             bar.append(f" {'▸' if sel else ' '}{n} ", style="reverse" if sel else "")
             bar.append(f"● {st}  ", style=color)
-        bar.append("   ←/→ select · n actions · ssh/console also from another terminal", style="dim")
+        bar.append("   ←/→ select · s SSH · c console · n more", style="dim")
         self.query_one("#node-bar", Static).update(bar)
         problems = [n for n, h in (health.get("nodes") or {}).items() if h.get("grader_access") is False]
         banner = self.query_one("#exam-banner", Static)
@@ -343,6 +350,10 @@ class ExamScreen(Screen[None]):
 
         self.app.push_screen(NodeMenu(node, state, self.ssh_user(node)), chosen)
 
+    def action_open(self, kind: str) -> None:
+        if self.node_names:
+            self.open_terminal(kind, self.node_names[self.node_index])
+
     def ssh_user(self, node: str) -> str:
         return "student" if self.sess.exam == "rhce" and node == "control" else "root"
 
@@ -363,7 +374,8 @@ class ExamScreen(Screen[None]):
             hint = f"SSH to {node} as {self.ssh_user(node)}. Type 'exit' to return to autorelabel."
         else:
             cmd = lab.hv.console_command(v.domain)
-            hint = f"Serial console of {node}. Press Enter for a prompt; Ctrl+] returns to autorelabel."
+            hint = (f"Serial console of {node}. {self.engine.console_login(self.sess, node)}\n"
+                    "Press Enter for a prompt; Ctrl+] returns to autorelabel.")
         with self.app.suspend():
             print(f"\n\x1b[1;36m{hint}\x1b[0m\n", flush=True)
             subprocess.run(cmd)
