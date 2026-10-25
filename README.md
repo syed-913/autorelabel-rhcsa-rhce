@@ -1,13 +1,6 @@
 <div align="center">
 
-```
- █████╗ ██╗   ██╗████████╗ ██████╗ ██████╗ ███████╗██╗      █████╗ ██████╗ ███████╗██╗
-██╔══██╗██║   ██║╚══██╔══╝██╔═══██╗██╔══██╗██╔════╝██║     ██╔══██╗██╔══██╗██╔════╝██║
-███████║██║   ██║   ██║   ██║   ██║██████╔╝█████╗  ██║     ███████║██████╔╝█████╗  ██║
-██╔══██║██║   ██║   ██║   ██║   ██║██╔══██╗██╔══╝  ██║     ██╔══██║██╔══██╗██╔══╝  ██║
-██║  ██║╚██████╔╝   ██║   ╚██████╔╝██║  ██║███████╗███████╗██║  ██║██████╔╝███████╗███████╗
-╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝
-```
+<img src="docs/media/demo.gif" width="880" alt="autorelabel in 50 seconds: the RHEL 10 lab, a timed RHCSA exam, every node rebooted before grading, the results, and touch /.autorelabel">
 
 # autorelabel: RHCSA & RHCE practice exam simulator for RHEL 10
 
@@ -100,6 +93,8 @@ That's it. The first run:
 and then you can start an exam. Afterwards `./autorelabel rhcsa` (or `./autorelabel rhce`) jumps
 straight into a new exam.
 
+<p align="center"><img src="docs/media/home.png" width="760" alt="The home screen: new RHCSA or RHCE exam, practice, history, lab and box, doctor, settings"></p>
+
 ### Getting the RHEL 10 ISO
 
 Create a free [Red Hat Developer](https://developers.redhat.com/register) account and download the
@@ -124,6 +119,16 @@ finds it in the repository folder or `~/Downloads`.
 - **Retake** the same exam from its starting point, or start a new one.
 - **Practice mode**: pick any tasks, untimed, check your work at any time (with or without a
   reboot), read the solution.
+
+<p align="center">
+  <img src="docs/media/exam.png" width="880" alt="The exam screen: the 20 tasks, the countdown, task 18 open, and the nodes"><br>
+  <sub>An RHCSA exam in progress: the tasks, the time left, the open task and the nodes' power controls.</sub>
+</p>
+<p align="center">
+  <img src="docs/media/results.png" width="880" alt="The results: 258 of 300, PASS, points per difficulty and domain, and every check of task 18"><br>
+  <sub>The results after the reboot. Task 18's firewall rule was added without <code>--permanent</code>: it
+  worked before the reboot, not after.</sub>
+</p>
 
 ### If something goes wrong
 
@@ -429,6 +434,7 @@ src/autorelabel/             # engine, grader, proctor, TUI, doctor, providers
 banks/rhcsa/  banks/rhce/    # objectives (verbatim), blueprint, tasks
 vagrant/  packer/            # lab definition and box build
 scripts/uninstall.sh         # pure-bash uninstaller
+scripts/dev/                 # footprint audit, RHCE playbook check, README animation and screenshots
 docs/                        # coverage reports and architecture
 ```
 

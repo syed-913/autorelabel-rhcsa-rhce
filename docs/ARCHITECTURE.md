@@ -168,3 +168,10 @@ profile, libvirt objects, network interfaces, user units, processes, temporary d
 one on a clean host, install and use autorelabel (box build, exam, grading), run
 `./autorelabel uninstall`, take another and `diff` them: apart from the two items above, they
 must be identical.
+
+**README media.** `scripts/dev/demo/render.sh` renders the animation at the top of the README
+from `demo.py` with [Manim](https://www.manim.community/) (the banner's real glyphs and colours,
+real bank content) into `docs/media/demo.gif`, plus a 1080p MP4 for release pages.
+`scripts/dev/demo/screenshots.py` takes the TUI screenshots: it runs the real app headless in a
+throwaway workspace, with only the VM power states and the box status stubbed, and gets the
+results screen from the grader's own scoring.
