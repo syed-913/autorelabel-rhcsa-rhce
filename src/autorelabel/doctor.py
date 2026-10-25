@@ -14,7 +14,7 @@ from pathlib import Path
 
 from . import guides, hostinfo, labspec, ledger, paths, proc, vagrant
 from .config import Settings
-from .fsutil import disk_free_bytes
+from .fsutil import atomic_write_json, disk_free_bytes, read_json
 
 MIN_VAGRANT = (2, 3)
 MIN_PACKER = (1, 10)
@@ -370,7 +370,23 @@ def run(settings: Settings, exam: str = "rhcsa") -> list[Check]:
              "vagrant_libvirt", "virtualbox", "vagrant_registration", f"memory_{exam}", "storage",
              "iso", "subnets", "box", "hv_clash", "vbox_profile", "ledger"]
     results.sort(key=lambda c: order.index(c.id) if c.id in order else len(order))
+    remember_user_actions(results, settings.storage_dir)
     return results
+
+
+def remember_user_actions(checks: list[Check], storage_dir: str = "") -> None:
+    """Fixes the user ran with sudo (a check that showed undo commands now passes) go into the
+    ledger as user actions, so the uninstaller can list their undo commands."""
+    pending_file = paths.WORKSPACE / "doctor-pending.json"
+    pending: dict[str, list[str]] = read_json(pending_file, default={}) or {}
+    for c in checks:
+        if c.status in (Status.FAIL, Status.WARN) and c.undo:
+            pending[c.id] = list(c.undo)
+        elif c.status is Status.OK and c.id in pending:
+            for undo in pending.pop(c.id):
+                ledger.record("user-action", f"{c.id}: {undo}", undo, storage_dir=storage_dir or None)
+    if pending or pending_file.exists():
+        atomic_write_json(pending_file, pending)
 
 
 def usable_providers(checks: list[Check]) -> list[str]:

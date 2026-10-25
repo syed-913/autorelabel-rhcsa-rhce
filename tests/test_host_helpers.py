@@ -156,3 +156,20 @@ def test_rhel_hosts_build_with_qemu_kvm(monkeypatch):
     assert hostinfo.qemu_system() is None
     monkeypatch.setattr(proc, "which", lambda name: f"/usr/bin/{name}")
     assert hostinfo.qemu_system() == "/usr/bin/qemu-system-x86_64"
+
+
+def test_fixes_the_user_ran_are_ledgered_for_uninstall(tmp_path, monkeypatch):
+    from autorelabel import doctor
+
+    monkeypatch.setattr(paths, "WORKSPACE", tmp_path)
+    monkeypatch.setattr(paths, "LEDGER_FILE", tmp_path / "ledger.tsv")
+    failing = doctor.Check("libvirt_group", "libvirt group", doctor.Status.FAIL,
+                           fix=["sudo usermod -aG libvirt $USER"], undo=["sudo gpasswd -d $USER libvirt"])
+    doctor.remember_user_actions([failing])
+    assert ledger.entries() == []                          # shown, not run yet: nothing to undo
+    fixed = doctor.Check("libvirt_group", "libvirt group", doctor.Status.OK)
+    doctor.remember_user_actions([fixed])
+    [entry] = ledger.entries()
+    assert (entry.kind, entry.details) == ("user-action", "sudo gpasswd -d $USER libvirt")
+    doctor.remember_user_actions([fixed])                  # recorded once
+    assert len(ledger.entries()) == 1
