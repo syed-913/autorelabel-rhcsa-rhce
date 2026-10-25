@@ -5,10 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting! When autorelabel hits an error it can't solve, it saves a problem
-        report in `.workspace/reports/` and prints its path. You can also write one yourself with
-        `./autorelabel report "what went wrong"`. Please read it before you paste it: the home
-        directory, user name and host name are replaced and passwords are masked.
+        Thanks for reporting! When autorelabel hits an error it can't solve, it saves a problem report in `.workspace/reports/` and prints its path. You can also write one yourself with `./autorelabel report "what went wrong"`. Please read it before you paste it: the home directory, user name and host name are replaced and passwords are masked.
   - type: textarea
     id: report
     attributes:
