@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/media/demo.gif" width="880" alt="autorelabel in 50 seconds: the RHEL 10 lab, a timed RHCSA exam, every node rebooted before grading, the results, and touch /.autorelabel">
+<img src="docs/media/banner.png" width="880" alt="autorelabel: RHCSA and RHCE practice exams on real RHEL 10 VMs. 20 tasks, 300 points, pass at 210, graded after a reboot. sh-5.2# touch /.autorelabel">
 
 # autorelabel: RHCSA & RHCE practice exam simulator for RHEL 10
 
@@ -9,6 +9,9 @@
 `touch /.autorelabel`: forget it after `rd.break` and your node won't let you log in. You'll never forget again.
 
 </div>
+
+<!-- DEMO VIDEO: on github.com, edit this file and drag demo.mp4 (scripts/dev/demo/render.sh; 1080p, 8 MB, GitHub allows 10 MB) onto the empty line below. GitHub uploads it and inserts a https://github.com/user-attachments/assets/... link: keep that link alone on its line (it becomes an inline player), delete this comment, and commit. -->
+
 
 ---
 
@@ -467,7 +470,7 @@ src/autorelabel/             # engine, grader, proctor, TUI, doctor, providers
 banks/rhcsa/  banks/rhce/    # objectives (verbatim), blueprint, tasks
 vagrant/  packer/            # lab definition and box build
 scripts/uninstall.sh         # pure-bash uninstaller
-scripts/dev/                 # footprint audit, RHCE playbook check, README animation and screenshots
+scripts/dev/                 # footprint audit, RHCE playbook check, README banner, animation and screenshots
 docs/                        # coverage reports and architecture
 ```
 
