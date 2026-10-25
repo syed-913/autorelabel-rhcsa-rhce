@@ -630,8 +630,8 @@
     "status": "pass"
   },
   "rhcsa.tools.links": {
-    "box": "RHEL 10.0 20261019.1805",
-    "date": "2026-10-19",
+    "box": "RHEL 10.0 20261025.0724",
+    "date": "2026-10-25",
     "detail": "",
     "digest": "94dbd1b1b144",
     "status": "pass"
