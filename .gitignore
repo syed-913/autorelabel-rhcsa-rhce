@@ -24,3 +24,7 @@ __pycache__/
 .DS_Store
 .idea/
 .vscode/
+
+# Rendered demo videos (uploaded to GitHub, never committed)
+/demo.mp4
+scripts/dev/demo/*.mp4
