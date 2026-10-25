@@ -83,3 +83,16 @@ Outside these, the tools autorelabel drives keep their usual state: the Vagrant 
 **Footprint audit.** `scripts/dev/footprint.sh <file>` snapshots everything on the host that autorelabel or these tools could change (home directory dotfiles, Vagrant, VirtualBox's default profile, libvirt objects, network interfaces, user units, processes, temporary directories). Take one on a clean host, install and use autorelabel (box build, exam, grading), run `./autorelabel uninstall`, take another and `diff` them: apart from the two items above, they must be identical.
 
 **README media.** `scripts/dev/demo/banner_image.py` draws the README banner (`docs/media/banner.png`, 2x) and the social preview from the TUI banner's real glyphs. `scripts/dev/demo/render.sh` renders the demo video from `demo.py` with [Manim](https://www.manim.community/) (the banner's real glyphs and colours, real bank content) as a 1080p MP4, which is uploaded to the README and release pages on GitHub rather than committed. `scripts/dev/demo/screenshots.py` takes the TUI screenshots: it runs the real app headless in a throwaway workspace, with only the VM power states and the box status stubbed, and gets the results screen from the grader's own scoring.
+
+## Repository layout
+
+```
+autorelabel                  # the one command (bash bootstrap)
+src/autorelabel/             # engine, grader, proctor, TUI, doctor, providers
+banks/rhcsa/  banks/rhce/    # objectives (verbatim), blueprint, tasks
+vagrant/  packer/            # lab definition and box build
+scripts/uninstall.sh         # pure-bash uninstaller
+scripts/dev/                 # footprint audit, RHCE playbook check, README banner, animation and screenshots
+docs/                        # coverage reports, architecture, task authoring
+docs/guide/                  # the user guide
+```
