@@ -1,0 +1,2339 @@
+{
+  "rhcsa.deploy.cron-system": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "1339f592cd7a",
+      "params": {
+        "every": 5,
+        "word": "comet"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "1339f592cd7a",
+      "params": {
+        "every": 10,
+        "word": "pulsar"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "1339f592cd7a",
+      "params": {
+        "every": 15,
+        "word": "pulsar"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "1339f592cd7a",
+      "params": {
+        "every": 20,
+        "word": "lyra"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.deploy.cron-user": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "fc2e8b3d24d3",
+      "params": {
+        "dow": "1-5",
+        "hour": "08",
+        "minute": "05",
+        "user": "nina",
+        "word": "atlas"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "fc2e8b3d24d3",
+      "params": {
+        "dow": "1,3,5",
+        "hour": "13",
+        "minute": "12",
+        "user": "fatima",
+        "word": "nebula"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "fc2e8b3d24d3",
+      "params": {
+        "dow": "6,0",
+        "hour": "17",
+        "minute": "19",
+        "user": "priya",
+        "word": "zenith"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "fc2e8b3d24d3",
+      "params": {
+        "dow": "1-5",
+        "hour": "21",
+        "minute": "23",
+        "user": "mike",
+        "word": "comet"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.deploy.grub-timeout": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "995c66839556",
+      "params": {
+        "timeout": 8
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "995c66839556",
+      "params": {
+        "timeout": 10
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "995c66839556",
+      "params": {
+        "timeout": 12
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "995c66839556",
+      "params": {
+        "timeout": 15
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.deploy.kernel-args": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "c92e97ce1d73",
+      "params": {
+        "arg": "audit_backlog_limit=8192"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "c92e97ce1d73",
+      "params": {
+        "arg": "panic=30"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "c92e97ce1d73",
+      "params": {
+        "arg": "printk.devkmsg=on"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "c92e97ce1d73",
+      "params": {
+        "arg": "consoleblank=600"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.deploy.systemd-timer": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "c7ad7ffa90d1",
+      "params": {
+        "hour": "02",
+        "minute": "10",
+        "word": "vega"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "c7ad7ffa90d1",
+      "params": {
+        "hour": "03",
+        "minute": "20",
+        "word": "zenith"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "c7ad7ffa90d1",
+      "params": {
+        "hour": "04",
+        "minute": "30",
+        "word": "nebula"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "c7ad7ffa90d1",
+      "params": {
+        "hour": "22",
+        "minute": "40",
+        "word": "atlas"
+      },
+      "status": "pass"
+    },
+    "4": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "c7ad7ffa90d1",
+      "params": {
+        "hour": "23",
+        "minute": "10",
+        "word": "pulsar"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.deploy.timezone-and-ntp": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "adb9aa261ad0",
+      "params": {
+        "tz": "Asia/Karachi"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "adb9aa261ad0",
+      "params": {
+        "tz": "Europe/Berlin"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "adb9aa261ad0",
+      "params": {
+        "tz": "America/Chicago"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "adb9aa261ad0",
+      "params": {
+        "tz": "Asia/Tokyo"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.filesystems.autofs-direct": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a28b28e1ab38",
+      "params": {
+        "dir": "/srv/reports"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a28b28e1ab38",
+      "params": {
+        "dir": "/opt/shared-docs"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a28b28e1ab38",
+      "params": {
+        "dir": "/data/library"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.filesystems.autofs-home-wildcard": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ad73a2a6eafb",
+      "params": {
+        "base": "netdir",
+        "user1": "ravi",
+        "user2": "elena"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ad73a2a6eafb",
+      "params": {
+        "base": "rhome",
+        "user1": "zara",
+        "user2": "john"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ad73a2a6eafb",
+      "params": {
+        "base": "nethome",
+        "user1": "john",
+        "user2": "kenji"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.filesystems.extend-ext4": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "19a443b0cb09",
+      "params": {
+        "vg": "mailvg"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "19a443b0cb09",
+      "params": {
+        "vg": "printvg"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "19a443b0cb09",
+      "params": {
+        "vg": "labvg2"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.filesystems.extend-xfs": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "27b55161deca",
+      "params": {
+        "target": 700,
+        "vg": "salesvg"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "27b55161deca",
+      "params": {
+        "target": 800,
+        "vg": "hrvg"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "27b55161deca",
+      "params": {
+        "target": 900,
+        "vg": "opsdatavg"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.filesystems.fix-home-access": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "d41434b3b9cc",
+      "params": {
+        "password": "Fix-Home-11",
+        "user": "layla"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "d41434b3b9cc",
+      "params": {
+        "password": "Fix-Home-22",
+        "user": "natasha"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.filesystems.nfs-mount": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a1d1a5c99bd1",
+      "params": {
+        "share": "public"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a1d1a5c99bd1",
+      "params": {
+        "share": "software"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a1d1a5c99bd1",
+      "params": {
+        "share": "manuals"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a1d1a5c99bd1",
+      "params": {
+        "share": "archive"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.filesystems.vfat-uuid": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e5b31d71aee5",
+      "params": {
+        "dir": "usbshare"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e5b31d71aee5",
+      "params": {
+        "dir": "exchange"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e5b31d71aee5",
+      "params": {
+        "dir": "transfer"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.networking.dns-client": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "caf389a49e3e",
+      "params": {
+        "short": "web02"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "caf389a49e3e",
+      "params": {
+        "short": "app02"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "caf389a49e3e",
+      "params": {
+        "short": "db02"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "caf389a49e3e",
+      "params": {
+        "short": "srv02"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.networking.hosts-file": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "35d4b119f1d1",
+      "params": {
+        "alias": "repo"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "35d4b119f1d1",
+      "params": {
+        "alias": "mirror"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "35d4b119f1d1",
+      "params": {
+        "alias": "depot"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "35d4b119f1d1",
+      "params": {
+        "alias": "files"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.networking.ipv6-address": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "0cbf9ae7468a",
+      "params": {
+        "host": 101
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "0cbf9ae7468a",
+      "params": {
+        "host": 150
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "0cbf9ae7468a",
+      "params": {
+        "host": 200
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "0cbf9ae7468a",
+      "params": {
+        "host": 250
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.operate.boot-emergency-fstab": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ee700f35578d",
+      "params": {
+        "mnt": "appdata"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ee700f35578d",
+      "params": {
+        "mnt": "records"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ee700f35578d",
+      "params": {
+        "mnt": "vault"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.operate.journal-size-limit": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "4f6d36fe90de",
+      "params": {
+        "size": 64
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "4f6d36fe90de",
+      "params": {
+        "size": 100
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "4f6d36fe90de",
+      "params": {
+        "size": 128
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.operate.nice-cron-job": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f1cfb9498b12",
+      "params": {
+        "hour": "01",
+        "nice": 10,
+        "user": "chen"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f1cfb9498b12",
+      "params": {
+        "hour": "02",
+        "nice": 15,
+        "user": "zara"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f1cfb9498b12",
+      "params": {
+        "hour": "03",
+        "nice": 19,
+        "user": "zara"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.operate.process-priority": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "521e9c2f24e9",
+      "params": {
+        "nice": 5,
+        "word": "zenith"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "521e9c2f24e9",
+      "params": {
+        "nice": 10,
+        "word": "comet"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "521e9c2f24e9",
+      "params": {
+        "nice": 15,
+        "word": "zenith"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "521e9c2f24e9",
+      "params": {
+        "nice": 19,
+        "word": "comet"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.operate.root-account-expired": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f71055e197d9",
+      "params": {
+        "new_password": "revalkin"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f71055e197d9",
+      "params": {
+        "new_password": "sorbanet"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f71055e197d9",
+      "params": {
+        "new_password": "tremidor"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.operate.root-password-reset": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "83a7eddf9a1e",
+      "params": {
+        "new_password": "flectrag"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "83a7eddf9a1e",
+      "params": {
+        "new_password": "atenorth"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "83a7eddf9a1e",
+      "params": {
+        "new_password": "varkulos"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "83a7eddf9a1e",
+      "params": {
+        "new_password": "meridane"
+      },
+      "status": "pass"
+    },
+    "4": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "83a7eddf9a1e",
+      "params": {
+        "new_password": "trosvali"
+      },
+      "status": "pass"
+    },
+    "5": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "83a7eddf9a1e",
+      "params": {
+        "new_password": "kelpimar"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.operate.tuned-profile": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "19dcf4a4b1f4",
+      "params": {
+        "profile": "throughput-performance"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "19dcf4a4b1f4",
+      "params": {
+        "profile": "latency-performance"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "19dcf4a4b1f4",
+      "params": {
+        "profile": "powersave"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "19dcf4a4b1f4",
+      "params": {
+        "profile": "balanced"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.scripts.arg-loop": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "5f8b82deaa21",
+      "params": {
+        "name": "count-chars"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "5f8b82deaa21",
+      "params": {
+        "name": "wordlen"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "5f8b82deaa21",
+      "params": {
+        "name": "measure"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.scripts.file-loop": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "66d986fe2e27",
+      "params": {
+        "name": "resolve-hosts"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "66d986fe2e27",
+      "params": {
+        "name": "hostlookup"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "66d986fe2e27",
+      "params": {
+        "name": "check-hosts"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.scripts.path-type": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ba32a83a5175",
+      "params": {
+        "name": "pathtype"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ba32a83a5175",
+      "params": {
+        "name": "whatis-path"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ba32a83a5175",
+      "params": {
+        "name": "classify"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.scripts.user-lookup": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "d0a2314cf968",
+      "params": {
+        "name": "whois-user"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "d0a2314cf968",
+      "params": {
+        "name": "usercheck"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "d0a2314cf968",
+      "params": {
+        "name": "finduser"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.security.firewall-services": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "4c8b05637449",
+      "params": {
+        "port": 8446,
+        "service": "https"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "4c8b05637449",
+      "params": {
+        "port": 8430,
+        "service": "nfs"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "4c8b05637449",
+      "params": {
+        "port": 8408,
+        "service": "ftp"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "4c8b05637449",
+      "params": {
+        "port": 8485,
+        "service": "smtp"
+      },
+      "status": "pass"
+    },
+    "4": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "4c8b05637449",
+      "params": {
+        "port": 8466,
+        "service": "mysql"
+      },
+      "status": "pass"
+    },
+    "5": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "4c8b05637449",
+      "params": {
+        "port": 8412,
+        "service": "postgresql"
+      },
+      "status": "pass"
+    },
+    "6": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "4c8b05637449",
+      "params": {
+        "port": 8490,
+        "service": "dns"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.security.firewall-zone": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "38426d40049a",
+      "params": {
+        "zone": "work"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "38426d40049a",
+      "params": {
+        "zone": "internal"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "38426d40049a",
+      "params": {
+        "zone": "home"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.security.selinux-boolean": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "7c8b4f1f117f",
+      "params": {
+        "pair": "httpd_can_network_connect httpd_can_sendmail"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "7c8b4f1f117f",
+      "params": {
+        "pair": "httpd_enable_homedirs httpd_use_nfs"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "7c8b4f1f117f",
+      "params": {
+        "pair": "ftpd_full_access httpd_can_network_connect_db"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "7c8b4f1f117f",
+      "params": {
+        "pair": "use_nfs_home_dirs httpd_enable_cgi"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.security.selinux-contexts": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a3fd70bff428",
+      "params": {
+        "path": "/etc/shadow",
+        "process": "chronyd"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a3fd70bff428",
+      "params": {
+        "path": "/var/log/messages",
+        "process": "sshd"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a3fd70bff428",
+      "params": {
+        "path": "/etc/ssh/sshd_config",
+        "process": "crond"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a3fd70bff428",
+      "params": {
+        "path": "/usr/sbin/sshd",
+        "process": "rsyslogd"
+      },
+      "status": "pass"
+    },
+    "4": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a3fd70bff428",
+      "params": {
+        "path": "/etc/hosts",
+        "process": "NetworkManager"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.security.selinux-fcontext-web": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "48f61912ca5d",
+      "params": {
+        "site": "intranet",
+        "token": "2gflq71g92"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "48f61912ca5d",
+      "params": {
+        "site": "reports",
+        "token": "ey51uyn72k"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "48f61912ca5d",
+      "params": {
+        "site": "docs",
+        "token": "fj5zxzm3ao"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "48f61912ca5d",
+      "params": {
+        "site": "portal",
+        "token": "zwwiqspse3"
+      },
+      "status": "pass"
+    },
+    "4": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "48f61912ca5d",
+      "params": {
+        "site": "wiki",
+        "token": "c032bxvg50"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.security.selinux-find-boolean": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e31673f8a1d4",
+      "params": {
+        "case": {
+          "boolean": "samba_enable_home_dirs",
+          "desc": "allow Samba to share users' home directories"
+        }
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e31673f8a1d4",
+      "params": {
+        "case": {
+          "boolean": "httpd_can_sendmail",
+          "desc": "allow the Apache HTTP server to send email"
+        }
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e31673f8a1d4",
+      "params": {
+        "case": {
+          "boolean": "httpd_can_network_connect_db",
+          "desc": "allow the Apache HTTP server to connect to databases over the network"
+        }
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e31673f8a1d4",
+      "params": {
+        "case": {
+          "boolean": "use_nfs_home_dirs",
+          "desc": "allow user home directories to be mounted from NFS"
+        }
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.security.selinux-port-web": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "2315ea9b5e72",
+      "params": {
+        "port": 82,
+        "token": "b0oafnaz73"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "2315ea9b5e72",
+      "params": {
+        "port": 83,
+        "token": "b28uh532u5"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "2315ea9b5e72",
+      "params": {
+        "port": 8090,
+        "token": "7nqvew5l1t"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "2315ea9b5e72",
+      "params": {
+        "port": 8909,
+        "token": "fed4aummf3"
+      },
+      "status": "pass"
+    },
+    "4": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "2315ea9b5e72",
+      "params": {
+        "port": 9091,
+        "token": "eefkt5q634"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.security.selinux-ssh-port": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "7498b4e1d607",
+      "params": {
+        "port": 2022
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "7498b4e1d607",
+      "params": {
+        "port": 2222
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "7498b4e1d607",
+      "params": {
+        "port": 4422
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.security.ssh-key-only-user": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "6bbba4ff83c4",
+      "params": {
+        "password": "Key-Only-55",
+        "user": "amina"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "6bbba4ff83c4",
+      "params": {
+        "password": "Key-Only-66",
+        "user": "maria"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.security.ssh-keys": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "eaf6a7106648",
+      "params": {
+        "password": "Secret-Key-42",
+        "user": "maria"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "eaf6a7106648",
+      "params": {
+        "password": "Lab-Login-77",
+        "user": "zara"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "eaf6a7106648",
+      "params": {
+        "password": "Key-Auth-31",
+        "user": "ivan"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.security.umask-user": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "9fe2ef3b8705",
+      "params": {
+        "password": "redhat123",
+        "user": "omar"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "9fe2ef3b8705",
+      "params": {
+        "password": "labpass42",
+        "user": "ravi"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "9fe2ef3b8705",
+      "params": {
+        "password": "trustno1x",
+        "user": "maria"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.software.flatpak-remote-install": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a854989cde27",
+      "params": {
+        "remote": "lab-flatpaks"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a854989cde27",
+      "params": {
+        "remote": "rhel-local"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a854989cde27",
+      "params": {
+        "remote": "labrepo"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.software.flatpak-user-remote": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e276978f2e01",
+      "params": {
+        "remote": "labapps",
+        "user": "alex"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e276978f2e01",
+      "params": {
+        "remote": "team-flatpaks",
+        "user": "yuki"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e276978f2e01",
+      "params": {
+        "remote": "utility-apps",
+        "user": "elena"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.software.install-remove-packages": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "64581d33130f",
+      "params": {
+        "pkgs": "tmux zsh",
+        "remove": "nano"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "64581d33130f",
+      "params": {
+        "pkgs": "nmap tcpdump",
+        "remove": "bash-completion"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "64581d33130f",
+      "params": {
+        "pkgs": "lsof strace",
+        "remove": "nano"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "64581d33130f",
+      "params": {
+        "pkgs": "tree mtr",
+        "remove": "bash-completion"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.storage.gpt-partitions": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "94162e42a465",
+      "params": {
+        "size1": 600,
+        "size2": 300,
+        "word": "quasar"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "94162e42a465",
+      "params": {
+        "size1": 700,
+        "size2": 400,
+        "word": "pulsar"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.storage.lv-delete": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "75413836a925",
+      "params": {
+        "vg": "oldvg"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "75413836a925",
+      "params": {
+        "vg": "tempvg"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "75413836a925",
+      "params": {
+        "vg": "retiredvg"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.storage.lvm-create": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "be7e334b2951",
+      "params": {
+        "extents": 20,
+        "lv": "datalv",
+        "pe": 16,
+        "vg": "datavg"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "be7e334b2951",
+      "params": {
+        "extents": 25,
+        "lv": "applv",
+        "pe": 32,
+        "vg": "appvg"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "be7e334b2951",
+      "params": {
+        "extents": 30,
+        "lv": "storelv",
+        "pe": 16,
+        "vg": "storevg"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.storage.mount-label": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "fd41e65e395d",
+      "params": {
+        "label": "ARCHIVE"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "fd41e65e395d",
+      "params": {
+        "label": "MEDIA"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "fd41e65e395d",
+      "params": {
+        "label": "BACKUPS"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "fd41e65e395d",
+      "params": {
+        "label": "PROJECTS"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.storage.pv-remove": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e0402be3adf7",
+      "params": {
+        "vg": "archvg"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e0402be3adf7",
+      "params": {
+        "vg": "backupvg"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "e0402be3adf7",
+      "params": {
+        "vg": "mediavg"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.storage.swap-lv": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ffbbaf520ca7",
+      "params": {
+        "size": 256,
+        "vg": "labvg"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ffbbaf520ca7",
+      "params": {
+        "size": 384,
+        "vg": "opsvg"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ffbbaf520ca7",
+      "params": {
+        "size": 256,
+        "vg": "sysvg"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.storage.swap-partition": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "88a2d1459bb6",
+      "params": {
+        "size": 384
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "88a2d1459bb6",
+      "params": {
+        "size": 512
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.storage.vg-extend": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "53a98b183d2f",
+      "params": {
+        "vg": "webvg"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "53a98b183d2f",
+      "params": {
+        "vg": "logvg"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "53a98b183d2f",
+      "params": {
+        "vg": "dbvg"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.tools.archive-bzip2": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f77345e4f1ba",
+      "params": {
+        "dir": "/etc/ssh",
+        "name": "aurora"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f77345e4f1ba",
+      "params": {
+        "dir": "/etc/sysconfig",
+        "name": "comet"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f77345e4f1ba",
+      "params": {
+        "dir": "/etc/security",
+        "name": "nebula"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f77345e4f1ba",
+      "params": {
+        "dir": "/etc/pam.d",
+        "name": "zenith"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.tools.edit-as-user": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "05efacd9ab79",
+      "params": {
+        "password": "Switch-Me-12",
+        "user": "ravi",
+        "word": "quasar"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "05efacd9ab79",
+      "params": {
+        "password": "Become-User-34",
+        "user": "ivan",
+        "word": "zenith"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.tools.grep-regex": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a43559a568b2",
+      "params": {
+        "prefix": "ERROR"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a43559a568b2",
+      "params": {
+        "prefix": "WARN"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "a43559a568b2",
+      "params": {
+        "prefix": "FAIL"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.tools.grep-save-lines": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ef9ab756d190",
+      "params": {
+        "word": "backup"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ef9ab756d190",
+      "params": {
+        "word": "timeout"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ef9ab756d190",
+      "params": {
+        "word": "denied"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "ef9ab756d190",
+      "params": {
+        "word": "quota"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.tools.man-search": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "0b24b46487a7",
+      "params": {
+        "keyword": "partition"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "0b24b46487a7",
+      "params": {
+        "keyword": "journal"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "0b24b46487a7",
+      "params": {
+        "keyword": "firewall"
+      },
+      "status": "pass"
+    },
+    "3": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "0b24b46487a7",
+      "params": {
+        "keyword": "password"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.tools.sudo-as-user": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "7b50b4ef218b",
+      "params": {
+        "password": "Wheel-Lab-11",
+        "user": "sofia",
+        "word": "nebula"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "7b50b4ef218b",
+      "params": {
+        "password": "Wheel-Lab-22",
+        "user": "david",
+        "word": "comet"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.users.create-users": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "3fefee92c01e",
+      "params": {
+        "gid": 3179,
+        "group": "auditors",
+        "password": "Lab-Pass-1",
+        "uid3": 4125,
+        "user1": "harry",
+        "user2": "zara",
+        "user3": "omar"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "3fefee92c01e",
+      "params": {
+        "gid": 3162,
+        "group": "dbadmins",
+        "password": "Rhcsa-2026",
+        "uid3": 4190,
+        "user1": "alex",
+        "user2": "harry",
+        "user3": "ivan"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "3fefee92c01e",
+      "params": {
+        "gid": 3178,
+        "group": "webteam",
+        "password": "Exam-Ready-9",
+        "uid3": 4142,
+        "user1": "alex",
+        "user2": "sofia",
+        "user3": "elena"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.users.modify-delete-users": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "48cd03d8e7a5",
+      "params": {
+        "comment": "Database Administrator",
+        "gone": "layla",
+        "keep": "sarah",
+        "newgroup": "webteam",
+        "oldgroup": "finance"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "48cd03d8e7a5",
+      "params": {
+        "comment": "Release Engineer",
+        "gone": "elena",
+        "keep": "oscar",
+        "newgroup": "finance",
+        "oldgroup": "support"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "48cd03d8e7a5",
+      "params": {
+        "comment": "Security Auditor",
+        "gone": "chen",
+        "keep": "lucas",
+        "newgroup": "research",
+        "oldgroup": "marketing"
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.users.password-aging": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "62f3bd75a41a",
+      "params": {
+        "defmax": 30,
+        "expire": "2027-12-25",
+        "maxdays": 45,
+        "user": "amina",
+        "warn": 5
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "62f3bd75a41a",
+      "params": {
+        "defmax": 60,
+        "expire": "2027-07-11",
+        "maxdays": 60,
+        "user": "mike",
+        "warn": 7
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "62f3bd75a41a",
+      "params": {
+        "defmax": 120,
+        "expire": "2027-06-30",
+        "maxdays": 90,
+        "user": "sofia",
+        "warn": 10
+      },
+      "status": "pass"
+    }
+  },
+  "rhcsa.users.sudo-access": {
+    "0": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f5552e79c1c3",
+      "params": {
+        "admin": "lucas",
+        "group": "support",
+        "operator": "oscar",
+        "password": "Sudo-Lab-11"
+      },
+      "status": "pass"
+    },
+    "1": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f5552e79c1c3",
+      "params": {
+        "admin": "elena",
+        "group": "sysmgrs",
+        "operator": "natasha",
+        "password": "Sudo-Lab-22"
+      },
+      "status": "pass"
+    },
+    "2": {
+      "box": "RHEL 10.0 20261019.2036",
+      "date": "2026-10-25",
+      "detail": "",
+      "digest": "f5552e79c1c3",
+      "params": {
+        "admin": "yuki",
+        "group": "research",
+        "operator": "harry",
+        "password": "Sudo-Lab-33"
+      },
+      "status": "pass"
+    }
+  }
+}
