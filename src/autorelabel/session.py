@@ -195,7 +195,8 @@ class Session:
 
 # --- persistence ------------------------------------------------------------------------------
 
-CURRENT = paths.SESSIONS / "current"
+def _current_file() -> Path:
+    return paths.SESSIONS / "current"        # resolved on use, like every session path
 
 
 def new_id() -> str:
@@ -212,7 +213,7 @@ def load(session_id: str) -> Session:
 
 def current() -> Session | None:
     try:
-        sid = CURRENT.read_text().strip()
+        sid = _current_file().read_text().strip()
     except OSError:
         return None
     try:
@@ -225,9 +226,9 @@ def current() -> Session | None:
 def set_current(s: Session | None) -> None:
     paths.SESSIONS.mkdir(parents=True, exist_ok=True)
     if s is None:
-        CURRENT.unlink(missing_ok=True)
+        _current_file().unlink(missing_ok=True)
     else:
-        CURRENT.write_text(s.id + "\n")
+        _current_file().write_text(s.id + "\n")
 
 
 def all_sessions() -> list[Session]:
