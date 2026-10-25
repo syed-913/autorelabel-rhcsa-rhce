@@ -1,6 +1,6 @@
 [project]
 name = "autorelabel"
-version = "0.1.0"
+version = "1.0.0"
 description = "RHCSA (EX200) & RHCE (EX294) practice exam simulator for RHEL 10: timed, auto-graded, hands-on labs graded after a reboot."
 readme = "README.md"
 license = { text = "MIT" }
