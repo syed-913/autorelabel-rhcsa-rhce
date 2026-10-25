@@ -118,16 +118,16 @@ def cmd_bank_coverage(args: argparse.Namespace) -> int:
     bank = load_bank(args.exam)
     text = coverage.markdown(bank)
     out = paths.ROOT / "docs" / f"COVERAGE-{args.exam.upper()}.md"
-    readme = paths.ROOT / "README.md"
+    page = paths.ROOT / "docs" / "guide" / "12-objectives.md"
     if args.write:
         out.write_text(text, encoding="utf-8")
-        readme.write_text(coverage.update_readme(readme.read_text(encoding="utf-8"), bank), encoding="utf-8")
-        print(f"wrote {out} and the {args.exam.upper()} objectives in {readme.name}")
+        page.write_text(coverage.update_objectives(page.read_text(encoding="utf-8"), bank), encoding="utf-8")
+        print(f"wrote {out} and the {args.exam.upper()} objectives in {page.name}")
     elif args.check:
-        for f, want in ((out, text), (readme, coverage.update_readme(readme.read_text(encoding="utf-8"), bank))):
+        for f, want in ((out, text), (page, coverage.update_objectives(page.read_text(encoding="utf-8"), bank))):
             if not f.exists() or f.read_text(encoding="utf-8") != want:
                 return _err(f"{f.name} is stale", f"run ./autorelabel bank coverage {args.exam} --write")
-        print(f"{out.name} and the {args.exam.upper()} objectives in {readme.name} are up to date")
+        print(f"{out.name} and the {args.exam.upper()} objectives in {page.name} are up to date")
     else:
         print(text)
     return 0

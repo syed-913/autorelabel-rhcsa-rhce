@@ -50,7 +50,7 @@ jobs:
         env:
           PYTHONPATH: src
 
-      - name: Coverage reports and the README objective lists are up to date
+      - name: Coverage reports and the objective lists in the user guide are up to date
         run: |
           python -m autorelabel bank coverage rhcsa --check
           python -m autorelabel bank coverage rhce --check

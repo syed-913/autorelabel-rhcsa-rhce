@@ -156,17 +156,17 @@ def test_coverage_gate_levels(synthetic_bank):
     assert any("facet not covered" in f for f in full)   # synthetic tasks only cover the first facet
 
 
-def test_readme_objectives_replaced_between_markers(synthetic_bank):
-    readme = "intro\n<!-- objectives:rhcsa -->\nstale\n<!-- /objectives:rhcsa -->\noutro\n"
-    out = coverage.update_readme(readme, synthetic_bank)
-    assert out.startswith("intro\n<!-- objectives:rhcsa -->\n<details>")
-    assert out.endswith("</details>\n<!-- /objectives:rhcsa -->\noutro\n")
+def test_objectives_replaced_between_markers(synthetic_bank):
+    page = "intro\n<!-- objectives:rhcsa -->\nstale\n<!-- /objectives:rhcsa -->\noutro\n"
+    out = coverage.update_objectives(page, synthetic_bank)
+    assert out.startswith("intro\n<!-- objectives:rhcsa -->\n## RHCSA (EX200): ")
+    assert out.endswith("\n<!-- /objectives:rhcsa -->\noutro\n")
     assert "stale" not in out
-    assert coverage.update_readme(out, synthetic_bank) == out
+    assert coverage.update_objectives(out, synthetic_bank) == out
     for o in synthetic_bank.objectives.objectives.values():
         assert o.text in out
     with pytest.raises(ValueError):
-        coverage.update_readme("no markers", synthetic_bank)
+        coverage.update_objectives("no markers", synthetic_bank)
 
 
 def test_errexit_hazards_detected():

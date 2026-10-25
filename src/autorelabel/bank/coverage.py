@@ -73,14 +73,13 @@ def summary(bank: Bank) -> dict[str, int]:
     }
 
 
-def readme_objectives(bank: Bank) -> str:
-    """The objective list for README.md: every line verbatim with its coverage mark."""
+def objectives_list(bank: Bank) -> str:
+    """The objective list for the user guide: every line verbatim with its coverage mark."""
     cov = compute(bank)
     covered = sum(1 for c in cov if c.primary_tasks or (c.implicit and c.tasks))
     code = {"rhcsa": "EX200", "rhce": "EX294"}.get(bank.exam, "")
-    lines = ["<details>",
-             f"<summary><b>{bank.exam.upper()} ({code}): {covered} of {len(cov)} objective lines covered,"
-             f" {len(bank.tasks)} tasks</b></summary>", ""]
+    lines = [f"## {bank.exam.upper()} ({code}): {covered} of {len(cov)} objective lines covered,"
+             f" {len(bank.tasks)} tasks", ""]
     for d in bank.objectives.domains:
         lines += [f"**{d.title}**", ""]
         for c in cov:
@@ -88,18 +87,17 @@ def readme_objectives(bank: Bank) -> str:
                 mark = "✅" if c.primary_tasks or (c.implicit and c.tasks) else "⬜"
                 lines.append(f"- {mark} {c.text}")
         lines.append("")
-    lines.append("</details>")
-    return "\n".join(lines)
+    return "\n".join(lines).rstrip("\n")
 
 
-def update_readme(readme: str, bank: Bank) -> str:
-    """README.md with the objective list between `<!-- objectives:<exam> -->` markers replaced."""
+def update_objectives(page: str, bank: Bank) -> str:
+    """The guide page with the list between `<!-- objectives:<exam> -->` markers regenerated."""
     start, end = f"<!-- objectives:{bank.exam} -->", f"<!-- /objectives:{bank.exam} -->"
-    if start not in readme or end not in readme:
-        raise ValueError(f"README.md has no {start} ... {end} markers")
-    head, rest = readme.split(start, 1)
+    if start not in page or end not in page:
+        raise ValueError(f"no {start} ... {end} markers")
+    head, rest = page.split(start, 1)
     _old, tail = rest.split(end, 1)
-    return f"{head}{start}\n{readme_objectives(bank)}\n{end}{tail}"
+    return f"{head}{start}\n{objectives_list(bank)}\n{end}{tail}"
 
 
 def markdown(bank: Bank, verified: dict[str, str] | None = None) -> str:
