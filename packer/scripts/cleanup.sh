@@ -25,5 +25,8 @@ history -c || true
 rm -f /root/.bash_history /home/vagrant/.bash_history
 
 echo "STEP: zero free space for compaction"
-fstrim -av >/dev/null 2>&1 || true
+# Not on VirtualBox: its disks have no discard (see hard_drive_discard in rhel10.pkr.hcl).
+if [[ "$(systemd-detect-virt 2>/dev/null || true)" != oracle ]]; then
+  fstrim -av >/dev/null 2>&1 || true
+fi
 sync

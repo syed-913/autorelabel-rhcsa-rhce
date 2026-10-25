@@ -105,7 +105,10 @@ source "virtualbox-iso" "rhel10" {
   guest_os_type            = "RedHat_64"
   disk_size                = 20480
   hard_drive_interface     = "sata"
-  hard_drive_discard       = true
+  # No discard (TRIM): VirtualBox 7.2's SATA controller can hang for good on a discard request.
+  # A build froze in fstrim and could not even power off ("1 async tasks - ahci/0"), and the lab
+  # VMs inherit this setting, where RHEL's weekly fstrim.timer could freeze a node mid-exam.
+  hard_drive_discard       = false
   cpus                     = var.cpus
   memory                   = var.memory
   headless                 = true

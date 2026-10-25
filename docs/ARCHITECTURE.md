@@ -56,6 +56,10 @@ the facts tasks are rendered with (addresses, disks, URLs, RHCE inventory groups
   40 had them out of order, once with the root disk as `sdc`). Tasks name disks in prompts and
   checks, so the box boots with RHEL's `sd_mod.probe=sync`: names follow the port order. libvirt
   disks are virtio (`vdX`) and keep their names anyway.
+- **No TRIM on VirtualBox:** VirtualBox 7.2's SATA controller can hang for good on a discard
+  request (a box build froze in `fstrim` and could not even power off). The box's disk has discard
+  turned off on VirtualBox, so neither the build nor RHEL's weekly `fstrim.timer` on a lab VM sends
+  one. libvirt keeps discard, which keeps its sparse disk images small.
 - **Provisioning:** the app provisions over SSH (`vagrant/provision/*.sh`, streamed with progress
   markers), not through Vagrant provisioners, so it can retry and verify. The utility VM serves
   the DVD repositories, Flatpaks, DNS, NTP, NFS, and for RHCE a Git server and Ansible content.
