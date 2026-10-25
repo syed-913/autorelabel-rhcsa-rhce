@@ -1,10 +1,6 @@
 # Writing tasks
 
-Every task in `banks/<exam>/tasks/<domain>/<name>/` is a small, self-tested unit: a prompt in exam
-style, the setup that creates its starting point, checks that grade it after a reboot, a
-reference solution, and tests that prove the checks accept valid answers and catch classic
-mistakes. A task ships only when `./autorelabel bank lint` is clean and `./autorelabel selftest`
-passes on real VMs.
+Every task in `banks/<exam>/tasks/<domain>/<name>/` is a small, self-tested unit: a prompt in exam style, the setup that creates its starting point, checks that grade it after a reboot, a reference solution, and tests that prove the checks accept valid answers and catch classic mistakes. A task ships only when `./autorelabel bank lint` is clean and `./autorelabel selftest` passes on real VMs.
 
 ## Layout
 
@@ -21,10 +17,7 @@ banks/rhcsa/tasks/storage/lvm-create/
     └── mistake-<name>.sh     a classic error: must NOT score full marks
 ```
 
-`<script>.sh` runs on the task's `node`; `<script>@<vm>.sh` runs on that VM. Never create both
-`setup.sh` and `setup@<task node>.sh`: they target the same node and only one would run (lint
-rejects it). In RHCE banks a script can also target an inventory group: `setup@all.sh`,
-`setup@prod.sh` run on every host of that group in the current lab profile.
+`<script>.sh` runs on the task's `node`; `<script>@<vm>.sh` runs on that VM. Never create both `setup.sh` and `setup@<task node>.sh`: they target the same node and only one would run (lint rejects it). In RHCE banks a script can also target an inventory group: `setup@all.sh`, `setup@prod.sh` run on every host of that group in the current lab profile.
 
 ## task.yaml
 
@@ -79,46 +72,23 @@ references:
 
 ### Guard checks
 
-A check of something the candidate must **not** break (SELinux stays enforcing, existing data
-stays intact, ssh stays allowed) is already true before any work is done. Mark it `guard: true`.
-A task scores nothing until at least one of its other checks passes. After that, guards count like
-any other check, so breaking one still costs points. Every task needs at least one check that is
-not a guard. The self-test enforces this: an untouched task must score 0 (see below).
+A check of something the candidate must **not** break (SELinux stays enforcing, existing data stays intact, ssh stays allowed) is already true before any work is done. Mark it `guard: true`. A task scores nothing until at least one of its other checks passes. After that, guards count like any other check, so breaking one still costs points. Every task needs at least one check that is not a guard. The self-test enforces this: an untouched task must score 0 (see below).
 
 ### Checks on a group of hosts (RHCE)
 
-`on: "@group"` runs a check once per host of the group, and the hosts share its weight (partial
-credit per host). When a check concerns only some of those hosts (the web servers but not the
-broken one, the hosts without a maintenance flag), call `skip_here` on the others instead of
-`exit 0`: the grader records *n/a*, the applicable hosts share the whole weight, and an untouched
-task can't collect points from hosts the check never meant to grade. What the other hosts must
-*not* get (no role file outside dev and prod) is a separate check, marked `guard: true`.
+`on: "@group"` runs a check once per host of the group, and the hosts share its weight (partial credit per host). When a check concerns only some of those hosts (the web servers but not the broken one, the hosts without a maintenance flag), call `skip_here` on the others instead of `exit 0`: the grader records *n/a*, the applicable hosts share the whole weight, and an untouched task can't collect points from hosts the check never meant to grade. What the other hosts must *not* get (no role file outside dev and prod) is a separate check, marked `guard: true`.
 
 ### Placeholders
 
-- `{{name}}` (no spaces) is an autorelabel placeholder: a parameter, `{{param.field}}` for dict
-  parameters, `{{pkgs.0}}` for list items, or a lab fact such as `{{lab.node1.ip}}`,
-  `{{lab.repo_baseos}}`, `{{lab.groups.prod}}`, `{{lab.project_dir}}`. An unknown placeholder is a
-  lint error, checked against both lab profiles.
-- `{{ name }}` (with spaces) is left untouched, so prompts and `solution.md` can show Ansible and
-  Jinja2 code verbatim. `{{ {{var}} }}` renders as `{{ env_name }}` when `var` is `env_name`.
+- `{{name}}` (no spaces) is an autorelabel placeholder: a parameter, `{{param.field}}` for dict parameters, `{{pkgs.0}}` for list items, or a lab fact such as `{{lab.node1.ip}}`, `{{lab.repo_baseos}}`, `{{lab.groups.prod}}`, `{{lab.project_dir}}`. An unknown placeholder is a lint error, checked against both lab profiles.
+- `{{ name }}` (with spaces) is left untouched, so prompts and `solution.md` can show Ansible and Jinja2 code verbatim. `{{ {{var}} }}` renders as `{{ env_name }}` when `var` is `env_name`.
 - `lab.inventory_md` renders the RHCE inventory groups as a Markdown list.
 
-Scripts get the same values as environment variables: `P_<NAME>` (`P_CASE_DESC` for dict
-fields, `P_PKGS` and `P_PKGS_0`… for lists) and `LAB_<PATH>` (`LAB_NODE1_IP`,
-`LAB_GROUPS_PROD`), plus `AR_NODE`, `AR_TASK` and, in RHCE, `AR_STUDENT_PASSWORD` and
-`AR_ANSIBLE_PASSWORD`.
+Scripts get the same values as environment variables: `P_<NAME>` (`P_CASE_DESC` for dict fields, `P_PKGS` and `P_PKGS_0`… for lists) and `LAB_<PATH>` (`LAB_NODE1_IP`, `LAB_GROUPS_PROD`), plus `AR_NODE`, `AR_TASK` and, in RHCE, `AR_STUDENT_PASSWORD` and `AR_ANSIBLE_PASSWORD`.
 
 ## Scripts (setup, solution, tests)
 
-They run as root over SSH, like a root login shell: root's normal `PATH` (including
-`/usr/local/bin`), no `SUDO_*` variables, stdin is `/dev/null`, and `banks/lib/setup-lib.sh` is
-prepended, which sets `set -Eeuo pipefail` and an ERR trap. **Any failing command fails the
-script**: append `|| true` where failure is expected (`find /` over `/proc`, `grep` over a glob
-that may match nothing). Never pipe into a reader that stops early (`| head`, `| grep -m`,
-and in scripts `| grep -q`): the writer can die of SIGPIPE, which `pipefail` turns into a random
-failure. Use `sed -n 1p` (reads to the end) or a here-string (`grep -m1 x <<<"$out"`); lint
-rejects the pipe.
+They run as root over SSH, like a root login shell: root's normal `PATH` (including `/usr/local/bin`), no `SUDO_*` variables, stdin is `/dev/null`, and `banks/lib/setup-lib.sh` is prepended, which sets `set -Eeuo pipefail` and an ERR trap. **Any failing command fails the script**: append `|| true` where failure is expected (`find /` over `/proc`, `grep` over a glob that may match nothing). Never pipe into a reader that stops early (`| head`, `| grep -m`, and in scripts `| grep -q`): the writer can die of SIGPIPE, which `pipefail` turns into a random failure. Use `sed -n 1p` (reads to the end) or a here-string (`grep -m1 x <<<"$out"`); lint rejects the pipe.
 
 Helpers from `setup-lib.sh`:
 
@@ -134,75 +104,45 @@ Helpers from `setup-lib.sh`:
 | `as_user <user> cmd...` | run as a user with a clean environment (never `sudo -u`: `flatpak --user` refuses it) |
 | `as_student cmd...`, `student_sh '...'`, `student_write <path> [mode]` | RHCE: act as the candidate in `~/ansible` |
 
-Reference solutions show *one* good way to do the task. Use `tests/alt-*.sh` for other valid
-ways (a YAML inventory instead of INI, `semanage` vs a system role). Mistake tests reproduce one
-classic error each; the first line comment says which.
+Reference solutions show *one* good way to do the task. Use `tests/alt-*.sh` for other valid ways (a YAML inventory instead of INI, `semanage` vs a system role). Mistake tests reproduce one classic error each; the first line comment says which.
 
-Tasks whose setup leaves the node unbootable (`breaks_boot: true`) are solved by typing the
-solution on the serial console in the self-test; keep those scripts to plain commands.
+Tasks whose setup leaves the node unbootable (`breaks_boot: true`) are solved by typing the solution on the serial console in the self-test; keep those scripts to plain commands.
 
 ## Checks
 
-Checks run **after the grading reboot**, read-only, with `set -e` and `pipefail`, and with
-`banks/lib/check-lib.sh` prepended. Every line counts: a check passes only if every command
-succeeds.
+Checks run **after the grading reboot**, read-only, with `set -e` and `pipefail`, and with `banks/lib/check-lib.sh` prepended. Every line counts: a check passes only if every command succeeds.
 
-- `! cmd` and `test ... && ...` don't fail a `set -e` script unless they are the last line; lint
-  rejects them elsewhere. Write `! cmd || exit 1`, or split the line.
-- `producer | grep -q x` is safe in checks (check-lib makes quiet greps drain the pipe), but prefer
-  `out="$(producer)"; grep -q x <<<"$out"` when the producer may print a lot. `| head` and
-  `| grep -m` are not: use `sed -n 1p`.
+- `! cmd` and `test ... && ...` don't fail a `set -e` script unless they are the last line; lint rejects them elsewhere. Write `! cmd || exit 1`, or split the line.
+- `producer | grep -q x` is safe in checks (check-lib makes quiet greps drain the pipe), but prefer `out="$(producer)"; grep -q x <<<"$out"` when the producer may print a lot. `| head` and `| grep -m` are not: use `sed -n 1p`.
 - A plain YAML scalar must not contain `: `. Use a block scalar (`run: |`).
-- Check the **result**, not the method: the effective configuration (`sshd -T`,
-  `ansible-config dump --only-changed`, `firewall-cmd --list-all`, `ansible-inventory --list`),
-  never the exact text of a file unless the task asks for it.
-- Act as the right user: NFS exports squash root (`runuser -u <user> -- cat ...`), RHCE checks use
-  `as_student`.
-- Expected values that only setup knows (a generated digest, the users of a list) can be stored
-  in `/etc/autorelabel/` on the node by the setup script.
+- Check the **result**, not the method: the effective configuration (`sshd -T`, `ansible-config dump --only-changed`, `firewall-cmd --list-all`, `ansible-inventory --list`), never the exact text of a file unless the task asks for it.
+- Act as the right user: NFS exports squash root (`runuser -u <user> -- cat ...`), RHCE checks use `as_student`.
+- Expected values that only setup knows (a generated digest, the users of a list) can be stored in `/etc/autorelabel/` on the node by the setup script.
 
-Helpers from `check-lib.sh`: `as_student`, `student_sh`, `as_user`, `inventory_hosts <group>`,
-`inv_var <host> <var>`, `same_words "a b" "b a"`, `playbook_ok <file>` (exists and passes
-`--syntax-check`).
+Helpers from `check-lib.sh`: `as_student`, `student_sh`, `as_user`, `inventory_hosts <group>`, `inv_var <host> <var>`, `same_words "a b" "b a"`, `playbook_ok <file>` (exists and passes `--syntax-check`).
 
 ## Self-test
 
 `./autorelabel selftest --exam rhcsa [task ids] [--changed]` runs every task on real VMs:
 
-1. **pre-state**: untouched, graded like an exam (after a reboot), the task must score 0 points.
-   A check that passes here either is a guard (mark it) or verifies something the setup doesn't
-   break (fix the setup or the check);
+1. **pre-state**: untouched, graded like an exam (after a reboot), the task must score 0 points. A check that passes here either is a guard (mark it) or verifies something the setup doesn't break (fix the setup or the check);
 2. **reference**: `solution*.sh`, reboot, full marks;
 3. **alternatives**: each `tests/alt-*` group, reboot, full marks;
 4. **mistakes**: each `tests/mistake-*` group, reboot, not full marks.
 
-In rounds 3 and 4, tasks of the batch that have no test of that number get their reference
-solution, so the task under test is judged in an otherwise solved lab.
+In rounds 3 and 4, tasks of the batch that have no test of that number get their reference solution, so the task under test is judged in an otherwise solved lab.
 
-Compatible tasks share a lab (no common `exclusive` tag, disk budgets fit). Anchors and
-`breaks_boot` tasks always run alone, because their tests break what other tasks need. Results
-go to `banks/<exam>/selftest.json` (libvirt, the primary provider; the coverage report reads this
-one) or `banks/<exam>/selftest-virtualbox.json`, with a digest of the task's files; `--changed`
-re-tests only tasks whose files changed or that never passed on the current provider. Console
-transcripts and every grading round are kept in the session directory under `.workspace/sessions/`.
+Compatible tasks share a lab (no common `exclusive` tag, disk budgets fit). Anchors and `breaks_boot` tasks always run alone, because their tests break what other tasks need. Results go to `banks/<exam>/selftest.json` (libvirt, the primary provider; the coverage report reads this one) or `banks/<exam>/selftest-virtualbox.json`, with a digest of the task's files; `--changed` re-tests only tasks whose files changed or that never passed on the current provider. Console transcripts and every grading round are kept in the session directory under `.workspace/sessions/`.
 
-A normal run draws one value for each parameter. `--sweep` runs the suites again once per value
-of each `choice` parameter (draw *i* gives every choice its value *i* mod *n*), so a value that
-doesn't work on RHEL 10, such as a port that already has an SELinux type, fails before a
-candidate draws it. Results go to `banks/<exam>/selftest-sweep[-virtualbox].json`.
+A normal run draws one value for each parameter. `--sweep` runs the suites again once per value of each `choice` parameter (draw *i* gives every choice its value *i* mod *n*), so a value that doesn't work on RHEL 10, such as a port that already has an SELinux type, fails before a candidate draws it. Results go to `banks/<exam>/selftest-sweep[-virtualbox].json`.
 
 ## Before you open a pull request
 
-- [ ] The prompt names every value the checks verify, in exam style ("persistently", exact paths
-      and names), and nothing else.
+- [ ] The prompt names every value the checks verify, in exam style ("persistently", exact paths and names), and nothing else.
 - [ ] Every requirement has a check, every check covers a requirement.
-- [ ] The task works on RHEL 10 as shipped on the DVD (RHEL 10 differs from 9: yescrypt hashes,
-      volatile journal, no `rsync` NEWS file, `atd` enabled by preset, ...).
+- [ ] The task works on RHEL 10 as shipped on the DVD (RHEL 10 differs from 9: yescrypt hashes, volatile journal, no `rsync` NEWS file, `atd` enabled by preset, ...).
 - [ ] `./autorelabel bank lint <exam>` is clean.
-- [ ] RHCE: `scripts/dev/check-rhce-playbooks.py` passes (every playbook your scripts write gets an
-      `ansible-playbook --syntax-check` with the lab's ansible-core 2.16; see the script's header).
+- [ ] RHCE: `scripts/dev/check-rhce-playbooks.py` passes (every playbook your scripts write gets an `ansible-playbook --syntax-check` with the lab's ansible-core 2.16; see the script's header).
 - [ ] `./autorelabel selftest --exam <exam> <task id>` passes, including at least one mistake test.
-- [ ] If the task has `choice` parameters: `./autorelabel selftest --exam <exam> --sweep <task id>`
-      passes too.
-- [ ] `solution.md` explains the *why* and the classic mistake, with references to official
-      documentation or man pages.
+- [ ] If the task has `choice` parameters: `./autorelabel selftest --exam <exam> --sweep <task id>` passes too.
+- [ ] `solution.md` explains the *why* and the classic mistake, with references to official documentation or man pages.
