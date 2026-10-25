@@ -10,8 +10,7 @@
 
 </div>
 
-<!-- DEMO VIDEO: on github.com, edit this file and drag demo.mp4 (scripts/dev/demo/render.sh; 1080p, 8 MB, GitHub allows 10 MB) onto the empty line below. GitHub uploads it and inserts a https://github.com/user-attachments/assets/... link: keep that link alone on its line (it becomes an inline player), delete this comment, and commit. -->
-
+https://github.com/user-attachments/assets/14ee6511-12b0-4dd1-a072-51f685ff5ea6
 
 ---
 
