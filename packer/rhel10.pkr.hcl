@@ -41,6 +41,17 @@ variable "volume_label" {
   default = "RHEL-10-0-BaseOS-x86_64"
 }
 
+# box.py sets these on RHEL-family hosts, whose qemu-kvm has no i440fx machine type.
+variable "qemu_binary" {
+  type    = string
+  default = "qemu-system-x86_64"
+}
+
+variable "machine_type" {
+  type    = string
+  default = "pc"
+}
+
 variable "cpus" {
   type    = number
   default = 2
@@ -80,6 +91,8 @@ source "qemu" "rhel10" {
   disk_compression = true
   net_device       = "virtio-net"
   accelerator      = "kvm"
+  qemu_binary      = var.qemu_binary
+  machine_type     = var.machine_type
   cpu_model        = "host"
   cpus             = var.cpus
   memory           = var.memory
@@ -98,28 +111,28 @@ source "qemu" "rhel10" {
 }
 
 source "virtualbox-iso" "rhel10" {
-  iso_url                  = var.iso_path
-  iso_checksum             = var.iso_checksum
-  output_directory         = "${var.output_dir}/virtualbox"
-  vm_name                  = "autorelabel-build-rhel10"
-  guest_os_type            = "RedHat_64"
-  disk_size                = 20480
-  hard_drive_interface     = "sata"
+  iso_url              = var.iso_path
+  iso_checksum         = var.iso_checksum
+  output_directory     = "${var.output_dir}/virtualbox"
+  vm_name              = "autorelabel-build-rhel10"
+  guest_os_type        = "RedHat_64"
+  disk_size            = 20480
+  hard_drive_interface = "sata"
   # No discard (TRIM): VirtualBox 7.2's SATA controller can hang for good on a discard request.
   # A build froze in fstrim and could not even power off ("1 async tasks - ahci/0"), and the lab
   # VMs inherit this setting, where RHEL's weekly fstrim.timer could freeze a node mid-exam.
-  hard_drive_discard       = false
-  cpus                     = var.cpus
-  memory                   = var.memory
-  headless                 = true
-  guest_additions_mode     = "disable"
-  http_content             = { "/ks.cfg" = local.kickstart }
-  boot_wait                = "6s"
-  boot_command             = local.boot_command
-  ssh_username             = "vagrant"
-  ssh_password             = "vagrant"
-  ssh_timeout              = "90m"
-  shutdown_command         = "sudo /usr/sbin/shutdown -P now"
+  hard_drive_discard   = false
+  cpus                 = var.cpus
+  memory               = var.memory
+  headless             = true
+  guest_additions_mode = "disable"
+  http_content         = { "/ks.cfg" = local.kickstart }
+  boot_wait            = "6s"
+  boot_command         = local.boot_command
+  ssh_username         = "vagrant"
+  ssh_password         = "vagrant"
+  ssh_timeout          = "90m"
+  shutdown_command     = "sudo /usr/sbin/shutdown -P now"
   vboxmanage = [
     ["modifyvm", "{{ .Name }}", "--nat-localhostreachable1", "on"],
     # Not KVM's paravirtual clock: it at random stalls the boot right after the boot loader.

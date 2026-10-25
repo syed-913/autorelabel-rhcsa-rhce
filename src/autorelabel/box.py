@@ -170,6 +170,9 @@ def build(
         "-var", f"output_dir={out_dir}",
         "-var", f"box_version={version}",
         "-var", f"volume_label={vol}",
+        # RHEL-family hosts: only /usr/libexec/qemu-kvm, which has q35 machines but no i440fx ("pc")
+        *(["-var", f"qemu_binary={hostinfo.RHEL_QEMU}", "-var", "machine_type=q35"]
+          if provider == "libvirt" and hostinfo.qemu_system() == hostinfo.RHEL_QEMU else []),
         str(paths.PACKER_DIR),
     ]
 

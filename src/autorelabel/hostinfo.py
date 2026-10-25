@@ -19,6 +19,15 @@ from . import proc
 X86_64_V3_FLAGS = ("avx", "avx2", "bmi1", "bmi2", "fma", "movbe", "f16c", "xsave")
 
 
+RHEL_QEMU = "/usr/libexec/qemu-kvm"
+
+
+def qemu_system() -> str | None:
+    """QEMU for the box build: qemu-system-x86_64, or on RHEL-family hosts (which don't ship
+    it) their qemu-kvm."""
+    return proc.which("qemu-system-x86_64") or (RHEL_QEMU if os.access(RHEL_QEMU, os.X_OK) else None)
+
+
 @dataclass(frozen=True)
 class Distro:
     id: str

@@ -143,3 +143,16 @@ def test_the_lab_network_gets_no_virtualbox_dhcp(monkeypatch):
     calls.clear()
     assert not vb.remove_dhcp_server("vboxnet1")      # none there: nothing removed
     assert calls == [("list", "dhcpservers")]
+
+
+def test_rhel_hosts_build_with_qemu_kvm(monkeypatch):
+    """RHEL-family hosts ship /usr/libexec/qemu-kvm instead of qemu-system-x86_64."""
+    from autorelabel import proc
+
+    monkeypatch.setattr(proc, "which", lambda name: None)
+    monkeypatch.setattr(hostinfo.os, "access", lambda path, mode: path == hostinfo.RHEL_QEMU)
+    assert hostinfo.qemu_system() == hostinfo.RHEL_QEMU
+    monkeypatch.setattr(hostinfo.os, "access", lambda path, mode: False)
+    assert hostinfo.qemu_system() is None
+    monkeypatch.setattr(proc, "which", lambda name: f"/usr/bin/{name}")
+    assert hostinfo.qemu_system() == "/usr/bin/qemu-system-x86_64"

@@ -137,7 +137,9 @@ def check_libvirt() -> Check:
         if "libvirt" not in hostinfo.user_groups():
             _with_guide(c, "libvirt_group")
         return _with_guide(c, "libvirt")
-    missing = [b for b in ("qemu-img", "qemu-system-x86_64") if not proc.which(b)]
+    missing = [b for b in ("qemu-img",) if not proc.which(b)]
+    if not hostinfo.qemu_system():
+        missing.append("qemu-system-x86_64")
     if missing:
         return _with_guide(Check("libvirt", "libvirt (qemu:///system)", Status.FAIL,
                                  f"missing {', '.join(missing)} (needed to build the box)"), "libvirt")
