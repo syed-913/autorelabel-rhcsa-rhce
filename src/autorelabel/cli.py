@@ -102,7 +102,8 @@ def build_parser() -> argparse.ArgumentParser:
         description="RHCSA & RHCE practice exam simulator for RHEL 10. Run without arguments for the TUI.",
     )
     p.add_argument("--version", action="version", version=f"autorelabel {__version__}")
-    p.add_argument("--debug", action="store_true", help="verbose logging (also VAGRANT_LOG/PACKER_LOG)")
+    p.add_argument("--debug", action="store_true",
+                   help="debug details in the log, full tracebacks on errors (AUTORELABEL_DEBUG=1 also logs Packer)")
     sub = p.add_subparsers(dest="command", metavar="<command>")
 
     d = sub.add_parser("doctor", help="check that this host can run the labs")
@@ -124,7 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
     c.set_defaults(func=cmd_config)
 
     sub.add_parser("uninstall", help="remove everything autorelabel created on this host "
-                                     "(--dry-run, --keep-box, --yes)")
+                                     "(--dry-run, --yes, --keep-box, --delete-iso)")
 
     for name, hlp in (("rhcsa", "open the TUI and start a new RHCSA exam"),
                       ("rhce", "open the TUI and start a new RHCE exam"),
