@@ -380,6 +380,8 @@ class Lab:
         if not ok:
             raise LabError(f"RHEL 10 box not ready: {msg}", "Build the box first (Lab → Build box).", log_file,
                            user_fixable=True)
+        if self.exam == "rhce":
+            self._rhce_content()          # missing content: say so before any VM starts
         step("Preparing host networks and storage")
         self.prepare_host()
         self.write_env()

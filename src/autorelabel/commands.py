@@ -146,6 +146,8 @@ def cmd_lab_up(args: argparse.Namespace) -> int:
     from . import secrets_util
     from .lab import LabError
 
+    if args.exam == "rhce" and _ensure_rhce_content(args.verbose):
+        return 1
     lab = _lab(args.exam)
     pw = {n: secrets_util.password() for n in lab.names()}
     try:
@@ -246,11 +248,32 @@ def _fmt_time(seconds: float) -> str:
     return f"{seconds // 3600}:{seconds % 3600 // 60:02d}:{seconds % 60:02d}"
 
 
+def _ensure_rhce_content(verbose: bool = False) -> int:
+    """The one-time RHCE download (as the TUI does before an RHCE exam). Returns 1 on failure."""
+    from . import content
+
+    st = config.load()
+    ok, _msg = content.status(st)
+    if ok:
+        return 0
+    print("The RHCE lab needs ansible-navigator, the ansible.posix and community.general collections"
+          + (" and code-server (VS Code in the browser)" if st.code_server else "") + ". Downloading them once"
+          " (about 60-150 MB); everything after that works offline.", flush=True)
+    try:
+        content.download(st, on_line=(lambda s: print(f"    {s}", flush=True)) if verbose else None,
+                         on_step=lambda s: print(f"==> {s}", flush=True), with_code_server=st.code_server)
+    except content.ContentError as exc:
+        return _fail(exc, "Downloading the RHCE content", "rhce")
+    return 0
+
+
 def cmd_exam_start(args: argparse.Namespace) -> int:
     from .engine import EngineError
     from .lab import LabError
 
     eng = _engine()
+    if args.exam == "rhce" and _ensure_rhce_content(args.verbose):
+        return 1
     try:
         sess = eng.create(args.exam, mode="exam", seed=args.seed)
         print(f"Session {sess.id} (seed {sess.seed}): preparing the lab...")
@@ -282,6 +305,17 @@ def cmd_exam_tasks(args: argparse.Namespace) -> int:
     for n in info["nodes"]:
         pw = n["root_password"] or "(unknown: see the tasks)"
         print(f"  {n['name']:7} {n['fqdn']:24} {n['ip']:15} root password: {pw}")
+    if info["exam"] == "rhce":   # what the TUI's instructions show: without it, no way into control
+        acc, ctl = info["accounts"], info["control"]
+        print(f"\n  Work on control as {ctl['user']} (password {acc.get('student', '?')}) in {ctl['project_dir']}:"
+              f" ./autorelabel ssh control")
+        print(f"  Managed nodes have a user ansible (password {acc.get('ansible', '?')}).")
+        print(f"  Git repository: {info['git_url']} (user {ctl['user']}, same password)")
+        if info.get("code_server"):
+            print(f"  VS Code in your browser: {info['code_server']} (password: the {ctl['user']} password)")
+        print("  Inventory groups:")
+        for line in info["inventory_md"].splitlines():
+            print("    " + line.replace("`", "").replace("**", ""))
     for t in eng.rendered(sess):
         diff = f" [{t['difficulty']}]" if sess.show_difficulty else ""
         print(f"\nTask {t['number']} ({t['points']} pts){diff}: {t['title']}")
