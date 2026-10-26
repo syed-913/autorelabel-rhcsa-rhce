@@ -86,4 +86,4 @@ Yes. [TASK-AUTHORING.md](../TASK-AUTHORING.md) explains the format, the rules ev
 
 ### Where do I report a bug or a wrong task?
 
-On the [issue tracker](https://github.com/syed-913/autorelabel-rhcsa-rhce/issues). For failures, the problem report form asks for the report autorelabel writes; see [Troubleshooting](09-troubleshooting.md#problem-reports).
+On the [issue tracker](https://github.com/syed-913/autorelabel-rhcsa-rhce/issues/new/choose), which has a form for each case. For failures, the **Problem report** form asks for the report autorelabel writes; see [Troubleshooting](09-troubleshooting.md#problem-reports). For a task that is unclear, or that marked a correct solution as wrong, use **Task or grading feedback**. Questions and ideas go to [Discussions](https://github.com/syed-913/autorelabel-rhcsa-rhce/discussions), and security problems to the private form described in [SECURITY.md](../../SECURITY.md).

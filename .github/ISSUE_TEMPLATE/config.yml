@@ -1,1 +1,14 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/syed-913/autorelabel-rhcsa-rhce/discussions/categories/q-a
+    about: How do I…? Is this normal? Questions about using autorelabel or studying for the exams.
+  - name: Suggest an idea
+    url: https://github.com/syed-913/autorelabel-rhcsa-rhce/discussions/categories/ideas
+    about: A feature, a new kind of task, or anything else you'd like to see.
+  - name: Read the user guide
+    url: https://github.com/syed-913/autorelabel-rhcsa-rhce/tree/main/docs/guide
+    about: Installing, the exam screen, grading, the command reference, troubleshooting and the FAQ.
+  - name: Report a security problem
+    url: https://github.com/syed-913/autorelabel-rhcsa-rhce/security/advisories/new
+    about: Please report security problems privately, never in a public issue.

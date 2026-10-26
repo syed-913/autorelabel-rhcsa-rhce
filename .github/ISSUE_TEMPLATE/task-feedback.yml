@@ -1,0 +1,54 @@
+name: Task or grading feedback
+description: A task is unclear or wrong, or grading marked a correct solution as wrong (or a wrong one as correct)
+labels: [task-feedback]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the task bank. Every task is self-tested, but a self-test only knows the solutions someone thought of, so a correct solution that loses points is exactly what this form is for. If autorelabel itself failed (box build, lab, crash), please use the **Problem report** form.
+  - type: dropdown
+    id: exam
+    attributes:
+      label: Exam
+      options: [RHCSA (EX200), RHCE (EX294)]
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of problem is it?
+      options:
+        - My solution is correct but lost points
+        - My solution is wrong but got points
+        - The task text is unclear or ambiguous
+        - The task doesn't match the exam objective
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: The task's result
+      description: Run `./autorelabel exam results` and paste the section for this task (it starts with "Task N:" and lists every check). For a practice session, use the session's report the same way.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What you did
+      description: The commands you ran or the files you changed, and why you think they meet the task. Please leave out any password.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: For example "the check should accept a LABEL= entry in /etc/fstab", or a link to the Red Hat documentation that supports your solution.
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Hypervisor
+      options: [libvirt/KVM, VirtualBox]
+    validations:
+      required: true

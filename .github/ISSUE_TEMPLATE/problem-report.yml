@@ -1,5 +1,5 @@
 name: Problem report
-description: Something failed (box build, lab, exam, grading) or a task looks wrong
+description: Something failed (box build, lab, exam, grading). For a wrong or unclear task, use Task or grading feedback.
 labels: [problem-report]
 body:
   - type: markdown
