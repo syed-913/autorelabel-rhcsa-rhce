@@ -1,0 +1,15 @@
+# Monthly, grouped updates, so they arrive as one pull request at a time.
+# Python libraries aren't listed: pyproject.toml only sets lower bounds, and
+# the RHCE content pins (ansible-core, collections, code-server) must follow
+# the exam, not the newest release.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "CI"
