@@ -1,0 +1,20 @@
+---
+import Icon from './Icon.astro';
+interface Props {id?:string;}
+const {id='result'}=Astro.props;
+const curve='M274 43C281 69 231 97 151 103C74 110 17 94 12 67C7 39 60 13 137 8C211 2 266 16 274 43Z';
+---
+<div>
+<article class="score-sheet room--paper" data-results-card data-ink-loop aria-label="Example results from the real product" id={id}>
+  <div class="score-sheet__head"><span>RHCSA / EX200</span><span>RESULTS AFTER REBOOT</span></div>
+  <div class="score-top"><div class="score-mark"><b>258</b><span>/300</span><svg class="score-circle" viewBox="0 0 288 112" preserveAspectRatio="none" aria-hidden="true"><path class="ink-base" d={curve}/><path class="ink-base" d="M276 41C288 74 220 101 148 103C71 107 16 92 10 67C6 37 69 8 142 7C217 4 270 15 276 41Z"/><path class="ink-trace" pathLength="1" d={curve}/></svg></div><div class="score-pass">PASS<small>pass mark 210</small></div></div>
+  <p class="sheet-note">The configuration has the last word.</p>
+  <div class="result-lines"><div class="result-line"><span class="check-mark">✔</span><span>01&nbsp; Configure networking on node1</span><b>15 / 15</b></div><div class="result-line"><span class="check-mark check-mark--bad">✘</span><span>14&nbsp; Schedule a job with a systemd timer</span><b>0 / 15</b></div></div>
+  <div class="task-eighteen"><div class="task-eighteen__meta"><span>TASK 18 · HARD · node2</span><span data-task-score>13.33 / 20</span></div><h2>Serve a web site on a non-standard port</h2>
+    <div class="reboot-switch" data-state="after" role="group" aria-label="Task 18 reboot state"><button type="button" data-reboot-state="before" aria-pressed="false">Before reboot</button><button type="button" data-reboot-state="after" aria-pressed="true"><Icon name="reboot"/> After reboot</button></div>
+    <div class="check-line"><span class="check-mark">✔</span><span>httpd enabled and running</span></div><div class="check-line"><span class="check-mark">✔</span><span>Port labelled; SELinux enforcing</span></div><div class="check-line is-negative" data-firewall><span class="check-mark">✘</span><span data-check-label>Page reachable from utility: not persistent</span></div>
+    <p class="result-caption" data-result-caption><code>firewall-cmd --add-port</code> without <code>--permanent</code>: it worked before the reboot, not after.</p><p class="sr-only" role="status" aria-live="polite" data-result-status></p>
+  </div>
+</article>
+<div class="motion-controls"><span data-motion-status>8 s loop · pauses offscreen</span><button type="button" data-motion-toggle aria-pressed="false"><Icon name="pause"/><span data-motion-label>Pause motion</span></button></div>
+</div>

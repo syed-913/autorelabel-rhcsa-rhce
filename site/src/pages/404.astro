@@ -1,0 +1,7 @@
+---
+import Layout from '../layouts/Layout.astro';
+import {href} from '../lib/urls';
+---
+<Layout title="Page not found" description="This page could not be found. Return to autorelabel or browse the user guide." path="/404.html" noindex>
+<main id="content" class="not-found room--night"><div class="container"><img src={href('/brand/wordmark-banner-on-night.svg')} width="620" height="165" alt="autorelabel"/><p class="mono">Kernel panic - not syncing:</p><h1>Page not found.</h1><p>This path did not survive the reboot.</p><div class="button-row"><a class="btn" href={href('/')}>Return home</a><a class="text-link" href={href('/docs/')}>Open the user guide ↗</a></div><img src={href('/brand/lockup-motto-on-night.svg')} width="250" height="43" alt="touch /.autorelabel" loading="lazy"/></div></main>
+</Layout>

@@ -1,0 +1,29 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CommandBlock from '../components/CommandBlock.astro';
+import Icon from '../components/Icon.astro';
+import {readme,section,markdown,cloneCommands} from '../lib/content';
+import {href} from '../lib/urls';
+const requirements=section(readme,'Requirements');
+const distributions=[...requirements.matchAll(/<details>\s*<summary><b>(.*?)<\/b><\/summary>([\s\S]*?)<\/details>/g)].map((match,index)=>({title:match[1],id:['ubuntu','fedora','rhel','arch','opensuse'][index],body:match[2]}));
+if(distributions.length!==5)throw new Error('Expected five distribution install sections in README Requirements');
+const first=requirements.indexOf('<details>');
+const last=requirements.lastIndexOf('</details>')+'</details>'.length;
+const intro=await markdown(requirements.slice(0,first));
+const alternative=await markdown(requirements.slice(last));
+const getting=section(readme,'Getting started');
+const [before,after]=getting.split(/```(?:bash|sh)?\n[\s\S]*?```/);
+const gettingBefore=await markdown(before),gettingAfter=await markdown(after);
+const distroContent=await Promise.all(distributions.map(async d=>({ ...d,commands:d.body.match(/```(?:bash|sh)?\n([\s\S]*?)```/)![1].trimEnd().split('\n'),note:await markdown(d.body.replace(/```(?:bash|sh)?\n[\s\S]*?```/,'')) })));
+---
+<Layout title="Get started" description="Install the host tools, bring your RHEL 10 ISO, and build your first autorelabel practice lab." path="/start/">
+<main id="content" class="container reading-page start-page">
+  <div class="page-intro"><h1>Build the box once.<br/><em>Then practise.</em></h1><p>Install the host tools, bring your RHEL 10 DVD, and let autorelabel prepare the lab.</p></div>
+  <nav class="jump-links" aria-label="Get started sections"><a class="text-link" href="#requirements">Requirements</a><a class="text-link" href="#install">Install commands</a><a class="text-link" href="#getting-started">First run</a><a class="text-link" href="#removing">Remove everything</a></nav>
+  <section class="page-section prose" id="requirements"><h2>What you need.</h2><div set:html={intro.html}/></section>
+  <section class="page-section" id="install"><h2>Install the host tools.</h2><p class="measure muted">Choose your Linux distribution. These are the commands from the repository’s current Requirements section.</p><div data-tabs data-remember="autorelabel-distro"><div class="tabs distro-tabs" role="tablist" aria-label="Linux distribution">{distroContent.map((d,index)=><button type="button" class="tab" role="tab" id={`tab-${d.id}`} aria-controls={`distro-${d.id}`} aria-selected={index===0?'true':'false'} tabindex={index===0?0:-1}>{d.id==='rhel'?'RHEL family':d.title}</button>)}</div>{distroContent.map(d=><div class="distro-panel" role="tabpanel" id={`distro-${d.id}`} aria-labelledby={`tab-${d.id}`}><h3>{d.title}</h3><div class="prose" set:html={d.note.html}/><CommandBlock id={`install-${d.id}`} label={`${d.title} / libvirt`} commands={d.commands}/></div>)}</div><div class="prose alternative-note" set:html={alternative.html}/></section>
+  <section class="page-section" id="getting-started"><h2>Bring the ISO.<br/>Start autorelabel.</h2><div class="prose" set:html={gettingBefore.html}/><CommandBlock id="quick-start" commands={cloneCommands}/><div class="prose" set:html={gettingAfter.html}/><div class="first-run-path"><span>Private environment</span><Icon name="arrow"/><span>Host check</span><Icon name="arrow"/><span>Three setup questions</span><Icon name="arrow"/><span>Build the box</span></div><p><a class="text-link" href={href('/docs/installing/')}>The installation guide explains each step ↗</a></p><p><a class="text-link" href={href('/docs/first-exam/')}>Then take your first exam ↗</a></p></section>
+  <section class="page-section prose" id="where"><h2>Where things go.</h2><dl class="file-ledger"><div><dt><code>.venv/</code></dt><dd>The private Python environment, inside the repository.</dd></div><div><dt><code>.workspace/</code></dt><dd>Settings, sessions, history, logs and the resource ledger.</dd></div><div><dt><code>~/.local/share/autorelabel/</code></dt><dd>The suggested lab storage folder. Setup lets you choose another location.</dd></div></dl><p><a class="text-link" href={href('/docs/files-and-uninstall/')}>Read the complete file reference ↗</a></p></section>
+  <section class="page-section" id="removing"><h2>Remove what it created.</h2><p class="measure">The uninstaller reads the ledger. Preview its list, then remove the lab, box, settings, history, and private environment. Your ISO is kept unless you explicitly ask to delete it.</p><CommandBlock id="uninstall" label="Uninstall / inspect first" commands={['./autorelabel uninstall --dry-run','./autorelabel uninstall']}/><p><a class="text-link" href={href('/docs/files-and-uninstall/#uninstalling')}>Options and the rescue uninstaller ↗</a></p></section>
+</main>
+</Layout>

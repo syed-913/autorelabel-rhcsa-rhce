@@ -1,0 +1,26 @@
+---
+import type {Exam} from '../lib/content';
+interface Props {exam:Exam;}
+const {exam}=Astro.props;
+const rhce=exam==='rhce';
+const nodes=rhce?[
+  {id:'utility',label:'utility',x:40,y:85,role:'Repositories, DNS, time, NFS, Git and Ansible content',ram:'1 GB in both profiles',disks:'No extra disks',address:'.10'},
+  {id:'control',label:'control',x:320,y:40,role:'Where you work as student. Ansible, ansible-navigator and VS Code',ram:'2 GB lite / 2.5 GB standard, 2 CPUs',disks:'No extra disks',address:'.20'},
+  {id:'managed',label:'node1…node5',x:590,y:205,role:'Managed nodes. Three in lite, five in standard',ram:'768 MB lite / 1 GB standard per node',disks:'One extra 4 GB disk per node',address:'.21 and up'},
+]:[
+  {id:'utility',label:'utility',x:40,y:125,role:'Support server: repositories, DNS, time, NFS and Flatpak',ram:'768 MB lite / 1 GB standard',disks:'No extra disks',address:'.10'},
+  {id:'node1',label:'node1',x:350,y:45,role:'Exam node. Configure its lab network from the console',ram:'1 GB lite / 1.5 GB standard',disks:'Two extra disks: 8 GB and 4 GB',address:'.11'},
+  {id:'node2',label:'node2',x:590,y:220,role:'Exam node. Reset its unknown root password from the console',ram:'1 GB lite / 1.5 GB standard',disks:'One extra 4 GB disk',address:'.12'},
+];
+---
+<div class="lab-layout" data-lab>
+  <section class="lab-drawing room--night" tabindex="0" aria-label={`${exam.toUpperCase()} lab diagram. Scroll horizontally on small screens.`}><svg viewBox="0 0 820 355" role="group" aria-label={`${exam.toUpperCase()} lab. Focus a virtual machine to read its role.`}>
+    <path class="lab-wire" d="M120 285H720M120 285V167M430 285V120M670 285V265"/>
+    <path class="lab-packet" d="M120 285H720"/>
+    <text class="lab-label" x="40" y="330">LAB NETWORK · ISOLATED · NO INTERNET</text>
+    {nodes.map((node,index)=><g class="lab-node" role="button" tabindex="0" aria-labelledby={`${exam}-${node.id}-name ${exam}-${node.id}-address`} aria-describedby={`${exam}-${node.id}-description`} aria-pressed={index===0?'true':'false'} data-vm={node.id} data-vm-info={JSON.stringify(node)} transform={`translate(${node.x} ${node.y})`}>
+      <desc id={`${exam}-${node.id}-description`}>{node.role}. Press Enter or Space to pin details.</desc><rect width="180" height="76" rx="2"/><path d="M145 50l7 5-7 5m12 1h10"/><text id={`${exam}-${node.id}-name`} x="15" y="31">{node.label}</text><text id={`${exam}-${node.id}-address`} class="lab-address" x="15" y="58">{node.address}</text>
+    </g>)}
+  </svg><p class="lab-scroll-hint">Scroll the diagram horizontally. Focus or tap a VM to inspect it.</p></section>
+  <div class="lab-detail" aria-live="polite"><h3 data-vm-title>{nodes[0].label}</h3><p data-vm-role>{nodes[0].role}</p><dl><dt>Memory</dt><dd data-vm-ram>{nodes[0].ram}</dd><dt>Extra disks</dt><dd data-vm-disks>{nodes[0].disks}</dd></dl><p class="small muted">Focus or hover to inspect. Click to pin. The tables below are the complete reference.</p><button type="button" class="btn btn--quiet" data-unpin>Unpin selection</button></div>
+</div>

@@ -1,0 +1,32 @@
+@font-face{font-family:Atkinson;src:url('/autorelabel-rhcsa-rhce/fonts/atkinson-hyperlegible-next-latin-400-normal.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:Atkinson;src:url('/autorelabel-rhcsa-rhce/fonts/atkinson-hyperlegible-next-latin-600-normal.woff2') format('woff2');font-weight:600;font-display:swap}
+@font-face{font-family:Atkinson;src:url('/autorelabel-rhcsa-rhce/fonts/atkinson-hyperlegible-next-latin-700-normal.woff2') format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:JetBrains;src:url('/autorelabel-rhcsa-rhce/fonts/jetbrains-mono-latin-400-normal.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:JetBrains;src:url('/autorelabel-rhcsa-rhce/fonts/jetbrains-mono-latin-500-normal.woff2') format('woff2');font-weight:500;font-display:swap}
+@font-face{font-family:JetBrains;src:url('/autorelabel-rhcsa-rhce/fonts/jetbrains-mono-latin-700-normal.woff2') format('woff2');font-weight:700;font-display:swap}
+
+@font-face{font-family:Fraunces;src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-latin-full-normal.woff2') format('woff2');font-weight:100 649;font-style:normal;font-display:swap;unicode-range:U+20-7E,U+A0-FF,U+131,U+152-153,U+2BC,U+2C6,U+2DA,U+2DC,U+300-301,U+303-304,U+308,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+2032-2033,U+2039-203A,U+2044,U+20AC,U+2122,U+2212,U+2215}
+
+@font-face{font-family:Fraunces;src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-latin-full-normal.woff2') format('woff2');font-weight:651 900;font-style:normal;font-display:swap;unicode-range:U+20-7E,U+A0-FF,U+131,U+152-153,U+2BC,U+2C6,U+2DA,U+2DC,U+300-301,U+303-304,U+308,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+2032-2033,U+2039-203A,U+2044,U+20AC,U+2122,U+2212,U+2215}
+
+@font-face{font-family:Fraunces;src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-latin-full-normal.woff2') format('woff2');font-weight:650;font-style:normal;font-display:swap;unicode-range:U+A1-D6,U+D8-FF,U+131,U+152-153,U+2BC,U+2C6,U+2DA,U+2DC,U+300-301,U+303-304,U+308,U+2032-2033,U+2039-203A,U+2044,U+20AC,U+2122,U+2212,U+2215}
+
+@font-face{font-family:Fraunces;src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-650-latin-normal.woff2') format('woff2');font-weight:650;font-style:normal;font-display:swap;unicode-range:U+20-7E,U+A0,U+D7,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026}
+
+@font-face{font-family:"Fraunces Headline";src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-headline-normal.woff2') format('woff2');font-weight:650;font-style:normal;font-display:swap;unicode-range:U+20-7E,U+A0,U+D7,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026}
+
+@font-face{font-family:Fraunces;src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-latin-full-italic.woff2') format('woff2');font-weight:100 399;font-style:italic;font-display:swap;unicode-range:U+20-7E,U+A0-FF,U+131,U+152-153,U+2BC,U+2C6,U+2DA,U+2DC,U+300-301,U+303-304,U+308,U+323,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+2032-2033,U+2039-203A,U+2044,U+20AC,U+2122,U+2212,U+2215}
+
+@font-face{font-family:Fraunces;src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-latin-full-italic.woff2') format('woff2');font-weight:401 649;font-style:italic;font-display:swap;unicode-range:U+20-7E,U+A0-FF,U+131,U+152-153,U+2BC,U+2C6,U+2DA,U+2DC,U+300-301,U+303-304,U+308,U+323,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+2032-2033,U+2039-203A,U+2044,U+20AC,U+2122,U+2212,U+2215}
+
+@font-face{font-family:Fraunces;src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-latin-full-italic.woff2') format('woff2');font-weight:651 900;font-style:italic;font-display:swap;unicode-range:U+20-7E,U+A0-FF,U+131,U+152-153,U+2BC,U+2C6,U+2DA,U+2DC,U+300-301,U+303-304,U+308,U+323,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+2032-2033,U+2039-203A,U+2044,U+20AC,U+2122,U+2212,U+2215}
+
+@font-face{font-family:Fraunces;src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-latin-full-italic.woff2') format('woff2');font-weight:400;font-style:italic;font-display:swap;unicode-range:U+A1-D6,U+D8-FF,U+131,U+152-153,U+2BC,U+2C6,U+2DA,U+2DC,U+300-301,U+303-304,U+308,U+323,U+2032-2033,U+2039-203A,U+2044,U+20AC,U+2122,U+2212,U+2215}
+
+@font-face{font-family:Fraunces;src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-400-latin-italic.woff2') format('woff2');font-weight:400;font-style:italic;font-display:swap;unicode-range:U+20-7E,U+A0,U+D7,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026}
+
+@font-face{font-family:Fraunces;src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-latin-full-italic.woff2') format('woff2');font-weight:650;font-style:italic;font-display:swap;unicode-range:U+A1-D6,U+D8-FF,U+131,U+152-153,U+2BC,U+2C6,U+2DA,U+2DC,U+300-301,U+303-304,U+308,U+323,U+2032-2033,U+2039-203A,U+2044,U+20AC,U+2122,U+2212,U+2215}
+
+@font-face{font-family:Fraunces;src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-650-latin-italic.woff2') format('woff2');font-weight:650;font-style:italic;font-display:swap;unicode-range:U+20-7E,U+A0,U+D7,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026}
+
+@font-face{font-family:"Fraunces Headline";src:url('/autorelabel-rhcsa-rhce/fonts/fraunces-headline-italic.woff2') format('woff2');font-weight:650;font-style:italic;font-display:swap;unicode-range:U+20-7E,U+A0,U+D7,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026}

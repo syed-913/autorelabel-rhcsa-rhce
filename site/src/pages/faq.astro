@@ -1,0 +1,18 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+import {faqs,markdown} from '../lib/content';
+import {href} from '../lib/urls';
+const answers=await Promise.all(faqs.map(async faq=>({...faq,...await markdown(faq.answer,'docs/guide/11-faq.md')})));
+const groups=[...new Set(answers.map(a=>a.group))];
+const schema={'@context':'https://schema.org','@type':'FAQPage',mainEntity:answers.map(a=>({'@type':'Question',name:a.question,acceptedAnswer:{'@type':'Answer',text:a.html}}))};
+---
+<Layout title="Frequently asked questions" description="Answers about autorelabel, RHCSA and RHCE practice exams, requirements, grading and getting help." path="/faq/" schema={schema}>
+<main id="content" class="container faq-page" data-faq>
+  <div class="page-intro"><h1>Good questions.<br/><em>Plain answers.</em></h1><p>Requirements, grading, and the details you want to know before building a lab.</p></div>
+  <div class="faq-tools"><label class="search-field"><Icon name="search"/><input type="search" data-faq-search placeholder="Filter these answers…" aria-label="Filter frequently asked questions"/></label><button type="button" class="text-button" data-open-search>Search the whole guide <kbd>/</kbd></button></div><p class="small muted" role="status" aria-live="polite" data-faq-count>{answers.length} questions</p>
+  <div data-pagefind-body><h2 class="sr-only" data-pagefind-meta="title">Frequently asked questions</h2>{groups.map(group=><section class="faq-group" data-faq-group><h2>{group}</h2><div class="accordion">{answers.filter(a=>a.group===group).map(answer=><details id={answer.id} data-faq-item data-search={`${answer.question} ${answer.answer}`.toLowerCase()}><summary><span>{answer.question}</span><Icon name="plus"/></summary><div class="answer prose"><div set:html={answer.html}/><a class="text-link" href={`#${answer.id}`} aria-label={`Link to answer: ${answer.question}`}>Link to this answer</a></div></details>)}</div></section>)}</div>
+  <div class="bank-empty" hidden data-faq-empty><h2>No matching answers.</h2><p>Search the whole guide, or clear this filter.</p><button type="button" class="btn btn--secondary" data-faq-clear>Clear filter</button></div>
+  <p class="faq-help">Start with <a class="text-link" href={href('/docs/troubleshooting/')}>Troubleshooting</a> if your lab needs attention. The guide also explains <a class="text-link" href={href('/docs/objectives/')}>every covered objective</a>.</p>
+</main>
+</Layout>

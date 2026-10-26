@@ -1,0 +1,25 @@
+---
+import {Image} from 'astro:assets';
+import Layout from '../layouts/Layout.astro';
+import Icon from './Icon.astro';
+import Lab from './Lab.astro';
+import Objectives from './Objectives.astro';
+import {counts,domains,blueprints,read,section,markdown,type Exam} from '../lib/content';
+import {href} from '../lib/urls';
+import {exam as screenshot} from '../lib/images';
+interface Props {exam:Exam;}
+const {exam}=Astro.props;
+const rhce=exam==='rhce',name=exam.toUpperCase(),code=rhce?'EX294':'EX200',blueprint=blueprints[exam];
+const lab=await markdown(section(read('docs/guide/04-the-lab.md'),`The ${name} lab`),'docs/guide/04-the-lab.md');
+const mix=Object.entries(blueprint.difficulty_mix);
+---
+<Layout title={`${name} (${code}) practice exams`} description={`${name} practice exams on RHEL 10: ${blueprint.tasks} tasks, ${blueprint.duration_minutes} minutes, ${blueprint.total_points} points, and grading after a reboot.`} path={`/${exam}/`}>
+<main id="content">
+  <section class="container exam-intro"><div><h1>{name}.<br/><em>On real RHEL 10.</em></h1><p>{rhce?'An empty project directory. Managed nodes. Your Ansible configuration, graded after a reboot.':'A node without a network. An unknown root password. Your systems, graded after a reboot.'}</p><div class="hero-actions"><a class="btn" href={href('/start/')} data-magnetic>Get started <Icon name="arrow"/></a><a class="text-link" href="#objectives">See every objective ↓</a></div></div><div class="exam-spec room--night"><h2>{code}</h2><dl><div><dt>Time</dt><dd>{blueprint.duration_minutes} minutes</dd></div><div><dt>Tasks</dt><dd>{blueprint.tasks}</dd></div><div><dt>Points</dt><dd>{blueprint.total_points}</dd></div><div><dt>Pass mark</dt><dd>{blueprint.pass_mark}</dd></div><div><dt>Task bank</dt><dd>{counts[exam]}</dd></div></dl></div></section>
+  <section class="page-section container" id="lab"><div class="section-title"><h2 data-relabel>The lab is yours.<br/>The network is isolated.</h2><p>Inspect a VM to see its job, memory, and disks. The lab interface is yours to configure; management stays separate.</p></div><Lab exam={exam}/><div class="prose lab-reference" set:html={lab.html}/><p><a class="text-link" href={href('/docs/the-lab/')}>Networks, accounts, passwords and snapshots ↗</a></p></section>
+  <section class="exam-start-section room--night"><div class="container"><div class="section-title"><h2 data-relabel>Start where<br/>the exam starts.</h2><p>{rhce?'Write the inventory, configure Ansible, and prepare the managed nodes from control.':'Use the console to open the door. Then work over SSH.'}</p></div><div class="exam-start-grid"><Image src={screenshot} width={1280} format="webp" loading="lazy" alt="The real autorelabel exam screen, with tasks, countdown and node controls"/><div>{rhce?<><h3>Work as student.</h3><p>Your project starts empty at <code>/home/student/ansible</code> on <code>control</code>. The lab provides the RHEL system roles and an execution environment built offline from the DVD.</p><p>Use <code>ansible-navigator</code>, <code>ansible-playbook</code>, and VS Code in the browser. The editor is forwarded over SSH at <code>127.0.0.1:18080</code>.</p></>:<><h3>The first tasks matter.</h3><p>node1 has no lab network. node2’s root password is unknown. Neither node has software repositories configured.</p><p>Use the serial console to configure networking and interrupt the boot. The utility server has the DVD repositories waiting.</p></>}<a class="text-link" href={href('/docs/first-exam/')}>Read the first-exam walkthrough ↗</a></div></div></div></section>
+  <section class="page-section container"><div class="section-title"><h2 data-relabel>A fixed shape.<br/>A fresh exam.</h2><p>Tasks and their details vary. The blueprint keeps the same difficulty mix and point total.</p></div><div class="blueprint-grid"><table class="data-table"><caption>Difficulty mix</caption><thead><tr><th scope="col">Difficulty</th><th scope="col">Tasks</th><th scope="col">Points each</th></tr></thead><tbody>{mix.map(([level,count])=><tr><th scope="row">{level}</th><td>{count}</td><td>{blueprint.points[level as keyof typeof blueprint.points]}</td></tr>)}</tbody></table><table class="data-table"><caption>Tasks per domain</caption><thead><tr><th scope="col">Objective domain</th><th scope="col">Minimum</th><th scope="col">Maximum</th></tr></thead><tbody>{Object.entries(blueprint.domains).map(([id,limits])=><tr><th scope="row">{domains[exam].find(d=>d.id===id)?.title||id}</th><td>{limits[0]}</td><td>{limits[1]}</td></tr>)}</tbody></table></div></section>
+  <div class="container"><Objectives exam={exam}/></div>
+  <section class="reading-next room--night"><div class="container"><h2>Ready for a reboot?</h2><a class="btn" href={href('/start/')} data-magnetic>Set up the lab <Icon name="arrow"/></a><a class="text-link" href={href(`/tasks/?exam=${exam}`)}>Browse the {name} task titles ↗</a></div></section>
+</main>
+</Layout>

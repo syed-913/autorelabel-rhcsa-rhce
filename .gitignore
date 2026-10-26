@@ -28,3 +28,9 @@ __pycache__/
 # Rendered demo videos (uploaded to GitHub, never committed)
 /demo.mp4
 scripts/dev/demo/*.mp4
+
+# Website build output and local review captures
+site/node_modules/
+site/dist/
+site/.astro/
+site/qa/

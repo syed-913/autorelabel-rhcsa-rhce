@@ -1,0 +1,6 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import {read,markdown,guides} from '../../lib/content';
+const content=await markdown(read('docs/guide/README.md'),'docs/guide/README.md');
+---
+<DocsLayout title="User guide" description="Install autorelabel, take your first exam, understand grading, and find help." path="/docs/" file="README.md" headings={content.headings} next={guides[0]}><div set:html={content.html}/></DocsLayout>

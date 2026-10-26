@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /autorelabel-rhcsa-rhce/
+Sitemap: https://syed-913.github.io/autorelabel-rhcsa-rhce/sitemap-index.xml

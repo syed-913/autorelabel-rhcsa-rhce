@@ -1,0 +1,9 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import {read,markdown,guides} from '../../lib/content';
+import {guideImages} from '../../lib/images';
+export function getStaticPaths(){return guides.filter(g=>g.file!=='11-faq.md').map(guide=>({params:{page:guide.slug},props:{guide,previous:guides[guides.indexOf(guide)-1],next:guides[guides.indexOf(guide)+1]}}));}
+const {guide,previous,next}=Astro.props;
+const content=await markdown(read(`docs/guide/${guide.file}`),`docs/guide/${guide.file}`,await guideImages());
+---
+<DocsLayout title={guide.title} description={`${guide.title}: autorelabel RHCSA and RHCE practice exam user guide.`} path={`/docs/${guide.slug}/`} file={guide.file} headings={content.headings} previous={previous} next={next}><div set:html={content.html}/></DocsLayout>

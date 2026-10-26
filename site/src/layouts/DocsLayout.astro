@@ -1,0 +1,20 @@
+---
+import Layout from './Layout.astro';
+import Icon from '../components/Icon.astro';
+import {guides,type Heading,type Guide} from '../lib/content';
+import {href,repository} from '../lib/urls';
+interface Props {title:string;description:string;path:string;file:string;headings:Heading[];previous?:Guide;next?:Guide;}
+const {title,description,path,file,headings,previous,next}=Astro.props;
+---
+<Layout title={title} description={description} path={path}>
+<main id="content" class="container docs-page">
+  <aside class="docs-sidebar" aria-label="Guide navigation" data-pagefind-ignore="all"><details class="guide-pages room--night" data-guide-pages open><summary>User guide <Icon name="menu"/></summary><nav aria-label="User guide"><a class="guide-page text-link" href={href('/docs/')} aria-current={path==='/docs/'?'page':undefined}>Guide index</a>{guides.map(guide=><a class="guide-page text-link" href={guide.url} aria-current={guide.file===file?'page':undefined}>{guide.title}</a>)}</nav></details></aside>
+  <article class="prose docs-article" data-pagefind-body>
+    <h1 data-pagefind-meta="title">{title}</h1>
+    <slot/>
+    <nav class="guide-pagination" aria-label="Guide previous and next pages" data-pagefind-ignore="all"><div>{previous && <a class="text-link" href={previous.url}><small>Previous</small>{previous.title}</a>}</div><div>{next && <a class="text-link" href={next.url}><small>Next</small>{next.title}</a>}</div></nav>
+    <a class="edit-link text-link" href={`${repository}/edit/main/docs/guide/${file}`} data-pagefind-ignore="all">Edit this page on GitHub ↗</a>
+  </article>
+  <nav class="docs-outline" aria-label="On this page" data-pagefind-ignore="all"><p>ON THIS PAGE</p>{headings.map(heading=><a class:list={['toc-link',{'outline-child':heading.depth===3}]} href={`#${heading.id}`}>{heading.text}</a>)}</nav>
+</main>
+</Layout>

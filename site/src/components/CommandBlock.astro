@@ -1,0 +1,7 @@
+---
+import Icon from './Icon.astro';
+interface Props {id:string;commands:string[];label?:string;chip?:boolean;}
+const {id,commands,label='Quick start / Linux',chip=false}=Astro.props;
+---
+{chip ? <div class="command-block command-chip room--night"><span class="prompt" aria-hidden="true">$</span><code id={id}>{commands.join(' && ')}</code><button type="button" class="copy-button" data-copy-target={id} aria-label="Copy command" data-cursor="copy"><Icon name="copy"/><span data-copy-label class="copy-label">Copy</span></button></div> :
+<div class="command-block room--night"><div class="command-head"><span>{label}</span><button type="button" class="copy-button" data-copy-target={`${id}-all`} aria-label="Copy all commands" data-cursor="copy"><Icon name="copy"/><span data-copy-label>Copy all</span></button></div><div id={`${id}-all`} data-command={commands.join('\n')}>{commands.map((command,index)=><div class="command-line"><span aria-hidden="true">$</span><code id={`${id}-${index}`}>{command}</code><button type="button" class="copy-button" data-copy-target={`${id}-${index}`} aria-label={`Copy command ${index+1}`} data-cursor="copy"><Icon name="copy"/><span data-copy-label class="copy-label">Copy</span></button></div>)}</div></div>}

@@ -1,0 +1,19 @@
+{
+  "extends": [
+    "html-validate:recommended"
+  ],
+  "rules": {
+    "void-style": [
+      "error",
+      {
+        "style": "omit"
+      }
+    ],
+    "valid-id": [
+      "error",
+      {
+        "relaxed": true
+      }
+    ]
+  }
+}

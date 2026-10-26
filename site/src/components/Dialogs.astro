@@ -1,0 +1,24 @@
+---
+import Icon from './Icon.astro';
+import {href,repository} from '../lib/urls';
+const links=[['Get started','/start/','Install on Linux'],['RHCSA','/rhcsa/','EX200'],['RHCE','/rhce/','EX294'],['Tasks','/tasks/','The task bank'],['How it works','/how-it-works/','Build to results'],['Docs','/docs/','The user guide'],['FAQ','/faq/','Common questions']];
+---
+<dialog id="site-menu" class="site-menu room--night" data-site-menu aria-label="Site navigation" data-pagefind-ignore="all">
+  <div class="menu-head"><a class="brand" href={href('/')} aria-label="autorelabel Home"><img src={href('/brand/wordmark-mono-on-night.svg')} width="180" height="43" alt="autorelabel"/></a><button type="button" class="icon-button" data-close-menu aria-label="Close navigation menu"><Icon name="close"/></button></div>
+  <div class="menu-body"><div class="menu-title"><span>SELECT A PAGE</span><span>esc close</span></div><nav class="mobile-links" aria-label="Mobile navigation">{links.map(([label,path,detail])=><a href={href(path)}><span>{label}</span><small>{detail}</small></a>)}</nav><div class="menu-foot"><a class="text-link" href={repository}>GitHub ↗</a><span class="mono small">tab select · enter open</span></div></div>
+</dialog>
+<dialog class="shortcut-dialog" data-shortcuts aria-labelledby="shortcut-title" data-pagefind-ignore="all">
+  <div class="dialog-heading"><h2 id="shortcut-title">Keyboard shortcuts</h2><button type="button" class="icon-button" data-close-shortcuts aria-label="Close keyboard shortcuts"><Icon name="close"/></button></div>
+  <div class="shortcut-row"><span>Focus search</span><kbd>/</kbd></div><div class="shortcut-row"><span>Switch theme</span><kbd>t</kbd></div>
+  {[["Home","h"],["Get started","s"],["Task bank","t"]].map(([label,key])=><div class="shortcut-row"><span>{label}</span><span><kbd>g</kbd> <kbd>{key}</kbd></span></div>)}
+  <div class="shortcut-row"><span>Keyboard shortcuts</span><kbd>?</kbd></div>
+  <label class="control-check"><input type="checkbox" data-enable-shortcuts checked/>Enable keyboard shortcuts</label>
+  <p class="small muted">Turn off single-key shortcuts to use the visible controls only.</p><p class="shortcut-foot">tab select · enter open · esc close<br/>Shortcuts leave text inputs alone.</p>
+</dialog>
+<dialog class="search-dialog" data-search-dialog aria-labelledby="search-title" data-pagefind-ignore="all">
+  <div class="dialog-heading"><h2 id="search-title">Search Docs and FAQ</h2><button type="button" class="icon-button" data-close-search aria-label="Close search"><Icon name="close"/></button></div>
+  <form role="search" data-docs-search-form><label class="sr-only" for="docs-search">Search Docs and FAQ</label><div class="search-field"><Icon name="search"/><input id="docs-search" type="search" placeholder="Commands, setup, grading…" autocomplete="off" data-docs-search/><kbd>esc</kbd></div><button type="submit" class="btn btn--secondary">Search</button></form>
+  <p class="search-status" role="status" aria-live="polite" data-search-status>Search the user guide and frequently asked questions.</p>
+  <div data-search-results class="search-results"></div>
+  <p class="small search-browse"><a class="text-link" href={href('/docs/')}>Browse the guide</a><a class="text-link" href={href('/faq/')}>Read the FAQ</a></p>
+</dialog>

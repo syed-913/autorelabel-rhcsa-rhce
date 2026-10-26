@@ -1,0 +1,27 @@
+---
+import {disclaimer,markdown} from '../lib/content';
+import {href,repository} from '../lib/urls';
+import {version} from '../lib/project';
+const content=await markdown(disclaimer);
+---
+<footer class="site-footer room--night" data-pagefind-ignore="all" id="licence">
+  <div class="container">
+    <div class="site-footer__top">
+      <img src={href('/brand/lockup-motto-on-night.svg')} width="220" height="37" alt="touch /.autorelabel" loading="lazy"/>
+      <nav class="footer-links" aria-label="Footer">
+        <a class="footer-link" href={repository} data-cursor="GitHub ↗">GitHub ↗</a>
+        <a class="footer-link" href={`${repository}/issues/new/choose`}>Report a problem ↗</a>
+        <a class="footer-link" href={`${repository}/discussions`}>Discussions ↗</a>
+        <a class="footer-link" href={`${repository}/blob/main/SECURITY.md`}>Security policy ↗</a>
+        <a class="footer-link" href={`${repository}/blob/main/docs/TASK-AUTHORING.md`}>Write a task ↗</a>
+        <a class="footer-link" href={`${repository}/blob/main/LICENSE`}>MIT licence ↗</a>
+        <a class="footer-link" href={href('/docs/')}>User guide</a>
+      </nav>
+    </div>
+    <p class="footer-release small muted"><a class="footer-link" href={`${repository}/releases/tag/v${encodeURIComponent(version)}`}>v{version} · release notes ↗</a></p>
+    <div class="site-footer__bottom">
+      <div class="affiliation" set:html={content.html}/>
+      <button type="button" class="shortcut-link" data-open-shortcuts><kbd>?</kbd> Keyboard shortcuts</button>
+    </div>
+  </div>
+</footer>
