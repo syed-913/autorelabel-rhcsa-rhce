@@ -35,8 +35,10 @@
     --type-display: clamp(3.05rem,6.6vw,5.35rem);
     --type-section: clamp(2rem,3.65vw,2.8rem);
     --type-title: clamp(1.42rem,2.4vw,1.8rem);
-    --type-body: clamp(1rem,.94rem + .12vw,1.06rem);
-    --type-small: .82rem;
+    --type-body: clamp(1.06rem,1rem + .25vw,1.15rem);
+    --type-lede: clamp(1.15rem,1.05rem + .4vw,1.3rem);
+    --type-small: .9rem;
+    --type-table: .94rem;
     --type-label: .72rem;
     --type-mono: .72rem;
     --leading-display: 1.04;
