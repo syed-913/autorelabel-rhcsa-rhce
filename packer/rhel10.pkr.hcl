@@ -1,18 +1,21 @@
 # Builds the autorelabel/rhel10 Vagrant box offline from the RHEL 10 DVD ISO.
 # No registration, no subscription. Driven by `./autorelabel box build`.
 
+# Exact plugin versions, so every box is built the same way. A new plugin release moves the pin only
+# after a box build and a lab check on both hypervisors. packer init verifies each download against
+# the plugin release's SHA256SUMS.
 packer {
   required_plugins {
     qemu = {
-      version = "~> 1.1"
+      version = "= 1.1.7"
       source  = "github.com/hashicorp/qemu"
     }
     virtualbox = {
-      version = "~> 1.1"
+      version = "= 1.1.5"
       source  = "github.com/hashicorp/virtualbox"
     }
     vagrant = {
-      version = "~> 1.1"
+      version = "= 1.1.7"
       source  = "github.com/hashicorp/vagrant"
     }
   }
