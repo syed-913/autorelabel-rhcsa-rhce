@@ -4,24 +4,16 @@ What each coming version is planned to contain, and where it stands. When a vers
 
 | Version | Theme | Status |
 |---|---|---|
-| 1.0.1 | Dialog text wrapping | released |
-| 1.1.0 | Setup and verification | in progress |
 | 1.1.x | Fixes from real exam attempts | as reports come in |
 | 1.2.0 | Terminals in your browser | planned |
 | 1.3.0 | Results dashboard | planned |
 | 2.0.0 | Windows | planned, needs testing first |
 | later | More Red Hat exams | ideas |
 
-## 1.1.0: setup and verification
+## Repository and website (not versioned)
 
-- [ ] **`./autorelabel doctor --fix`** installs the missing host packages for your distribution. It is opt-in: it shows every command first, asks once, and runs them through `sudo`, which asks for your password itself. It stops at the first failure and never installs from the AUR or from unknown sources.
-- [ ] **The RHEL ISO is checked against Red Hat's published SHA-256 checksums** before the box is built. A download that doesn't match the checksum Red Hat publishes for its version stops the build with a clear message, instead of failing 10 minutes later inside the installer.
-- [ ] **Packer plugins pinned to exact versions**, so every box is built with the same plugins.
-
-## Alongside 1.1.0 (repository and website, not versioned)
-
-- [ ] GitHub Actions pinned to commit SHAs, kept current by Dependabot.
-- [ ] A GitHub release is created from this changelog when a version tag is pushed.
+- [x] GitHub Actions pinned to commit SHAs, kept current by Dependabot.
+- [x] A GitHub release is created from the changelog when a version tag is pushed.
 - [ ] Signed release tags.
 - [ ] [OpenSSF Scorecard](https://scorecard.dev) on the repository.
 - [ ] A CI check that every task has passing self-tests on both hypervisors for its current files, so an edited task can't ship untested.
