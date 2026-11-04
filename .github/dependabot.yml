@@ -1,4 +1,6 @@
 # Monthly, grouped updates, so they arrive as one pull request at a time.
+# The workflows pin each action to a commit SHA (a tag can be moved, a commit
+# can't); Dependabot updates the SHA and the version comment next to it.
 # Python libraries aren't listed: pyproject.toml only sets lower bounds, and
 # the RHCE content pins (ansible-core, collections, code-server) must follow
 # the exam, not the newest release.
