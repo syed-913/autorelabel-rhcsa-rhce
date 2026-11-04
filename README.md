@@ -39,7 +39,16 @@ Derivatives are recognised and get their parent's install commands: Linux Mint, 
 
 ## Requirements
 
-**Hardware:** an x86-64-v3 CPU (Intel Haswell or AMD Excavator and newer, which RHEL 10 requires) with virtualization enabled in the BIOS/UEFI, **about 3 GB of free RAM** for RHCSA (about 5.5 GB for RHCE) and **about 30 GB of free disk** (40 GB for RHCE).
+**Will it run on my computer?**
+
+| | Minimum: RHCSA, `lite` profile | Recommended: RHCSA and RHCE |
+|---|---|---|
+| **CPU** | x86-64-v3 (Intel Haswell or AMD Excavator and newer), virtualization enabled in the BIOS/UEFI, 2 cores | 4 cores / 8 threads |
+| **Installed RAM** | 8 GB | 16 GB |
+| **Free RAM while a lab runs** | 3.5 GB | 6 GB for RHCE (`lite`), 9.25 GB for RHCE (`standard`) |
+| **Free disk** | 30 GB | 40 GB, on an SSD |
+
+RHEL 10 itself needs the x86-64-v3 instruction set, so an older CPU can't run the labs at all. Some newer Pentium and Celeron models lack it too. To check yours, look for `x86-64-v3 (supported, searched)` in the output of `/lib64/ld-linux-x86-64.so.2 --help`. The doctor checks all of this on the first run, before anything else happens.
 
 **Software:** install these before you clone the repository. On its first run autorelabel checks your computer again and shows the exact commands, with undo commands, for anything still missing. It runs them only when you ask (`./autorelabel doctor --fix`, or **Fix for me** in the host check), and `sudo` asks for your password itself.
 
