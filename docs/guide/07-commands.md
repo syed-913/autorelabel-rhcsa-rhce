@@ -45,7 +45,7 @@ Run commands from the repository folder: `./autorelabel <command> [options]`. Th
 | `./autorelabel exam retake` | The same exam again, from its starting point. |
 | `./autorelabel exam resume` | Restart an exam's lab after your computer restarted. |
 | `./autorelabel exam abandon` | Give up the current session. |
-| `./autorelabel doctor` | Check that this computer can run the labs. |
+| `./autorelabel doctor` | Check that this computer can run the labs. `--fix` installs what's missing, after asking. |
 | `./autorelabel config` | Show or change settings. |
 | `./autorelabel box build` / `box status` | Build the RHEL 10 box, or show its state. |
 | `./autorelabel lab <up\|status\|health\|destroy>` | Manage the lab VMs directly. |
@@ -163,12 +163,13 @@ Gives up the current session. It isn't graded and isn't added to your history.
 
 ## Checking your computer
 
-### `doctor [--exam rhcsa|rhce] [--json]`
+### `doctor [--exam rhcsa|rhce] [--json] [--fix]`
 
-Runs every host check and prints ✔, `!` or ✘ for each, with the exact commands for your distribution under anything that needs fixing. It never changes anything itself. It exits with 1 when something must be fixed.
+Runs every host check and prints ✔, `!` or ✘ for each, with the exact commands for your distribution under anything that needs fixing. Without `--fix` it never changes anything. It exits with 1 when something must be fixed.
 
 - `--exam rhce` checks free memory against the RHCE lab, which needs more.
 - `--json` prints the checks as JSON, for scripts.
+- `--fix` lists the commands it would run, in order, with their undo commands, and asks once. If you answer yes, it runs them in your terminal, printing each one first, and stops at the first one that fails. `sudo` asks for your password itself; autorelabel never sees it. Then it checks again. It only runs commands written and tested for your distribution family (Debian and Ubuntu, Fedora, RHEL and its rebuilds, Arch, openSUSE, and their derivatives). Anything else stays yours to do: Vagrant from the AUR on Arch, Packer on openSUSE, a choice in Settings, or every step on a distribution autorelabel doesn't know. The undo commands are listed again by `./autorelabel uninstall`.
 
 Every check is explained in [Troubleshooting](09-troubleshooting.md#the-doctors-checks).
 

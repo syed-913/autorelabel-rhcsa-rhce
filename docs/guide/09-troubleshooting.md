@@ -6,7 +6,7 @@ When something doesn't work, start with the doctor. It checks everything autorel
 ./autorelabel doctor
 ```
 
-The same check is on the home screen (**Doctor**, or press `d`). It never changes anything on your computer; it shows you what to run.
+The same check is on the home screen (**Doctor**, or press `d`). It never changes anything on your computer by itself: it shows you what to run, and runs it only when you ask (`./autorelabel doctor --fix`, or **Fix for me** on the screen).
 
 ## The doctor's checks
 

@@ -42,7 +42,7 @@ Everything here is inside one subfolder, `<lab storage>/autorelabel/` (for examp
 | The proctor | A temporary systemd user service, `autorelabel-proctor-<session>`, which ends with the exam. |
 
 > **What does autorelabel never touch?**
-> Your system configuration, `/var/lib/libvirt/images`, your own VirtualBox VMs and settings, your other Vagrant projects, and anything that needs `sudo`. When something needs `sudo`, such as installing a package or joining a group, autorelabel shows you the command and you run it.
+> Your system configuration, `/var/lib/libvirt/images`, your own VirtualBox VMs and settings, your other Vagrant projects, and anything that needs `sudo` unless you ask. When something needs `sudo`, such as installing a package or joining a group, autorelabel shows you the command. You run it yourself, or let autorelabel run it with **Fix for me** or `doctor --fix`.
 
 > **What is the ledger?**
 > A plain text file that records each resource (a VM, a network, the box, a folder) at the moment autorelabel creates it. The uninstaller reads it to know what to remove, so it never has to guess, and so it never removes something that only happens to have a similar name.
@@ -66,7 +66,7 @@ This removes the lab VMs and their snapshots, the libvirt pool and networks (or 
 | `--delete-iso` | Also deletes your RHEL 10 ISO. Without it, the ISO is kept. |
 
 > **Does it remove Vagrant, Packer, libvirt or VirtualBox?**
-> No. You installed those yourself with `sudo`, and you might use them for other things. When you fix something the doctor shows you (a package, a group membership, a `setfacl` permission), autorelabel notes the matching undo command once the doctor sees the fix in place. At the end, the uninstaller lists those undo commands under "Steps you ran yourself during setup", so you can decide which ones to run.
+> No. You installed those with `sudo` (yourself, or through **Fix for me**), and you might use them for other things. When you fix something the doctor shows you (a package, a group membership, a `setfacl` permission), autorelabel notes the matching undo command once the doctor sees the fix in place. At the end, the uninstaller lists those undo commands under "Steps you ran yourself during setup", so you can decide which ones to run.
 
 > **Will I lose my exam history?**
 > Yes. Your history, settings and sessions live in `.workspace/`, which the uninstaller removes. Copy `.workspace/history.jsonl` somewhere first if you want to keep it.

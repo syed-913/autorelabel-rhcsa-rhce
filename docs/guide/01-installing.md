@@ -68,7 +68,7 @@ Here is what happens next, in order.
 
 autorelabel then checks your computer and shows a table of checks: the CPU, `/dev/kvm`, the tools and their versions, your group memberships, free memory, the lab storage folder, the ISO, the lab networks and a few more. A ✔ means the check passed, `!` is a warning, and ✘ must be fixed before you continue.
 
-Select a row with ✘ or `!` to see the exact commands for your distribution, together with the commands that undo them. Press `c` to copy them, run them yourself in another terminal, then press `r` to check again. The doctor never changes anything on your computer by itself.
+Select a row with ✘ or `!` to see the exact commands for your distribution, together with the commands that undo them. Press `c` to copy them, run them yourself in another terminal, then press `r` to check again. Or press `f` (**Fix for me**): after you confirm, autorelabel runs the commands for your distribution in your terminal, printing each one first, and checks again. `sudo` asks for your password itself; autorelabel never sees it. The doctor never changes anything on your computer unless you ask it to.
 
 Every check is explained in [Troubleshooting](09-troubleshooting.md#the-doctors-checks).
 

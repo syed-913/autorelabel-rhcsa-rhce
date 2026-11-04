@@ -12,7 +12,9 @@ A useful report says what you found, how to reproduce it, which version you used
 
 ## What counts as a security problem
 
-autorelabel runs on your computer with your user's rights, and never with `sudo`. These are the parts where a mistake would matter most:
+autorelabel runs on your computer with your user's rights. It uses `sudo` only when you ask it to install what's missing (`doctor --fix`, or **Fix for me** in the host check), after showing you every command. These are the parts where a mistake would matter most:
+
+- **`doctor --fix`** runs only the commands it showed you, in that order, after you said yes. Running anything else, or running without asking, is a security problem.
 
 - **The uninstaller** removes only what its ledger recorded. Removing anything else, or anything outside the folders described in [Files and uninstalling](docs/guide/10-files-and-uninstall.md), is a security problem.
 - **The lab** is reachable only from your own computer, and VS Code in the browser (RHCE) listens only on `127.0.0.1`, reached through SSH. A way for another computer on your network to reach a lab VM or VS Code is a security problem.

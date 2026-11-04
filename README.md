@@ -40,7 +40,7 @@ autorelabel builds a small RHEL 10 lab on your Linux computer and turns it into 
 
 **Hardware:** an x86-64-v3 CPU (Intel Haswell or AMD Excavator and newer, which RHEL 10 requires) with virtualization enabled in the BIOS/UEFI, **about 3 GB of free RAM** for RHCSA (about 5.5 GB for RHCE) and **about 30 GB of free disk** (40 GB for RHCE).
 
-**Software:** install these before you clone the repository. autorelabel never runs `sudo` itself. On its first run it checks your computer again and prints the exact commands, with undo commands, for anything still missing.
+**Software:** install these before you clone the repository. On its first run autorelabel checks your computer again and shows the exact commands, with undo commands, for anything still missing. It runs them only when you ask (`./autorelabel doctor --fix`, or **Fix for me** in the host check), and `sudo` asks for your password itself.
 
 | What | Why |
 |---|---|
