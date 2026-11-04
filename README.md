@@ -32,9 +32,10 @@ autorelabel builds a small RHEL 10 lab on your Linux computer and turns it into 
 | Host | Status |
 |---|---|
 | **Linux x86_64** (Ubuntu/Debian, Fedora, RHEL/Alma/Rocky/CentOS Stream, Arch, openSUSE) | ✅ libvirt/KVM (recommended) or VirtualBox 7.2.2+ |
-| Windows 10/11 | ❌ Not supported yet: planned for v2 (VirtualBox) |
-| WSL2 | ❌ Not supported |
+| Windows 10/11, WSL2 | ❌ Not supported yet: planned for v2, starting with WSL2 on Windows 11 ([roadmap](ROADMAP.md)) |
 | macOS | ❌ Not supported |
+
+Derivatives are recognised and get their parent's install commands: Linux Mint, Pop!_OS, Zorin OS, elementary OS, Kali Linux and KDE neon get Ubuntu's; Nobara and Ultramarine get Fedora's; AlmaLinux, Rocky Linux, CentOS Stream, Oracle Linux and EuroLinux get RHEL's; Manjaro, EndeavourOS, Garuda Linux and CachyOS get Arch's. So does any distribution that names one of these as its base (`ID_LIKE` in `/etc/os-release`). Other distributions, such as Gentoo, NixOS or Void, aren't tested, but autorelabel only needs the tools installed: the doctor lists what's missing, without distribution-specific commands.
 
 ## Requirements
 
