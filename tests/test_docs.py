@@ -29,6 +29,6 @@ def test_every_command_is_in_the_command_reference():
 
 
 def test_readme_and_guide_use_no_em_or_en_dashes():
-    for page in [ROOT / "README.md", *GUIDE.glob("*.md")]:
+    for page in [*ROOT.glob("*.md"), *GUIDE.glob("*.md")]:
         text = page.read_text(encoding="utf-8")
         assert "—" not in text and "–" not in text, page.name
