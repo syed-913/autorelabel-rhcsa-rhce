@@ -145,4 +145,5 @@ A normal run draws one value for each parameter. `--sweep` runs the suites again
 - [ ] RHCE: `scripts/dev/check-rhce-playbooks.py` passes (every playbook your scripts write gets an `ansible-playbook --syntax-check` with the lab's ansible-core 2.16; see the script's header).
 - [ ] `./autorelabel selftest --exam <exam> <task id>` passes, including at least one mistake test.
 - [ ] If the task has `choice` parameters: `./autorelabel selftest --exam <exam> --sweep <task id>` passes too.
+- [ ] The self-test passed on both libvirt and VirtualBox, and the updated `selftest*.json` files are committed. CI's quality gate (`scripts/dev/bank-quality.py --check`) fails a task whose files changed since its last passing run. Then `PYTHONPATH=src python scripts/dev/bank-quality.py --write` updates the table in the guide's [How the tasks are tested](guide/14-quality.md).
 - [ ] `solution.md` explains the *why* and the classic mistake, with references to official documentation or man pages.
