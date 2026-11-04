@@ -12,9 +12,7 @@
 
 </div>
 
-
 https://github.com/user-attachments/assets/9db4f356-1d16-48eb-b18f-fd3b874cd930
-
 
 ---
 
@@ -197,7 +195,7 @@ What sets autorelabel apart is the exam itself: a fresh 20-task exam each time, 
 
 ## Support
 
-autorelabel is free and stays free. If it helped you and you'd like to support it, [contact the author](https://syedammar.engineer).
+autorelabel is free and stays free. If it helped you and you'd like to support it, [write to the author](https://autorelabel.dpdns.org/contact/).
 
 ## License
 
