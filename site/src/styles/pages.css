@@ -68,7 +68,7 @@
   .search-result span {display:block;font-size:.85rem;color:var(--text-muted);line-height:1.6}
   .search-result mark {color:var(--text);background:var(--surface);text-decoration:underline;text-underline-offset:3px}
   .search-browse {display:flex;flex-wrap:wrap;gap:1rem 1.5rem;padding-top:1rem;border-top:1px solid var(--rule)}
-  .footer-release {margin-bottom:var(--space-3)}
+  .footer-support,.footer-release {margin-bottom:var(--space-3)}
   .site-footer__bottom .affiliation {font-size:.7rem;line-height:1.9;max-width:100ch;color:var(--text-muted)}
   .affiliation p {font-size:inherit;line-height:inherit}
   .bank-task-detail summary {list-style:none;display:flex;justify-content:space-between;align-items:start;gap:.8rem;min-height:44px;font-family:var(--font-text);font-size:.88rem;font-weight:600;line-height:1.5;cursor:pointer}

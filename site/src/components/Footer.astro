@@ -18,6 +18,7 @@ const content=await markdown(disclaimer);
         <a class="footer-link" href={href('/docs/')}>User guide</a>
       </nav>
     </div>
+    <p class="footer-support small muted">autorelabel is free and stays free. If it helped you and you'd like to support it, <a class="footer-link" href="https://syedammar.engineer">contact the author ↗</a>.</p>
     <p class="footer-release small muted"><a class="footer-link" href={`${repository}/releases/tag/v${encodeURIComponent(version)}`}>v{version} · release notes ↗</a></p>
     <div class="site-footer__bottom">
       <div class="affiliation" set:html={content.html}/>

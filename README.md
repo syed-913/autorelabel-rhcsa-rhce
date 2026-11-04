@@ -184,6 +184,10 @@ Several open projects help people practise for these exams. This table compares 
 
 What sets autorelabel apart is the exam itself: a fresh 20-task exam each time, a clock that locks the lab at zero, grading after a reboot of every node, and tasks that were each verified on real RHEL 10 VMs. The others have strengths of their own. Several run on Windows today through VirtualBox (autorelabel adds Windows in v2), and several come with study notes, which autorelabel doesn't try to replace.
 
+## Support
+
+autorelabel is free and stays free. If it helped you and you'd like to support it, [contact the author](https://syedammar.engineer).
+
 ## License
 
 autorelabel is released under the [MIT License](LICENSE).
