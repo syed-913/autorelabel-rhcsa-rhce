@@ -1,0 +1,51 @@
+name: objective check
+
+# Once a month: compare Red Hat's EX200 and EX294 pages with banks/<exam>/objectives.yaml,
+# and open an issue (or add to the open one) when the objectives changed.
+on:
+  schedule:
+    - cron: "23 5 3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies (hash-locked)
+        run: python -m pip install --require-hashes --no-deps -r requirements.lock
+
+      - name: Compare the objectives with Red Hat's pages
+        id: compare
+        run: |
+          set +e
+          python scripts/dev/objective-drift.py --markdown drift.md
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the issue
+        if: steps.compare.outputs.status == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: Red Hat changed the exam objectives
+        run: |
+          open=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body-file drift.md
+          else
+            gh issue create --title "$TITLE" --body-file drift.md
+          fi
+
+      - name: A page couldn't be read (its layout probably changed)
+        if: steps.compare.outputs.status == '2'
+        run: exit 1
