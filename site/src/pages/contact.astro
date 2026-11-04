@@ -1,0 +1,26 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+import {canonical,repository} from '../lib/urls';
+import {author} from '../lib/project';
+const places=[
+  ['A bug or an error message',`${repository}/issues/new?template=problem-report.yml`,'Report a problem ↗','Attach the report from `./autorelabel report`: it hides your user name, host name and passwords.'],
+  ['A task that is wrong or unclear',`${repository}/issues/new?template=task-feedback.yml`,'Send task feedback ↗','Name the task and what you expected. Every task is fixed and tested again before it ships.'],
+  ['A question others may have too',`${repository}/discussions`,'Ask in Discussions ↗','The answer stays there for the next person with the same question.'],
+  ['A security problem',`${repository}/security/advisories/new`,'Report it privately ↗','Only the maintainer sees it. Please don’t post it in public.'],
+];
+const schema={'@context':'https://schema.org','@type':'ContactPage',name:'Contact autorelabel',url:canonical('/contact/'),about:{'@type':'SoftwareApplication',name:'autorelabel',url:canonical('/')},author:{'@type':'Person',name:author.name,url:author.url}};
+---
+<Layout title="Contact" description="Write to the author of autorelabel, the free RHCSA and RHCE practice exam simulator. Bugs, task problems and security reports have their own place on GitHub." path="/contact/" schema={schema}>
+<main id="content" class="container reading-page contact-page">
+  <div class="page-intro"><h1>Write to<br/><em>the author.</em></h1><p>A question, an idea, your exam result, or a way to support autorelabel: one email reaches the person who builds it.</p></div>
+  <section class="page-section" id="email"><h2>Email.</h2>
+    <div class="contact-address"><a class="contact-address__link" id="contact-address" data-mail-user="contact" data-mail-domain="autorelabel.dpdns.org">contact (at) autorelabel.dpdns.org</a><button type="button" class="copy-button" data-copy-target="contact-address" aria-label="Copy the email address" data-cursor="copy"><Icon name="copy"/><span data-copy-label>Copy</span></button></div>
+    <p class="measure">Each address can send one message an hour. If yours comes back with a note asking you to wait, send it again later. Replies come by email.</p>
+  </section>
+  <section class="page-section" id="elsewhere"><h2>Some things have<br/>a better place.</h2>
+    <dl class="file-ledger contact-places">{places.map(([what,url,label,note])=><div><dt>{what}</dt><dd><a class="text-link" href={url}>{label}</a><span set:html={note.replace(/`([^`]+)`/g,'<code>$1</code>')}/></dd></div>)}</dl>
+  </section>
+  <section class="page-section" id="author"><h2>Who makes autorelabel.</h2><p class="measure">autorelabel is built and maintained by {author.name}. More of {author.name}’s work is at <a class="text-link" href={author.url}>{author.url.replace('https://','')} ↗</a>.</p></section>
+</main>
+</Layout>

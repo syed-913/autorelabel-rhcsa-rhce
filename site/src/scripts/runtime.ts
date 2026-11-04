@@ -33,6 +33,7 @@ function initialize(){
   const loops=new IntersectionObserver(entries=>entries.forEach(entry=>entry.target.classList.toggle('is-visible',entry.isIntersecting)),{threshold:.05});qsa('[data-ink-loop],.lab-drawing').forEach(element=>loops.observe(element));ctx.cleanup(()=>loops.disconnect());
   const visibility=()=>{root.dataset.pageHidden=String(document.hidden);if(document.hidden)root.dataset.cursorVisible='false';};ctx.on(document,'visibilitychange',visibility);visibility();
 
+  qsa<HTMLAnchorElement>('a[data-mail-user]').forEach(link=>{const address=`${link.dataset.mailUser}@${link.dataset.mailDomain}`;link.href=`mailto:${address}`;link.textContent=address;});
   qsa<HTMLButtonElement>('[data-copy-target]').forEach(button=>ctx.on(button,'click',async()=>{
     const target=document.getElementById(button.dataset.copyTarget!);if(!target)return;
     const content=target.dataset.command||target.textContent||'',label=qs('[data-copy-label]',button),original=label?.textContent||button.textContent||'Copy',aria=button.getAttribute('aria-label')||'Copy command';

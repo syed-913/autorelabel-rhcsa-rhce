@@ -7,9 +7,10 @@ import Icon from '../components/Icon.astro';
 import {counts,cloneCommands,markdown,readme,section,domains} from '../lib/content';
 import {home,exam,results} from '../lib/images';
 import {href,repository,canonical} from '../lib/urls';
+import {author} from '../lib/project';
 const platforms=await markdown(section(readme,'Supported platforms'));
 const comparison=await markdown(section(readme,'How it compares'));
-const schema={'@context':'https://schema.org','@type':'SoftwareApplication',name:'autorelabel',applicationCategory:'EducationalApplication',operatingSystem:'Linux x86_64',description:'Timed RHCSA and RHCE practice exams on real RHEL 10 virtual machines, graded after every node reboots.',url:canonical('/'),license:`${repository}/blob/main/LICENSE`,codeRepository:repository};
+const schema={'@context':'https://schema.org','@type':'SoftwareApplication',name:'autorelabel',applicationCategory:'EducationalApplication',operatingSystem:'Linux x86_64',description:'Timed RHCSA and RHCE practice exams on real RHEL 10 virtual machines, graded after every node reboots.',url:canonical('/'),license:`${repository}/blob/main/LICENSE`,codeRepository:repository,author:{'@type':'Person',name:author.name,url:author.url}};
 const features=[
   ['An exam-like start','Configure node1’s network from the console. Reset node2’s unknown root password. Set up the repositories. RHCE starts with an empty project directory.'],
   ['Method-agnostic grading','The final state counts. Use UUID or LABEL, nmcli or keyfiles. The grader never looks at the commands you typed.'],

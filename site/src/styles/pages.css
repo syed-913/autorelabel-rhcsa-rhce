@@ -50,6 +50,13 @@
   .file-ledger>div {display:grid;grid-template-columns:20rem 1fr;gap:1.5rem;padding:1rem 0;border-bottom:1px solid var(--rule)}
   .file-ledger dt {font-weight:600}
   .file-ledger dd {color:var(--text-muted)}
+  .contact-address {display:flex;flex-wrap:wrap;align-items:center;gap:1rem 1.5rem;margin-block:1.2rem 1.4rem}
+  .contact-address__link {font-family:var(--font-mono);font-size:clamp(1.05rem,.9rem + .8vw,1.45rem);overflow-wrap:anywhere}
+  .contact-address .copy-button {border-color:var(--control-border);color:var(--text)}
+  .contact-places dd {display:grid;gap:.35rem}
+  .contact-places dd>.text-link {justify-self:start}
+  .footer-credit {white-space:nowrap}
+  .footer-credit::before {content:'·';margin-inline:.6rem}
   .search-dialog {width:min(46rem,calc(100% - 2rem));max-height:85dvh;margin:auto;padding:1.5rem;background:var(--bg);color:var(--text);border:1px solid var(--control-border);overflow-y:auto}
   .search-dialog::backdrop {background:rgb(10 10 11 / .7)}
   .search-dialog>.dialog-heading {display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.3rem}

@@ -1,7 +1,7 @@
 ---
 import Icon from './Icon.astro';
 import {href,repository} from '../lib/urls';
-const links=[['Get started','/start/','Install on Linux'],['RHCSA','/rhcsa/','EX200'],['RHCE','/rhce/','EX294'],['Tasks','/tasks/','The task bank'],['How it works','/how-it-works/','Build to results'],['Docs','/docs/','The user guide'],['FAQ','/faq/','Common questions']];
+const links=[['Get started','/start/','Install on Linux'],['RHCSA','/rhcsa/','EX200'],['RHCE','/rhce/','EX294'],['Tasks','/tasks/','The task bank'],['How it works','/how-it-works/','Build to results'],['Docs','/docs/','The user guide'],['FAQ','/faq/','Common questions'],['Contact','/contact/','Write to the author']];
 ---
 <dialog id="site-menu" class="site-menu room--night" data-site-menu aria-label="Site navigation" data-pagefind-ignore="all">
   <div class="menu-head"><a class="brand" href={href('/')} aria-label="autorelabel Home"><img src={href('/brand/wordmark-mono-on-night.svg')} width="180" height="43" alt="autorelabel"/></a><button type="button" class="icon-button" data-close-menu aria-label="Close navigation menu"><Icon name="close"/></button></div>

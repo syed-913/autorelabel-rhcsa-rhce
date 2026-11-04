@@ -6,3 +6,4 @@ const manifest=parse(readFileSync(resolve(process.cwd(),'../pyproject.toml'),'ut
 const packageVersion=manifest.project?.version;
 if(typeof packageVersion!=='string'||!packageVersion.trim())throw new Error('Missing project.version in pyproject.toml');
 export const version=packageVersion;
+export const author={name:'Syed Ammar',url:'https://syedammar.engineer'};
