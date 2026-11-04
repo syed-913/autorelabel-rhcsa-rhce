@@ -46,9 +46,49 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     checks = doctor.run(settings, exam=args.exam)
     if args.json:
         print(json.dumps([asdict(c) | {"status": c.status.value} for c in checks], indent=2))
-    else:
-        print_checks(checks)
+        return 1 if doctor.blocking(checks) else 0
+    print_checks(checks)
+    if args.fix:
+        return _doctor_fix(settings, args.exam, checks)
     return 1 if doctor.blocking(checks) else 0
+
+
+def _doctor_fix(settings: config.Settings, exam: str, checks: list[doctor.Check]) -> int:
+    plan, manual = doctor.fix_plan(checks)
+    dim, bold = "\x1b[2m", "\x1b[1m"
+    if manual:
+        print(f" Left for you to do (see the commands above): {', '.join(c.title for c in manual)}.")
+    if not plan:
+        print(" Nothing for --fix to run." if not manual else
+              " --fix only runs commands tested for your distribution, so these are yours to do.")
+        return 1 if doctor.blocking(checks) else 0
+    if not sys.stdin.isatty():
+        print("doctor --fix needs a terminal: sudo asks for your password there.", file=sys.stderr)
+        return 2
+    print(_c("\n --fix will run these commands, in this order:", bold))
+    shown: set[str] = set()
+    for c in plan:
+        print(f"   {c.title}")
+        for cmd in doctor.commands(c.fix):
+            if cmd not in shown:
+                shown.add(cmd)
+                print(f"     {cmd}")
+    undo = [u for c in plan for u in c.undo]
+    if undo:
+        print(_c("\n To undo them later (./autorelabel uninstall lists these again):", dim))
+        for u in dict.fromkeys(undo):
+            print(_c(f"     {u}", dim))
+    print("\n sudo asks for your password itself; autorelabel never sees it.")
+    if input(" Run them now? [y/N] ").strip().lower() not in ("y", "yes"):
+        print(" Nothing was run.")
+        return 1
+    ok = doctor.apply_fixes(plan)
+    print("\n Checking again:\n")
+    checks = doctor.run(settings, exam=exam)
+    print_checks(checks)
+    if ok and doctor.needs_relogin(plan):
+        print(_c(" New group memberships apply after you log out and back in (or reboot).", bold))
+    return 0 if ok and not doctor.blocking(checks) else 1
 
 
 def cmd_report(args: argparse.Namespace) -> int:
@@ -109,6 +149,8 @@ def build_parser() -> argparse.ArgumentParser:
     d = sub.add_parser("doctor", help="check that this host can run the labs")
     d.add_argument("--exam", choices=("rhcsa", "rhce"), default="rhcsa")
     d.add_argument("--json", action="store_true")
+    d.add_argument("--fix", action="store_true",
+                   help="run the commands shown for your distribution, after showing them and asking once")
     d.set_defaults(func=cmd_doctor)
 
     r = sub.add_parser("report", help="write a problem report to post on the issue tracker")

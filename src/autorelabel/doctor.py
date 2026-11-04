@@ -1,10 +1,12 @@
-"""Read-only host preflight. Every failing check carries the exact commands for
-the user's distro (from guides.py). The doctor never changes the host."""
+"""Host preflight. Every failing check carries the exact commands for the user's
+distro (from guides.py). The checks never change the host; `apply_fixes` runs the
+commands only after the user has seen them and said yes (`doctor --fix`)."""
 
 from __future__ import annotations
 
 import ipaddress
 import os
+import subprocess
 import sys
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -40,6 +42,7 @@ class Check:
     fix: list[str] = field(default_factory=list)
     undo: list[str] = field(default_factory=list)
     steps: list[str] = field(default_factory=list)   # guide keys behind `fix`
+    fixable: bool = False   # `fix` holds tested commands that `doctor --fix` may run
 
     @property
     def blocking(self) -> bool:
@@ -57,6 +60,7 @@ def _with_guide(check: Check, *keys: str) -> Check:
             if s.note:
                 check.fix.append(f"# note: {s.note}")
             check.undo.extend(s.undo)
+    check.fixable = True
     return check
 
 
@@ -234,7 +238,7 @@ def check_storage(settings: Settings, exam: str = "rhcsa") -> Check:
                 return Check("storage", title, Status.FAIL,
                              f"QEMU (user {quser}) cannot reach {base}.",
                              fix=["# allow QEMU to traverse these directories:", *cmds],
-                             undo=[f"setfacl -x u:{quser} '{d}'" for d in blocked])
+                             undo=[f"setfacl -x u:{quser} '{d}'" for d in blocked], fixable=True)
     if free_gb < need:
         return Check("storage", title, Status.WARN, f"{root}: {free_gb:.0f} GB free, ~{need} GB recommended")
     return Check("storage", title, Status.OK, f"{root} ({free_gb:.0f} GB free, {fstype})")
@@ -263,7 +267,7 @@ def check_iso(settings: Settings) -> Check:
                 bit = "x" if blocked else "r"
                 return Check("iso", title, Status.FAIL, f"QEMU (user {quser}) cannot read {iso}",
                              fix=[f"setfacl -m u:{quser}:{bit} '{t}'" for t in targets],
-                             undo=[f"setfacl -x u:{quser} '{t}'" for t in targets])
+                             undo=[f"setfacl -x u:{quser} '{t}'" for t in targets], fixable=True)
     return Check("iso", title, Status.OK, f"RHEL {ver} · {iso}")
 
 
@@ -404,3 +408,46 @@ def usable_providers(checks: list[Check]) -> list[str]:
 
 def blocking(checks: list[Check]) -> list[Check]:
     return [c for c in checks if c.blocking]
+
+
+# --- doctor --fix ----------------------------------------------------------------
+
+def commands(fix: list[str]) -> list[str]:
+    """The lines of a fix that are commands; the rest are comments and notes for the reader."""
+    return [line for line in fix if line.strip() and not line.lstrip().startswith("#")]
+
+
+def fix_plan(checks: list[Check]) -> tuple[list[Check], list[Check]]:
+    """(run, manual). `run`: failing or warning checks whose commands `doctor --fix` may run, in
+    check order. `manual`: the ones left to the user, because their fix is a download page, the AUR
+    or a choice in Settings, or because the distribution has no tested commands at all."""
+    todo = [c for c in checks if c.status in (Status.FAIL, Status.WARN) and c.fix]
+    if guides.family() == "generic":
+        return [], todo
+    run = [c for c in todo if c.fixable and commands(c.fix)]
+    return run, [c for c in todo if c not in run]
+
+
+def needs_relogin(plan: list[Check]) -> bool:
+    return any("log out" in line for c in plan for line in c.fix)
+
+
+def _say(text: str) -> None:
+    print(text, flush=True)          # before the next command writes to the same terminal
+
+
+def apply_fixes(plan: list[Check], write: Callable[[str], None] = _say) -> bool:
+    """Run the plan's commands in this terminal, in order, each line once. sudo asks for the
+    password itself. Stops at the first command that fails; True when every command succeeded."""
+    done: set[str] = set()
+    for c in plan:
+        write(f"\n==> {c.title}")
+        for cmd in commands(c.fix):
+            if cmd in done:
+                continue
+            done.add(cmd)
+            write(f"$ {cmd}")
+            if subprocess.run(["bash", "-o", "pipefail", "-c", cmd]).returncode != 0:
+                write(f"\nThis command failed, so nothing after it was run:\n  {cmd}")
+                return False
+    return True
