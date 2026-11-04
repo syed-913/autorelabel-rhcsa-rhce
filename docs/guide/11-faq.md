@@ -52,6 +52,20 @@ Only for downloads, and only once each: autorelabel's Python libraries on the fi
 
 No. There is no telemetry and no account. A problem report only reaches the project if you post it yourself.
 
+## Your computer
+
+### Is it safe to run on my own computer?
+
+It runs as your own user and never runs `sudo` unless you ask it to install what's missing, after showing you every command. The lab can't reach the internet or your local network, and no other computer can reach the lab. [Security and your computer](13-security.md) explains each part, and you can check all of it in the source.
+
+### Will it change my dotfiles or system settings?
+
+No. It writes only to the repository folder, the lab storage folder you choose, and the hypervisor's own lists (the VMs, the networks and the box), and it records each thing it creates in a ledger. `./autorelabel uninstall` removes exactly what the ledger lists. Your system configuration, firewall, shell settings, own VMs and other Vagrant projects are left alone. [Files and uninstalling](10-files-and-uninstall.md) lists every file.
+
+### Why does it run on my computer and not in the cloud?
+
+Because the hardest parts of the exam need a real console and a real reboot: interrupting the boot to reset a root password, configuring a node that has no network, and rebooting every node before grading. On your own computer that all runs on real RHEL 10 VMs from your own DVD, offline and free, with no account and no subscription. A hosted lab needs servers that someone has to pay for.
+
 ## Using it
 
 ### How do I practise for the RHCSA on RHEL 10 at home?

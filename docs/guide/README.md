@@ -14,6 +14,7 @@ This guide explains how to install autorelabel, take an exam, read your results 
 10. **[Files and uninstalling](10-files-and-uninstall.md).** Everything autorelabel puts on your computer, and how to remove it.
 11. **[FAQ](11-faq.md).** Short answers to the questions people ask most.
 12. **[RHCSA and RHCE exam objectives covered](12-objectives.md).** Every official objective line and its coverage.
+13. **[Security and your computer](13-security.md).** Who autorelabel runs as, what it changes, what the lab can reach, and what it downloads.
 
 ## A few words you will meet often
 

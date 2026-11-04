@@ -157,6 +157,8 @@ cd autorelabel-rhcsa-rhce
 
 The first run sets up a private Python environment, checks your computer, asks where your ISO is and where to keep the VM disks, and builds the RHEL 10 box once (about 10 to 15 minutes). After that, a new exam is ready in a few minutes: `./autorelabel rhcsa` or `./autorelabel rhce` takes you straight to one.
 
+It runs as your own user, uses `sudo` only when you ask it to install what's missing (after showing you the commands), and its lab can't reach the internet or your network. [Security and your computer](docs/guide/13-security.md) explains each part.
+
 ## Documentation
 
 The **[user guide](docs/guide/README.md)** covers everything else, in detail (it is also on the [website](https://autorelabel.dpdns.org/docs/), with search):
@@ -173,6 +175,7 @@ The **[user guide](docs/guide/README.md)** covers everything else, in detail (it
 10. [Files and uninstalling](docs/guide/10-files-and-uninstall.md)
 11. [FAQ](docs/guide/11-faq.md)
 12. [Exam objectives covered](docs/guide/12-objectives.md)
+13. [Security and your computer](docs/guide/13-security.md): who it runs as, what it changes and what the lab can reach
 
 For contributors: [ARCHITECTURE.md](docs/ARCHITECTURE.md) and [TASK-AUTHORING.md](docs/TASK-AUTHORING.md).
 

@@ -12,7 +12,7 @@ A useful report says what you found, how to reproduce it, which version you used
 
 ## What counts as a security problem
 
-autorelabel runs on your computer with your user's rights. It uses `sudo` only when you ask it to install what's missing (`doctor --fix`, or **Fix for me** in the host check), after showing you every command. These are the parts where a mistake would matter most:
+autorelabel runs on your computer with your user's rights. It uses `sudo` only when you ask it to install what's missing (`doctor --fix`, or **Fix for me** in the host check), after showing you every command (see [Security and your computer](docs/guide/13-security.md)). These are the parts where a mistake would matter most:
 
 - **`doctor --fix`** runs only the commands it showed you, in that order, after you said yes. Running anything else, or running without asking, is a security problem.
 
