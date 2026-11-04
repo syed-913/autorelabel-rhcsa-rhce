@@ -164,3 +164,29 @@ def test_welcome_wraps_evenly_in_an_80x24_terminal(configured):
             assert all(len(line) > width * 0.75 for line in lines[:-1])     # no stray 1-3 word lines
 
     asyncio.run(run())
+
+
+def test_doctor_offers_to_run_tested_fixes(configured, monkeypatch):
+    from textual.widgets import Button
+
+    from autorelabel import doctor
+    from autorelabel.tui.common import Confirm
+    from autorelabel.tui.screens import DoctorScreen
+
+    broken = [doctor.Check("packer", "Packer", doctor.Status.FAIL, "not installed",
+                           fix=["sudo apt install -y packer"], fixable=True)]
+    monkeypatch.setattr("autorelabel.guides.family", lambda *_a: "debian")
+
+    async def run(checks: list[doctor.Check], fixable: bool) -> None:
+        monkeypatch.setattr(doctor, "run", lambda *_a, **_k: checks)
+        app = AutorelabelApp()
+        async with app.run_test(size=(100, 30)) as pilot:
+            app.push_screen(DoctorScreen())
+            await pilot.pause(0.3)
+            assert app.screen.query_one("#fix", Button).disabled is not fixable
+            await pilot.press("f")
+            await pilot.pause()
+            assert isinstance(app.screen, Confirm) is fixable
+
+    asyncio.run(run(broken, True))
+    asyncio.run(run([doctor.Check("packer", "Packer", doctor.Status.OK)], False))

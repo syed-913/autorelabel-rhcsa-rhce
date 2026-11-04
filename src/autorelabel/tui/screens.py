@@ -7,7 +7,7 @@ from pathlib import Path
 
 from rich.text import Text
 from textual import work
-from textual.app import ComposeResult
+from textual.app import ComposeResult, SuspendNotSupported
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import (
@@ -133,7 +133,8 @@ class HomeScreen(Screen[None]):
 
 # --------------------------------------------------------------------------- Doctor
 class DoctorScreen(Screen[bool]):
-    BINDINGS = [("escape", "back", "Back"), ("r", "recheck", "Re-check"), ("c", "copy", "Copy fix")]
+    BINDINGS = [("escape", "back", "Back"), ("r", "recheck", "Re-check"), ("c", "copy", "Copy fix"),
+                ("f", "fix", "Fix for me")]
 
     def __init__(self, wizard: bool = False):
         super().__init__()
@@ -147,6 +148,7 @@ class DoctorScreen(Screen[bool]):
         yield Static(id="doctor-fix")
         with Horizontal(id="form-buttons"):
             yield Button("Re-check", id="recheck")
+            yield Button("Fix for me", id="fix", disabled=True)
             yield Button("Continue", id="continue", variant="primary", disabled=True)
             yield Button("Back", id="back")
         yield Footer()
@@ -170,10 +172,13 @@ class DoctorScreen(Screen[bool]):
             sym, color = STATUS_STYLE[c.status]
             t.add_row(Text(sym, style=f"bold {color}"), c.title, Text(c.detail, style="dim"), key=c.id)
         blocking = doctor.blocking(checks)
+        plan, _manual = doctor.fix_plan(checks)
+        self.query_one("#fix", Button).disabled = not plan
         summary = self.query_one("#doctor-summary", Static)
         if blocking:
+            how = "press f to let autorelabel run them" if plan else "run them"
             summary.update(Text(f"{len(blocking)} problem(s) to fix. Select a row to see the commands for "
-                                f"your distribution, run them, then press Re-check.", style="yellow"))
+                                f"your distribution, {how}, then press Re-check.", style="yellow"))
         else:
             summary.update(Text("This host is ready.", style="bold green"))
         self.query_one("#continue", Button).disabled = bool(blocking)
@@ -206,6 +211,31 @@ class DoctorScreen(Screen[bool]):
             self.app.copy_to_clipboard("\n".join(line for line in c.fix if not line.startswith("#")))
             self.notify("Commands copied to the clipboard.")
 
+    def action_fix(self) -> None:
+        plan, manual = doctor.fix_plan(self.checks)
+        if not plan:
+            self.notify("Nothing here that autorelabel can run for you.")
+            return
+        left = f" Still yours to do: {', '.join(c.title for c in manual)}." if manual else ""
+        body = (f"autorelabel will run the commands for {', '.join(c.title for c in plan)} in your terminal, "
+                "printing each one before it runs, and stop at the first one that fails. sudo asks for your "
+                f"password itself; autorelabel never sees it.{left}")
+        self.app.push_screen(Confirm("Fix for me", body, yes="Run them"),
+                             lambda yes: yes and self._run_fixes(plan))
+
+    def _run_fixes(self, plan: list[doctor.Check]) -> None:
+        try:
+            with self.app.suspend():
+                ok = doctor.apply_fixes(plan)
+                if ok and doctor.needs_relogin(plan):
+                    print("\nNew group memberships apply after you log out and back in (or reboot).")
+                input("\nPress Enter to go back to autorelabel. ")
+        except SuspendNotSupported:
+            self.notify("This terminal can't hand over to the commands: run ./autorelabel doctor --fix instead.",
+                        severity="warning", timeout=12)
+            return
+        self.action_recheck()
+
     def action_recheck(self) -> None:
         self.query_one("#doctor-summary", Static).update("Checking…")
         self.run_checks()
@@ -216,6 +246,8 @@ class DoctorScreen(Screen[bool]):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "recheck":
             self.action_recheck()
+        elif event.button.id == "fix":
+            self.action_fix()
         elif event.button.id == "continue":
             self.dismiss(True)
         else:
