@@ -13,6 +13,9 @@ from .common import Confirm, Message, OperationScreen
 from .exam import ExamScreen, GradingScreen, InstructionsScreen, ResultsScreen
 from .screens import DoctorScreen, HomeScreen, SetupScreen
 
+WELCOME = ("First run: checking this host, then a short setup, then the RHEL 10 box is built once from "
+           "your ISO (about 10-15 minutes). After that, exams start in a few minutes.")
+
 
 class AutorelabelApp(App[None]):
     CSS_PATH = str(Path(__file__).with_name("theme.tcss"))
@@ -53,10 +56,8 @@ class AutorelabelApp(App[None]):
             if ok:
                 self.build_box()
 
-        self.push_screen(Message("Welcome to autorelabel",
-                                 "First run: checking this host, then a short setup, then the RHEL 10 box is\n"
-                                 "built once from your ISO (about 10-15 minutes). After that, exams start in a\n"
-                                 "few minutes."), lambda _r: self.push_screen(DoctorScreen(wizard=True), after_doctor))
+        self.push_screen(Message("Welcome to autorelabel", WELCOME),
+                         lambda _r: self.push_screen(DoctorScreen(wizard=True), after_doctor))
 
     # --- box ----------------------------------------------------------------------------
     def build_box(self, then=None) -> None:
@@ -116,10 +117,10 @@ class AutorelabelApp(App[None]):
                 then()
 
         self.push_screen(Confirm("RHCE content is needed once", (
-            "The RHCE lab needs ansible-navigator, the ansible.posix and community.general\n"
+            "The RHCE lab needs ansible-navigator, the ansible.posix and community.general "
             "collections" + (" and code-server (VS Code in the browser)" if st.code_server else "") +
             ". They are downloaded once from PyPI, Ansible Galaxy" +
-            (", GitHub and Open VSX" if st.code_server else "") + "\n(about 60-150 MB) and kept in the lab "
+            (", GitHub and Open VSX" if st.code_server else "") + " (about 60-150 MB) and kept in the lab "
             "storage. Everything after that works offline."), yes="Download"),
             lambda yes: yes and self.push_screen(OperationScreen("Downloading RHCE content", fn), done))
 

@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import ast
 import asyncio
+import re
+from pathlib import Path
 
 import pytest
 
 from autorelabel import config, paths
-from autorelabel.tui.app import AutorelabelApp
+from autorelabel.tui.app import WELCOME, AutorelabelApp
 from autorelabel.tui.screens import HistoryScreen, HomeScreen, SettingsScreen
 
 
@@ -120,3 +123,44 @@ def test_storage_defaults_to_the_xdg_data_directory(tmp_path, monkeypatch):
     assert config.default_storage_dir() == tmp_path / ".local" / "share"
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     assert config.default_storage_dir() == tmp_path
+
+
+# A newline inside a sentence. Textual wraps dialog text to the dialog's width, so a break typed for
+# an 80-column terminal breaks the line a second time ("...then the RHEL 10 box" / "is" / "built once").
+MID_SENTENCE = re.compile(r"[a-z0-9,;)]\n[A-Za-z(]")
+
+
+def test_dialog_text_has_no_breaks_inside_sentences():
+    from autorelabel import report
+
+    found = []
+    for path in sorted((Path(__file__).parents[1] / "src" / "autorelabel" / "tui").glob("*.py")):
+        for node in ast.walk(ast.parse(path.read_text())):
+            if isinstance(node, ast.Call) and getattr(node.func, "id", None) in ("Message", "Confirm"):
+                found += [f"{path.name}:{c.lineno}" for c in ast.walk(node)
+                          if isinstance(c, ast.Constant) and isinstance(c.value, str) and MID_SENTENCE.search(c.value)]
+    assert not found
+    for has_hint in (False, True):
+        assert not MID_SENTENCE.search(report.notice(Path("report.txt"), has_hint))
+
+
+def test_welcome_wraps_evenly_in_an_80x24_terminal(configured):
+    from textual.geometry import Region
+    from textual.widgets import Static
+
+    from autorelabel.tui.common import Message
+
+    async def run() -> None:
+        app = AutorelabelApp()
+        async with app.run_test(size=(80, 24)) as pilot:
+            await pilot.pause()
+            app.push_screen(Message("Welcome to autorelabel", WELCOME))
+            await pilot.pause()
+            body = next(w for w in app.screen.query(Static) if type(w) is Static)   # not the title Label
+            width, height = body.content_region.size
+            lines = [s.text.rstrip() for s in body.render_lines(Region(0, 0, width, height))]
+            lines = [line for line in lines if line]
+            assert " ".join(lines).split() == WELCOME.split()
+            assert all(len(line) > width * 0.75 for line in lines[:-1])     # no stray 1-3 word lines
+
+    asyncio.run(run())

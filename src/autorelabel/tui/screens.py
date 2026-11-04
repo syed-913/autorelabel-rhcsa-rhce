@@ -107,11 +107,11 @@ class HomeScreen(Screen[None]):
             app.push_screen(HistoryScreen())
         elif oid == "uninstall":
             app.push_screen(Message("Uninstall", (
-                "To remove everything autorelabel created on this host (VMs, networks, storage pool,\n"
+                "To remove everything autorelabel created on this host (VMs, networks, storage pool, "
                 "the Vagrant box, lab storage, .workspace and .venv), quit and run:\n\n"
-                "    ./autorelabel uninstall --dry-run     (shows what will be removed)\n"
+                "    ./autorelabel uninstall --dry-run   (shows what will be removed)\n"
                 "    ./autorelabel uninstall\n\n"
-                "Your ISO is kept. The uninstaller prints undo commands for anything you\n"
+                "Your ISO is kept. The uninstaller prints undo commands for anything you "
                 "installed yourself with sudo.")))
         elif oid in ("new-rhcsa", "new-rhce"):
             app.start_new_exam(oid.split("-", 1)[1])

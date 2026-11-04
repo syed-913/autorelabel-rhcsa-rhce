@@ -161,7 +161,7 @@ def notice(path: Path, has_hint: bool = False, asked: bool = False) -> str:
     return (f"{first}, so it can be fixed for everyone:\n"
             f"  1. open {ISSUES_URL}\n"
             f"  2. paste the problem report ({display_path(path)}) and say what you were doing.\n"
-            "The report holds your OS and tool versions and the end of the log, with your home\n"
+            "The report holds your OS and tool versions and the end of the log, with your home "
             "directory, user name and host name replaced. Read it before you post it.")
 
 
