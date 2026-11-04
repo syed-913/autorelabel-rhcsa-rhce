@@ -1,0 +1,41 @@
+name: release
+
+# Pushing a version tag (v1.2.3) publishes a GitHub release. Its notes are
+# that version's section of CHANGELOG.md, so they are written once, in review.
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: The tag matches the program's version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          grep -qx "__version__ = \"$version\"" src/autorelabel/__init__.py
+          grep -qx "version = \"$version\"" pyproject.toml
+
+      - name: Notes from the changelog
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '/^## /{p = ($2 == v); next} p' CHANGELOG.md > notes.md
+          grep -q '[^[:space:]]' notes.md
+          cat >> notes.md <<'EOF'
+
+          ---
+
+          Update an existing clone with `git pull` ([Updating autorelabel](https://github.com/syed-913/autorelabel-rhcsa-rhce/blob/main/docs/guide/01-installing.md#updating-autorelabel)). Not affiliated with or endorsed by Red Hat.
+          EOF
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "autorelabel $GITHUB_REF_NAME" --notes-file notes.md --verify-tag
