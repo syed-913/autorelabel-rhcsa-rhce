@@ -63,3 +63,5 @@ autorelabel never handles your Red Hat account. You download the ISO yourself, a
 ## Reporting a security problem
 
 Please don't open a public issue. The [security policy](../../SECURITY.md) explains what counts as a security problem and how to report one privately.
+
+The repository's own practices, such as pinned dependencies and limited workflow permissions, are scored every week by [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/syed-913/autorelabel-rhcsa-rhce).
