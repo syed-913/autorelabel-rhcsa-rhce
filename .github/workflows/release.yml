@@ -17,6 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: The tag is signed by the maintainer's key (.github/allowed_signers)
+        run: |
+          git fetch --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
+          git -c gpg.ssh.allowedSignersFile=.github/allowed_signers verify-tag "$GITHUB_REF_NAME"
+
       - name: The tag matches the program's version
         run: |
           version="${GITHUB_REF_NAME#v}"

@@ -4,6 +4,16 @@
 
 Only the latest release gets fixes. When a problem is fixed, it goes out as a patch release (for example 1.0.1), and the release notes say what changed.
 
+## Verifying a release
+
+Every release tag after v1.1.0 is signed with the maintainer's SSH key, and the release workflow refuses to publish from a tag without that signature. GitHub marks these tags **Verified**. To check one yourself, in a clone:
+
+```bash
+git -c gpg.ssh.allowedSignersFile=.github/allowed_signers tag -v v1.2.0
+```
+
+`Good "git" signature for syedammar2023@gmail.com` means the tag is the one the maintainer made. The public key is in [`.github/allowed_signers`](.github/allowed_signers), and it's the same key as on [the maintainer's GitHub profile](https://github.com/syed-913.keys).
+
 ## Reporting a problem
 
 Please don't open a public issue for a security problem. Report it privately on the [Security tab](https://github.com/syed-913/autorelabel-rhcsa-rhce/security/advisories/new) of this repository. Only the maintainer can see the report.
