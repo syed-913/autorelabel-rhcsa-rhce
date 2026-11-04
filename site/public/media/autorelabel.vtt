@@ -1,0 +1,67 @@
+WEBVTT
+
+00:00:00.865 --> 00:00:03.600
+You know that moment when everything works...
+
+00:00:03.667 --> 00:00:04.720
+until you reboot?
+
+00:00:05.640 --> 00:00:07.260
+The service is running.
+
+00:00:07.300 --> 00:00:08.780
+The port is open.
+
+00:00:08.860 --> 00:00:10.940
+Then suddenly, you can't reach it.
+
+00:00:11.954 --> 00:00:14.380
+That's the kind of mistake Autorelabel helps you catch.
+
+00:00:15.393 --> 00:00:20.700
+It gives you timed RHCSA and RHCE practice exams on real RHEL 10
+
+00:00:20.740 --> 00:00:23.260
+virtual machines, right on your Linux computer.
+
+00:00:23.409 --> 00:00:25.180
+Twenty tasks.
+
+00:00:25.220 --> 00:00:26.300
+Three hundred points.
+
+00:00:26.540 --> 00:00:28.460
+A lab you can actually work in.
+
+00:00:30.125 --> 00:00:34.060
+And when you submit, every exam node reboots before your work is scored.
+
+00:00:36.020 --> 00:00:37.620
+The service still starts.
+
+00:00:37.720 --> 00:00:40.100
+The SELinux label is still there.
+
+00:00:40.180 --> 00:00:42.900
+But that firewall rule you only changed at runtime?
+
+00:00:43.092 --> 00:00:43.940
+Gone.
+
+00:00:46.025 --> 00:00:49.640
+You see which checks passed, what didn't survive, and how to fix it.
+
+00:00:49.800 --> 00:00:51.480
+Review the solution.
+
+00:00:51.580 --> 00:00:52.840
+Try the exam again.
+
+00:00:53.020 --> 00:00:55.560
+And get comfortable making changes that last.
+
+00:00:55.864 --> 00:00:57.320
+Autorelabel.
+
+00:00:57.464 --> 00:00:58.760
+Make it survive.
