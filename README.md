@@ -178,21 +178,20 @@ For contributors: [ARCHITECTURE.md](docs/ARCHITECTURE.md) and [TASK-AUTHORING.md
 
 ## How it compares
 
-Several open projects help people practise for these exams. This table compares the ones that provide a lab or practice exams, based on each project's own README as of 26 October 2026. If something here is wrong or out of date, please [open an issue](https://github.com/syed-913/autorelabel-rhcsa-rhce/issues) and it will be corrected.
+Several open projects help people practise for these exams. This table compares the ones that provide a lab or practice exams and have changed in the last 12 months, based on each project's own README as of 4 November 2026. If something here is wrong or out of date, please [open an issue](https://github.com/syed-913/autorelabel-rhcsa-rhce/issues) and it will be corrected.
 
 | Project | Exam | RHEL | Lab setup | Practice tasks | Checks your work | Graded after a reboot | Timed exam |
 |---|---|---|---|---|---|---|---|
-| **autorelabel** | RHCSA, RHCE | 10.0, from your ISO | Automatic (Packer and Vagrant; libvirt or VirtualBox) | 157, drawn into 20-task exams | Yes, and every task is self-tested | Yes, every node | Yes, enforced (180 or 240 min) |
+| **autorelabel** | RHCSA, RHCE | 10, from your ISO | Automatic (Packer and Vagrant; libvirt or VirtualBox) | 157, drawn into 20-task exams | Yes, and every task is self-tested | Yes, every node | Yes, enforced (180 or 240 min) |
 | [jconwell3115/RHCSA_RHEL_10](https://github.com/jconwell3115/RHCSA_RHEL_10) | RHCSA | 10 | By hand, with `virt-install` and helper scripts (KVM) | 3 exams of 35 tasks | Yes, verify scripts | Not described | Time limits suggested |
 | [tucker-st/rhcsa-ex200](https://github.com/tucker-st/rhcsa-ex200) | RHCSA | 10, or Rocky/Alma | One VM, built from a guide | 8 labs | Yes, read-only grading scripts | Not described | Planned |
-| [rdbreak/rhcsa8env](https://github.com/rdbreak/rhcsa8env) | RHCSA | 8 | Automatic (Vagrant and Ansible; VirtualBox) | None included | Not described | Not described | Not described |
-| [ive663/RHCSA](https://github.com/ive663/RHCSA) | RHCSA | 8 | Vagrant playground of 4 empty VMs | A collection of questions | Not described | Not described | Not described |
-| [aggressiveHiker/rhcsa9](https://github.com/aggressiveHiker/rhcsa9) | RHCSA | 9 | By hand, from guidelines | A task list with solutions | Not described | Not described | No, a study list |
-| [RedHatRanger/RHCE9Vagrant](https://github.com/RedHatRanger/RHCE9Vagrant) | RHCE | 9 | Automatic (Vagrant; VirtualBox, 6 VMs) | About 18 sample questions | Not described | Not described | Not described |
 | [x69van/rhce9-ex294-practice-lab](https://github.com/x69van/rhce9-ex294-practice-lab) | RHCE | 9 | Pre-built disk image (KVM), cloned by hand | 18 tasks with solutions | A connectivity check | Not described | Not described |
-| [victorbrca/rhce8-practice-env](https://github.com/victorbrca/rhce8-practice-env) | RHCE | 8.4 | Automatic (Vagrant and Ansible; VirtualBox, 6 VMs) | A few practice exams | Not described | Not described | Not described |
 
-What sets autorelabel apart is the exam itself: a fresh 20-task exam each time, a clock that locks the lab at zero, grading after a reboot of every node, and tasks that were each verified on real RHEL 10 VMs. The others have strengths of their own. Several run on Windows today through VirtualBox (autorelabel adds Windows in v2), and several come with study notes, which autorelabel doesn't try to replace.
+Not compared, because their main branch hasn't changed in over a year: [rdbreak/rhcsa8env](https://github.com/rdbreak/rhcsa8env) (RHEL 8), [RedHatRanger/RHCE9Vagrant](https://github.com/RedHatRanger/RHCE9Vagrant) (RHEL 9), [aggressiveHiker/rhcsa9](https://github.com/aggressiveHiker/rhcsa9) (RHEL 9), [victorbrca/rhce8-practice-env](https://github.com/victorbrca/rhce8-practice-env) (RHEL 8) and [ive663/RHCSA](https://github.com/ive663/RHCSA) (RHEL 8).
+
+Paid options fall into two groups. Question banks show tasks and answers, but nothing checks your work on a real system. Hosted labs grade your work on real RHEL in the browser, for a subscription; their advantage is that there's nothing to set up, on any operating system.
+
+What sets autorelabel apart is the exam itself: a fresh 20-task exam each time, a clock that locks the lab at zero, grading after a reboot of every node, and tasks that were each verified on real RHEL 10 VMs, free and offline on your own computer. The others have strengths of their own, such as study notes, which autorelabel doesn't try to replace, or a single VM that runs on whatever hypervisor you already use.
 
 ## Support
 
