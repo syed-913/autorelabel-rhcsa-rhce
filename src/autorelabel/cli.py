@@ -25,7 +25,7 @@ def _c(text: str, code: str) -> str:
     return f"{code}{text}\x1b[0m" if _TTY else text
 
 
-def print_checks(checks: list[doctor.Check]) -> None:
+def print_checks(checks: list[doctor.Check], fixing: bool = False) -> None:
     for c in checks:
         sym, color = _SYM[c.status]
         print(f" {_c(sym, color)} {c.title:<38} {_c(c.detail, chr(27) + '[2m')}")
@@ -35,8 +35,8 @@ def print_checks(checks: list[doctor.Check]) -> None:
     blocking = doctor.blocking(checks)
     print()
     if blocking:
-        print(_c(f" {len(blocking)} problem(s) must be fixed. Run the commands above, then re-run "
-                 "./autorelabel doctor.", "\x1b[1;31m"))
+        how = "" if fixing else " Run the commands above, then re-run ./autorelabel doctor."
+        print(_c(f" {len(blocking)} problem(s) must be fixed.{how}", "\x1b[1;31m"))
     else:
         print(_c(" Host is ready.", "\x1b[1;32m"))
 
@@ -47,7 +47,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps([asdict(c) | {"status": c.status.value} for c in checks], indent=2))
         return 1 if doctor.blocking(checks) else 0
-    print_checks(checks)
+    print_checks(checks, fixing=args.fix)
     if args.fix:
         return _doctor_fix(settings, args.exam, checks)
     return 1 if doctor.blocking(checks) else 0
