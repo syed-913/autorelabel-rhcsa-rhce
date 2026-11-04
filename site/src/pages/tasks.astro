@@ -5,7 +5,7 @@ import {tasks,counts,domains,objectiveText} from '../lib/content';
 import {href} from '../lib/urls';
 const difficultyCounts=Object.fromEntries(['easy','medium','hard'].map(level=>[level,tasks.filter(t=>t.difficulty===level).length]));
 ---
-<Layout title="The task bank" description={`Browse all ${counts.total} autorelabel task titles and objective lines. Filter by exam, domain, difficulty and practice eligibility.`} path="/tasks/">
+<Layout title="RHCSA and RHCE practice tasks" description={`Browse all ${counts.total} RHCSA and RHCE practice task titles and objective lines. Filter by exam, domain, difficulty and practice eligibility.`} path="/tasks/">
 <main id="content" class="container" data-task-bank>
   <section class="task-bank-head"><div><h1>The task bank.</h1><p>Every task, and every objective it covers.<br/>An exam draws 20 of them; in practice mode you pick.</p></div><div class="bank-total"><b>{counts.total} tasks / {counts.eligible} exam-eligible</b><br/>{counts.rhcsa} RHCSA · {counts.rhce} RHCE · {counts.practice} practice-only</div></section>
   <form data-bank-form>

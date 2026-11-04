@@ -13,7 +13,7 @@ This guide explains how to install autorelabel, take an exam, read your results 
 9. **[Troubleshooting](09-troubleshooting.md).** The doctor's checks, common problems and how to report one.
 10. **[Files and uninstalling](10-files-and-uninstall.md).** Everything autorelabel puts on your computer, and how to remove it.
 11. **[FAQ](11-faq.md).** Short answers to the questions people ask most.
-12. **[Exam objectives covered](12-objectives.md).** Every official objective line and its coverage.
+12. **[RHCSA and RHCE exam objectives covered](12-objectives.md).** Every official objective line and its coverage.
 
 ## A few words you will meet often
 

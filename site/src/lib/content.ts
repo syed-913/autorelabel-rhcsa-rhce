@@ -55,6 +55,18 @@ export function section(markdown: string, title: string, level=2): string {
 export const disclaimer = readme.split('\n').find(line=>/^>.*not affiliated/i.test(line))!.replace(/^>\s*/,'');
 export interface Guide { title: string; file: string; slug: string; url: string; }
 export const guides: Guide[]=[...read('docs/guide/README.md').matchAll(/^\d+\. \*\*\[([^\]]+)\]\(([^)]+)\)/gm)].map(match=>({title:match[1],file:match[2],slug:guideSlug(match[2]),url:match[2]==='11-faq.md'?href('/faq/'):href(`/docs/${guideSlug(match[2])}/`)}));
+// A guide page's opening paragraph as plain text, for its meta description: about 155
+// characters, cut after a sentence when one fits, otherwise at a word.
+export function summary(file: string, max=155): string {
+  const tree=unified().use(remarkParse).parse(read(`docs/guide/${file}`)) as any;
+  const flat=(n:any):string=>n.value ?? (n.children||[]).map(flat).join('');
+  const first=tree.children.find((n:any)=>n.type==='paragraph');
+  const text=first?flat(first).replace(/\s+/g,' ').trim().replace(/:$/,'.'):'';
+  if(text.length<=max)return text;
+  const cut=text.slice(0,max-1),sentence=cut.lastIndexOf('. ');
+  return sentence>max*0.6?cut.slice(0,sentence+1):cut.slice(0,cut.lastIndexOf(' '))+'…';
+}
+
 export interface Faq { id:string; question:string; answer:string; group:string; }
 export const faqs: Faq[]=[];
 let faqGroup='';

@@ -10,7 +10,7 @@ import '../styles/system.css';
 import '../styles/pages.css';
 interface Props {title:string;description:string;path?:string;schema?:Record<string,unknown>;noindex?:boolean;}
 const {title,description,path='/',schema,noindex=false}=Astro.props;
-const pageTitle=path==='/'?`autorelabel · ${title}`:`${title} · autorelabel`;
+const pageTitle=`${title} · autorelabel`;
 ---
 <!doctype html>
 <html lang="en">

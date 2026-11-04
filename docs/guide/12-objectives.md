@@ -1,4 +1,4 @@
-# Exam objectives covered
+# RHCSA and RHCE exam objectives covered
 
 This page lists every objective line from Red Hat's current exam pages for the [RHCSA (EX200)](https://www.redhat.com/en/services/training/ex200-red-hat-certified-system-administrator-rhcsa-exam) and the [RHCE (EX294)](https://www.redhat.com/en/services/training/ex294-red-hat-certified-engineer-rhce-exam-red-hat-enterprise-linux), copied word for word. A ✅ means the task bank practises that line with at least two tasks.
 

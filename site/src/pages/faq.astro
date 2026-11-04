@@ -7,7 +7,7 @@ const answers=await Promise.all(faqs.map(async faq=>({...faq,...await markdown(f
 const groups=[...new Set(answers.map(a=>a.group))];
 const schema={'@context':'https://schema.org','@type':'FAQPage',mainEntity:answers.map(a=>({'@type':'Question',name:a.question,acceptedAnswer:{'@type':'Answer',text:a.html}}))};
 ---
-<Layout title="Frequently asked questions" description="Answers about autorelabel, RHCSA and RHCE practice exams, requirements, grading and getting help." path="/faq/" schema={schema}>
+<Layout title="RHCSA and RHCE practice exam FAQ" description="Is there a free RHCSA or RHCE practice exam for RHEL 10? Answers about autorelabel's practice exams, requirements, grading and getting help." path="/faq/" schema={schema}>
 <main id="content" class="container faq-page" data-faq>
   <div class="page-intro"><h1>Good questions.<br/><em>Plain answers.</em></h1><p>Requirements, grading, and the details you want to know before building a lab.</p></div>
   <div class="faq-tools"><label class="search-field"><Icon name="search"/><input type="search" data-faq-search placeholder="Filter these answers…" aria-label="Filter frequently asked questions"/></label><button type="button" class="text-button" data-open-search>Search the whole guide <kbd>/</kbd></button></div><p class="small muted" role="status" aria-live="polite" data-faq-count>{answers.length} questions</p>
