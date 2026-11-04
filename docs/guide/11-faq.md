@@ -24,7 +24,7 @@ Red Hat doesn't publish how its grader works. autorelabel follows what is known:
 
 ### How do I know the tasks are correct?
 
-Every task is self-tested on real RHEL 10 VMs, on both libvirt and VirtualBox, before it ships. The untouched lab must score 0, the reference solution and every accepted alternative must score full marks, and the classic mistakes must lose the points they should. For tasks with random details, every possible value of each detail is tested at least once. If you still find a task that grades you unfairly, please [report it](09-troubleshooting.md#problem-reports).
+Every task is self-tested on real RHEL 10 VMs, on both libvirt and VirtualBox, before it ships. The untouched lab must score 0, the reference solution and every accepted alternative must score full marks, and the classic mistakes must lose the points they should. For tasks with random details, every possible value of each detail is tested at least once. [How the tasks are tested](14-quality.md) shows where the tests stand today. If you still find a task that grades you unfairly, please [report it](09-troubleshooting.md#problem-reports).
 
 ## Requirements
 

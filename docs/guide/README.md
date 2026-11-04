@@ -15,6 +15,7 @@ This guide explains how to install autorelabel, take an exam, read your results 
 11. **[FAQ](11-faq.md).** Short answers to the questions people ask most.
 12. **[RHCSA and RHCE exam objectives covered](12-objectives.md).** Every official objective line and its coverage.
 13. **[Security and your computer](13-security.md).** Who autorelabel runs as, what it changes, what the lab can reach, and what it downloads.
+14. **[How the tasks are tested](14-quality.md).** What a self-test checks, and where the tests of every task stand today.
 
 ## A few words you will meet often
 

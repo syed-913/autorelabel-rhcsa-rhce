@@ -50,6 +50,11 @@ jobs:
         env:
           PYTHONPATH: src
 
+      - name: Quality gate (every task self-tested on both hypervisors for its current files)
+        run: python scripts/dev/bank-quality.py --check
+        env:
+          PYTHONPATH: src
+
       - name: Coverage reports and the objective lists in the user guide are up to date
         run: |
           python -m autorelabel bank coverage rhcsa --check

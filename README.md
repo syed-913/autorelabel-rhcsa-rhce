@@ -176,6 +176,7 @@ The **[user guide](docs/guide/README.md)** covers everything else, in detail (it
 11. [FAQ](docs/guide/11-faq.md)
 12. [Exam objectives covered](docs/guide/12-objectives.md)
 13. [Security and your computer](docs/guide/13-security.md): who it runs as, what it changes and what the lab can reach
+14. [How the tasks are tested](docs/guide/14-quality.md): what a self-test checks, and where every task's tests stand
 
 For contributors: [ARCHITECTURE.md](docs/ARCHITECTURE.md) and [TASK-AUTHORING.md](docs/TASK-AUTHORING.md).
 
