@@ -258,6 +258,7 @@ These are for people who add or change tasks in the bank. [TASK-AUTHORING.md](..
 | `AUTORELABEL_WORKSPACE` | Uses another folder for settings, sessions and logs (the default is `.workspace/` in the repository). This keeps a second, separate setup, for example one per hypervisor. |
 | `AUTORELABEL_PYTHON` | The Python used to create the private environment, for example `python3.12`. |
 | `AUTORELABEL_DEBUG` | When set (to `1`), the box build also writes Packer's detailed log. |
+| `AUTORELABEL_SKIP_ISO_CHECK` | When set (to `1`), the box build continues even if the ISO doesn't match Red Hat's published checksum. Only for an ISO that Red Hat re-issued after this release; please report it so the checksum list is updated. |
 | `NO_COLOR` | When set, output has no colours. |
 
 ## Exit codes

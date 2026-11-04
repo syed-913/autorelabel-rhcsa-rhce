@@ -99,7 +99,7 @@ The doctor also wants about 0.75 GB free on top of that for your own desktop.
 
 The last step builds the RHEL 10 box from your ISO. It takes about 10 to 15 minutes, and the screen shows each stage with a progress bar:
 
-1. **Verifying the ISO checksum.** Reading 8 GB takes a minute or two.
+1. **Verifying the ISO checksum.** Reading 8 GB takes a minute or two. The checksum is compared with the one Red Hat publishes for that RHEL version. An ISO that doesn't match stops the build here, because a damaged download would otherwise fail 10 minutes later inside the installer. For a version autorelabel doesn't know the checksum of yet, it shows the ISO's checksum so you can compare it with Red Hat's download page.
 2. **Installing Packer plugins.** A small download, needed once.
 3. **Installing RHEL from the ISO.** An unattended installation in a temporary VM: no subscription, no repository files left behind, a serial console for the exams that need one.
 4. **Adding the box to Vagrant**, under the name `autorelabel/rhel10`.

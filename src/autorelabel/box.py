@@ -18,6 +18,12 @@ from .fsutil import atomic_write_json, disk_free_bytes, read_json
 _log = log.get("box")
 BUILD_MIN_FREE_GB = 25
 PACKER_SOURCE = {"libvirt": "qemu.rhel10", "virtualbox": "virtualbox-iso.rhel10"}
+# SHA-256 of Red Hat's x86_64 DVD ISOs as published on https://developers.redhat.com/products/rhel/download
+# (the Customer Portal lists the same). Add new minor releases here when Red Hat publishes them.
+RED_HAT_DVD_SHA256 = {
+    "edce2dd6f8e1d1b2ff0b204f89b0659bc9e320d175beb7caad60712957a19608": "10.0",
+    "e15cb333529c332e76e4b1b946efe3515c99f996546675aec18e8effdf2540a5": "10.2",
+}
 
 
 class BoxError(RuntimeError):
@@ -76,6 +82,18 @@ def iso_sha256(iso: Path, on_progress: Callable[[float], None] | None = None) ->
     return digest
 
 
+def check_iso(digest: str, rhel: str) -> tuple[bool | None, str]:
+    """(verified, message). True: the ISO is exactly what Red Hat published. False: Red Hat published a
+    different checksum for this RHEL version, so the download is damaged or altered. None: no published
+    checksum is known for this version (a newer release, or one only on the Customer Portal)."""
+    if digest in RED_HAT_DVD_SHA256:
+        return True, f"The ISO matches Red Hat's published checksum for the RHEL {RED_HAT_DVD_SHA256[digest]} DVD."
+    if rhel in RED_HAT_DVD_SHA256.values():
+        return False, f"The ISO doesn't match Red Hat's published checksum for the RHEL {rhel} DVD."
+    return None, (f"autorelabel doesn't know Red Hat's checksum for the RHEL {rhel} DVD yet. To check the ISO "
+                  f"yourself, compare its SHA-256 with the one on Red Hat's download page: {digest}")
+
+
 def manifest_path(settings: Settings, provider: str) -> Path:
     return storage_layout(settings)["boxes"] / f"manifest-{provider}.json"
 
@@ -96,7 +114,8 @@ def box_status(settings: Settings, provider: str) -> tuple[bool, str]:
     vol = hostinfo.iso_volume_id(iso) if iso.exists() else None
     if vol and m.get("iso_volume_id") and vol != m["iso_volume_id"]:
         return False, f"box was built from {m['iso_volume_id']} but the configured ISO is {vol}; rebuild"
-    return True, f"RHEL {m.get('rhel_version', '?')} · built {m.get('built', '?')}"
+    verified = " · ISO verified" if m.get("iso_verified") else ""
+    return True, f"RHEL {m.get('rhel_version', '?')} · built {m.get('built', '?')}{verified}"
 
 
 def build(
@@ -145,6 +164,16 @@ def build(
                 on_line(proc.Progress(f"Checksum: {frac * 100:.0f}%"))
 
     digest = iso_sha256(iso, progress)
+    verified, message = check_iso(digest, rhel)
+    _log.info("%s (sha256 %s)", message, digest)
+    if on_line:
+        on_line(message)
+    if verified is False and not os.environ.get("AUTORELABEL_SKIP_ISO_CHECK"):
+        raise BoxError(message.rstrip("."),
+                       "The download is probably incomplete or damaged: download the ISO again from Red Hat. If "
+                       "Red Hat's download page shows this exact checksum, the ISO was re-issued: please report "
+                       "it, and build anyway with AUTORELABEL_SKIP_ISO_CHECK=1 ./autorelabel box build.",
+                       log_file, True)
 
     step("Installing Packer plugins")
     res = proc.stream(["packer", "init", str(paths.PACKER_DIR)], env=env, cwd=paths.PACKER_DIR,
@@ -213,6 +242,7 @@ def build(
         "rhel_version": rhel,
         "iso_volume_id": vol,
         "iso_sha256": digest,
+        "iso_verified": verified,
         "built": time.strftime("%Y-%m-%d %H:%M"),
         "kickstart_sha256": hashlib.sha256((paths.PACKER_DIR / "http" / "ks.cfg.pkrtpl").read_bytes()).hexdigest(),
     })
