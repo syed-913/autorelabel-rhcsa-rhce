@@ -7,7 +7,7 @@ import remarkParse from 'remark-parse';
 import yaml from 'js-yaml';
 import {parse as parseToml} from 'smol-toml';
 
-const directory=resolve('dist'),base='/autorelabel-rhcsa-rhce';
+const directory=resolve('dist'),base='',origin='https://autorelabel.dpdns.org';
 const walk=async path=>(await Promise.all((await readdir(path,{withFileTypes:true})).map(entry=>entry.isDirectory()?walk(join(path,entry.name)):join(path,entry.name)))).flat();
 const files=await walk(directory),pages=files.filter(file=>extname(file)==='.html');
 const decode=value=>value.replace(/&(?:amp|quot|apos|lt|gt|#39|#x27|#\d+|#x[\da-f]+);/gi,entity=>({'&amp;':'&','&quot;':'"','&apos;':"'",'&#39;':"'",'&#x27;':"'",'&lt;':'<','&gt;':'>'}[entity.toLowerCase()]||String.fromCodePoint(entity.toLowerCase().startsWith('&#x')?parseInt(entity.slice(3,-1),16):parseInt(entity.slice(2,-1),10))));
@@ -19,8 +19,8 @@ for(const [page,{html}] of documents){
   const route=page.slice(directory.length).replace(/index\.html$/,'');
   for(const match of html.matchAll(/\b(href|src|poster|data-src)="([^"]+)"/g)){
     const value=decode(match[2]);if(/^(mailto:|tel:|data:)/.test(value))continue;
-    const url=new URL(value,`https://syed-913.github.io${base}${route}`);
-    if(url.origin!=='https://syed-913.github.io'){assert.equal(match[1],'href',`External runtime resource: ${value}`);continue;}
+    const url=new URL(value,`${origin}${base}${route}`);
+    if(url.origin!==origin){assert.equal(match[1],'href',`External runtime resource: ${value}`);continue;}
     assert(url.pathname.startsWith(base+'/'),`Missing base: ${value} in ${page}`);
     let target=join(directory,decodeURIComponent(url.pathname.slice(base.length)));
     const info=await stat(target).catch(()=>null);assert(info,`Missing local file: ${value} in ${page}`);

@@ -5,7 +5,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 
 const output=fileURLToPath(new URL('../qa/renders/',import.meta.url));
-const base=(process.env.SITE_PREVIEW_URL||'http://127.0.0.1:4321/autorelabel-rhcsa-rhce/').replace(/\/?$/,'/');
+const base=(process.env.SITE_PREVIEW_URL||'http://127.0.0.1:4321/').replace(/\/?$/,'/');
 const previewOrigin=new URL(base).origin;
 const profile=await mkdtemp(join(tmpdir(),'autorelabel-review-'));
 const axe=await readFile(new URL('../node_modules/axe-core/axe.min.js',import.meta.url),'utf8');
@@ -122,7 +122,7 @@ try{
   report.captures.push(await screenshot(home,'docs-search',{full:false}));
   report.accessibility.push({page:'docs-search',...await accessibility(home)});
   await key(home,'Escape');
-  await evaluate(home,`document.querySelector('a[href="/autorelabel-rhcsa-rhce/faq/"]').click();true`);await delay(650);
+  await evaluate(home,`document.querySelector('a[href="/faq/"]').click();true`);await delay(650);
   report.interactions.transition=await evaluate(home,`({path:location.pathname,heading:document.querySelector('h1').textContent,active:[...document.querySelectorAll('.primary-nav a[aria-current]')].map(a=>a.textContent)})`);
   await evaluate(home,`document.querySelector('.accordion summary').click();true`);await delay(400);
   report.interactions.transition.faqWorks=await evaluate(home,`document.querySelector('.accordion details').open`);

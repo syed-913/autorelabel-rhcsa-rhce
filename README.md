@@ -8,7 +8,7 @@
 
 `touch /.autorelabel`: forget it after `rd.break` and your node won't let you log in. You'll never forget again.
 
-**[Website](https://syed-913.github.io/autorelabel-rhcsa-rhce/)** · [User guide](docs/guide/README.md) · [Releases](https://github.com/syed-913/autorelabel-rhcsa-rhce/releases)
+**[Website](https://autorelabel.dpdns.org/)** · [User guide](docs/guide/README.md) · [Releases](https://github.com/syed-913/autorelabel-rhcsa-rhce/releases)
 
 </div>
 
@@ -149,7 +149,7 @@ The first run sets up a private Python environment, checks your computer, asks w
 
 ## Documentation
 
-The **[user guide](docs/guide/README.md)** covers everything else, in detail (it is also on the [website](https://syed-913.github.io/autorelabel-rhcsa-rhce/docs/), with search):
+The **[user guide](docs/guide/README.md)** covers everything else, in detail (it is also on the [website](https://autorelabel.dpdns.org/docs/), with search):
 
 1. [Installing](docs/guide/01-installing.md): the dependencies, the first run and the box build
 2. [Your first exam](docs/guide/02-first-exam.md), step by step

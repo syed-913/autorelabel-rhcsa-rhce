@@ -5,7 +5,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 
 const output=fileURLToPath(new URL('../qa/renders/',import.meta.url));
-const base=(process.env.SITE_PREVIEW_URL||'http://127.0.0.1:4321/autorelabel-rhcsa-rhce/').replace(/\/?$/,'/');
+const base=(process.env.SITE_PREVIEW_URL||'http://127.0.0.1:4321/').replace(/\/?$/,'/');
 const previewOrigin=new URL(base).origin;
 const profile=await mkdtemp(join(tmpdir(),'autorelabel-review-'));
 const axe=await readFile(new URL('../node_modules/axe-core/axe.min.js',import.meta.url),'utf8');

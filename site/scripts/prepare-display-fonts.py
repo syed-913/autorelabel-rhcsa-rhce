@@ -22,7 +22,7 @@ def unicode_ranges(values):
     return ','.join(result)
 
 def face(filename, weight, style, characters, family='Fraunces'):
-    return f"@font-face{{font-family:{family};src:url('/autorelabel-rhcsa-rhce/fonts/{filename}') format('woff2');font-weight:{weight};font-style:{style};font-display:swap;unicode-range:{unicode_ranges(characters)}}}"
+    return f"@font-face{{font-family:{family};src:url('/fonts/{filename}') format('woff2');font-weight:{weight};font-style:{style};font-display:swap;unicode-range:{unicode_ranges(characters)}}}"
 
 rules = []
 for style in ['normal', 'italic']:

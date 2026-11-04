@@ -2,8 +2,7 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://syed-913.github.io',
-  base: '/autorelabel-rhcsa-rhce',
+  site: 'https://autorelabel.dpdns.org',
   trailingSlash: 'always',
   output: 'static',
   integrations: [sitemap()],

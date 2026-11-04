@@ -1,7 +1,8 @@
-export const base = '/autorelabel-rhcsa-rhce';
+export const origin = 'https://autorelabel.dpdns.org';
+export const base = '';
 export const repository = 'https://github.com/syed-913/autorelabel-rhcsa-rhce';
 export const href = (path = '/') => `${base}/${path.replace(/^\/+/, '')}`;
-export const canonical = (path = '/') => `https://syed-913.github.io${href(path)}`;
+export const canonical = (path = '/') => `${origin}${href(path)}`;
 
 const guideSlugs: Record<string, string> = {
   '01-installing': 'installing', '02-first-exam': 'first-exam',

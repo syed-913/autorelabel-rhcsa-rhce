@@ -1,6 +1,6 @@
 # autorelabel website
 
-The static project website for autorelabel. It runs on Astro 7 and TypeScript, with local fonts, handwritten CSS, and browser interactions. The deployment target is GitHub Pages at `/autorelabel-rhcsa-rhce/`.
+The static project website for autorelabel. It runs on Astro 7 and TypeScript, with local fonts, handwritten CSS, and browser interactions. It is deployed with GitHub Pages to https://autorelabel.dpdns.org/.
 
 ## Run locally
 
@@ -12,7 +12,7 @@ npm ci
 npm run dev
 ```
 
-Open the printed Local URL, including the project base. The default is `http://localhost:4321/autorelabel-rhcsa-rhce/`.
+Open the printed Local URL. The default is `http://localhost:4321/`.
 
 The complete search index is created by the production build. To test Docs and FAQ search:
 
