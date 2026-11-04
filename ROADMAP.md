@@ -14,11 +14,12 @@ What each coming version is planned to contain, and where it stands. When a vers
 
 - [x] GitHub Actions pinned to commit SHAs, kept current by Dependabot.
 - [x] A GitHub release is created from the changelog when a version tag is pushed.
-- [ ] Signed release tags.
-- [ ] [OpenSSF Scorecard](https://scorecard.dev) on the repository.
-- [ ] A CI check that every task has passing self-tests on both hypervisors for its current files, so an edited task can't ship untested.
-- [ ] A monthly check of Red Hat's EX200 and EX294 objective pages that opens an issue when the objectives change.
-- [ ] Website: a page on security and what autorelabel does to your computer, "Will it run on my computer?", the distributions it supports by name, an updated comparison, a new demo video, and its own domain.
+- [x] Signed release tags, verified by the release workflow before it publishes (from the release after 1.1.0).
+- [x] [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/syed-913/autorelabel-rhcsa-rhce) on the repository.
+- [x] A CI check that every task has passing self-tests on both hypervisors for its current files, so an edited task can't ship untested. Its results are on [How the tasks are tested](docs/guide/14-quality.md).
+- [x] A monthly check of Red Hat's EX200 and EX294 objective pages that opens an issue when the objectives change.
+- [x] Website: its own domain, a narrated film, a page on [security and your computer](docs/guide/13-security.md), "Will it run on my computer?", the distributions it supports by name, an updated comparison, a contact page, and larger text for reading.
+- [ ] Website: a results page where people share how their exam went, counting failures as well as passes.
 
 ## 1.1.x: fixes from real exam attempts
 
