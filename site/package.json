@@ -37,7 +37,7 @@
     "@types/js-yaml": "4.0.9",
     "@types/node": "22.19.3",
     "axe-core": "4.14.0",
-    "html-validate": "10.17.0",
+    "html-validate": "11.17.0",
     "lighthouse": "13.5.0",
     "pagefind": "1.5.2",
     "typescript": "5.9.3"
