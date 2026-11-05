@@ -55,6 +55,20 @@
   .contact-address .copy-button {border-color:var(--control-border);color:var(--text)}
   .contact-places dd {display:grid;gap:.35rem}
   .contact-places dd>.text-link {justify-self:start}
+  .contact-form {position:relative;display:grid;gap:1.4rem;max-width:46rem;margin-top:1.6rem}
+  .contact-form__row {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.4rem}
+  .contact-form__field {display:grid;gap:.5rem;min-width:0}
+  .contact-form label {font-size:var(--type-small);font-weight:700}
+  .contact-form label>span {margin-left:.45rem;font-weight:400;color:var(--text-muted)}
+  .contact-form :is(input,select,textarea) {width:100%;min-height:50px;padding:.65rem .8rem;border:1px solid var(--control-border);border-radius:var(--radius-control);background:var(--bg);color:var(--text);font:inherit;font-size:var(--type-body);line-height:1.5}
+  .contact-form textarea {min-height:12rem;resize:vertical}
+  .contact-form :is(input,select,textarea):focus-visible {outline:var(--focus-width) solid var(--focus);outline-offset:2px}
+  .contact-form :is(input,textarea):user-invalid {border-color:var(--bad)}
+  .contact-form__trap {position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+  .contact-form__send {display:flex;flex-wrap:wrap;align-items:center;gap:1rem 1.5rem}
+  .contact-form__status {margin:0;font-size:var(--type-body);line-height:1.55}
+  .contact-form__status[data-kind="ok"] {color:var(--ok)}
+  .contact-form__status[data-kind="bad"] {color:var(--bad)}
   .footer-credit {white-space:nowrap}
   .footer-credit::before {content:'·';margin-inline:.6rem}
   .search-dialog {width:min(46rem,calc(100% - 2rem));max-height:85dvh;margin:auto;padding:1.5rem;background:var(--bg);color:var(--text);border:1px solid var(--control-border);overflow-y:auto}
@@ -314,6 +328,7 @@
     .page-intro>p {font-size:var(--type-lede);margin-top:1.2rem}
     .page-section {padding-block:2rem 2.5rem}
     .page-section>h2 {font-size:2rem}
+    .contact-form__row {grid-template-columns:1fr}
     .section-title {display:block;margin-bottom:1.7rem}
     .section-title>p {margin-top:1.1rem;max-width:55ch;font-size:var(--type-body)}
     .section-title h2 {font-size:2.25rem}

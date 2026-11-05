@@ -54,7 +54,11 @@ for(const [page,{html}]of documents){
   assert(footer.includes('href="/contact/"')&&footer.includes('href="https://syedammar.engineer"'),`Footer contact and author: ${page}`);
 }
 for(const [page,{html}]of documents)assert(!/contact@autorelabel/i.test(html),`Contact address in plain HTML (harvesters read it): ${page}`);
-assert(/data-mail-user="contact"[^>]*data-mail-domain="autorelabel\.dpdns\.org"/.test(documents.get(join(directory,'contact/index.html')).html),'Contact page assembles the address');
+const contactPage=documents.get(join(directory,'contact/index.html')).html;
+assert(/data-mail-user="contact"[^>]*data-mail-domain="autorelabel\.dpdns\.org"/.test(contactPage),'Contact page assembles the address');
+assert(/data-contact-form/.test(contactPage)&&/<textarea[^>]*name="message"[^>]*required/.test(contactPage),'Contact page has the message form');
+assert(!/<(input|select)\b[^>]*\brequired/.test(contactPage),'Contact form asks for nothing but the message');
+assert(!/cooldown|an hour|per hour/i.test(contactPage),'Contact page keeps the rate limit private');
 const home=documents.get(join(directory,'index.html')).html;
 assert(/<video\b[^>]*aria-describedby="demo-description"/.test(home),'Video references its text alternative');
 const description=home.match(/<p\b[^>]*id="demo-description"[^>]*>([\s\S]*?)<\/p>/)?.[1];
@@ -74,5 +78,5 @@ const guideCount=((await readFile('../docs/guide/README.md','utf8')).match(/^\d+
 assert.equal(pages.length,guideCount+9);assert(await stat(join(directory,'pagefind/pagefind.js')));for(const file of ['autorelabel-720.mp4','autorelabel-poster.avif','autorelabel.vtt'])assert(await stat(join(directory,'media',file)),`Film file: ${file}`);
 const objectiveLines={};
 for(const exam of ['rhcsa','rhce']){const bank=yaml.load(await readFile(`../banks/${exam}/objectives.yaml`,'utf8'));const lines=bank.domains.flatMap(domain=>domain.objectives);objectiveLines[exam]=lines.length;for(const line of lines)assert(expected.filter(task=>task.exam===exam&&task.objectives.includes(line.id)).length>=2,`Objective coverage: ${line.id}`);}
-const report={pages:pages.length,localReferences:links,taskMetadata:payload.length,counts:{rhcsa:payload.filter(t=>t.exam==='rhcsa').length,rhce:payload.filter(t=>t.exam==='rhce').length,practiceOnly:payload.filter(t=>t.practice_only).length},objectiveLines,scriptGzipBytes:gzip,version,footer:'Release, support, contact and author links verified on every page',contact:'Address assembled in the browser, never in the HTML',video:'Captions on by default; visible text alternative linked to the film',disclaimer:'All pages match README',copy:'Style checks passed',anchors:'All local anchors resolve',taskBoundary:'Titles and metadata only',source:'No tool suppression comments in src',search:'Local Pagefind index present'};
+const report={pages:pages.length,localReferences:links,taskMetadata:payload.length,counts:{rhcsa:payload.filter(t=>t.exam==='rhcsa').length,rhce:payload.filter(t=>t.exam==='rhce').length,practiceOnly:payload.filter(t=>t.practice_only).length},objectiveLines,scriptGzipBytes:gzip,version,footer:'Release, support, contact and author links verified on every page',contact:'Address assembled in the browser, never in the HTML; the form asks only for the message',video:'Captions on by default; visible text alternative linked to the film',disclaimer:'All pages match README',copy:'Style checks passed',anchors:'All local anchors resolve',taskBoundary:'Titles and metadata only',source:'No tool suppression comments in src',search:'Local Pagefind index present'};
 await mkdir('qa',{recursive:true});await writeFile('qa/static-checks.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));

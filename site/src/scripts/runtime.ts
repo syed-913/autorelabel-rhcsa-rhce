@@ -5,6 +5,7 @@ import {cursor} from './cursor';
 import {taskBank} from './task-bank';
 import {docsSearch} from './search';
 import {simulation} from './simulation';
+import {contactForm} from './contact-form';
 import {navigate} from 'astro:transitions/client';
 
 let dispose:(()=>void)|undefined;
@@ -71,7 +72,7 @@ function initialize(){
     tabs.forEach((tab,index)=>{ctx.on(tab,'click',()=>select(tab));ctx.on(tab,'keydown',(event:KeyboardEvent)=>{const target=event.key==='ArrowRight'?(index+1)%tabs.length:event.key==='ArrowLeft'?(index-1+tabs.length)%tabs.length:event.key==='Home'?0:event.key==='End'?tabs.length-1:-1;if(target>=0){event.preventDefault();select(tabs[target],true);}});});select(tabs.find(tab=>tab.id===preference(key||''))||tabs[0]);
   });
   const compact=matchMedia('(max-width:700px)'),syncGuide=()=>qsa<HTMLDetailsElement>('[data-guide-pages]').forEach(menu=>{menu.open=!compact.matches;});ctx.on(compact,'change',syncGuide);syncGuide();
-  accordions(ctx);cursor(ctx);taskBank(ctx);simulation(ctx);
+  accordions(ctx);cursor(ctx);taskBank(ctx);simulation(ctx);contactForm(ctx);
   const revealHash=()=>{let id='';try{id=decodeURIComponent(location.hash.slice(1));}catch{return;}const target=document.getElementById(id);if(target instanceof HTMLDetailsElement)target.open=true;};ctx.on(window,'hashchange',revealHash);revealHash();
 
   const faq=qs('[data-faq]');if(faq){const input=qs<HTMLInputElement>('[data-faq-search]',faq)!,items=qsa<HTMLDetailsElement>('[data-faq-item]',faq);const filter=()=>{const query=input.value.toLowerCase().trim();items.forEach(item=>{item.hidden=!item.dataset.search!.includes(query);});qsa('[data-faq-group]',faq).forEach(group=>{group.hidden=!qsa('[data-faq-item]',group).some(item=>!item.hidden);});const count=items.filter(item=>!item.hidden).length;qs('[data-faq-count]',faq)!.textContent=`${count} of ${items.length} questions`;qs('[data-faq-empty]',faq)!.hidden=count>0;};ctx.on(input,'input',filter);ctx.on(qs('[data-faq-clear]',faq),'click',()=>{input.value='';filter();input.focus();});}
