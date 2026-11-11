@@ -53,8 +53,20 @@ checks:
     covers: [R4]
     desc: owner/mode unchanged
     run: |
-      test "$(stat -c '%U %a' /srv/{{word}})" = "{{owner}} 750"
-      test "$(stat -c '%U %a' /srv/{{word}}/budget.csv)" = "{{owner}} 640" -o "$(stat -c '%U %a' /srv/{{word}}/budget.csv)" = "{{owner}} 660"
+      # With an ACL, the group digit of the mode shows the ACL mask, not the group's rights: it
+      # grows with every entry for a named user (rwx for the writer on the directory makes it
+      # 770) although nobody ran chmod. So: the owner, the owner's and the others' digits, and
+      # the owning group's own entry.
+      d="$(stat -c '%U %a' /srv/{{word}})"; f="$(stat -c '%U %a' /srv/{{word}}/budget.csv)"
+      case "$d" in "{{owner}} 7"?0) ;; *) echo "directory: $d"; exit 1 ;; esac
+      case "$f" in "{{owner}} 6"?0) ;; *) echo "file: $f"; exit 1 ;; esac
+      if command -v getfacl >/dev/null; then
+        getfacl -p /srv/{{word}} | grep -qx 'group::r-x'
+        getfacl -p /srv/{{word}}/budget.csv | grep -qx 'group::r--'
+      else
+        test "$d" = "{{owner}} 750"
+        test "$f" = "{{owner}} 640"
+      fi
 
 references:
   - "RHEL 10: Managing file systems > Managing Access Control Lists"
