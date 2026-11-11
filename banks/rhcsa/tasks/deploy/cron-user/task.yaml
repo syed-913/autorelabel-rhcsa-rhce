@@ -43,12 +43,18 @@ checks:
           if len(parts) < 6 or want_cmd not in parts[5]:
               continue
           m, h, dom, mon, dow = parts[:5]
+          dow = dow.lower()          # cron takes day names too: mon-fri, Sat,Sun
+          for number, name in enumerate(("sun", "mon", "tue", "wed", "thu", "fri", "sat")):
+              dow = dow.replace(name, str(number))
           days = set()
-          for item in dow.replace("Sun","0").replace("sun","0").split(","):
-              if "-" in item:
-                  a, b = item.split("-"); days.update(range(int(a), int(b) + 1))
-              elif item != "*":
-                  days.add(int(item) % 7)
+          try:
+              for item in dow.split(","):
+                  if "-" in item:
+                      a, b = item.split("-"); days.update(range(int(a), int(b) + 1))
+                  elif item != "*":
+                      days.add(int(item) % 7)
+          except ValueError:
+              continue
           want = set()
           for item in "{{dow}}".split(","):
               if "-" in item:
