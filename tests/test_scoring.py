@@ -86,3 +86,17 @@ def _score_hosts(tmp_path, statuses: dict[str, str]) -> float:
 ])
 def test_checks_that_do_not_apply_to_a_host(tmp_path, statuses, points):
     assert _score_hosts(tmp_path, statuses) == points
+
+
+def test_the_history_line_names_the_tasks_of_the_attempt(tmp_path, monkeypatch):
+    import json
+
+    from autorelabel import grader, paths
+
+    monkeypatch.setattr(paths, "HISTORY_FILE", tmp_path / "history.jsonl")
+    r = _results(tmp_path, {"work": "pass", "more": "fail", "keep": "pass"})
+    session = SimpleNamespace(report_file=tmp_path / "report.md", results_file=tmp_path / "results.json")
+    bank = SimpleNamespace(objectives=SimpleNamespace(domains=[]))
+    grader.write_report(session, bank, r)
+    line = json.loads((tmp_path / "history.jsonl").read_text())
+    assert line["tasks"] == {r["tasks"][0]["task_id"]: pytest.approx(20 / 30)}

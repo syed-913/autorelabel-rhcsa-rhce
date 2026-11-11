@@ -485,6 +485,9 @@ def write_report(session: Session, bank: Bank, results: dict[str, Any]) -> str:
         "passed": r["passed"], "graded_at": r["graded_at"],
         "objectives": {o: (t["points"] / t["points_possible"] if t["points_possible"] else 0)
                        for t in r["tasks"] for o in t["objectives"]},
+        # which tasks, and how each went: what "this task came up recently" and a history view need
+        "tasks": {t["task_id"]: (t["points"] / t["points_possible"] if t["points_possible"] else 0)
+                  for t in r["tasks"]},
         "by_difficulty": r["by_difficulty"],
     }, sort_keys=True))
     return text
