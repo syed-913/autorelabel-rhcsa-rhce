@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 from collections import Counter
 
 import pytest
@@ -18,9 +19,51 @@ EXAMS = ("rhcsa", "rhce")
 SEEDS = range(2000)
 
 
+# How often a task may come up across generated exams. A bank is only as varied as its draws: a
+# task below the floor is in the bank but practically never in an exam, and one above the
+# ceiling is in most of them, so a few exams are enough to know it by heart. Anchors (in every
+# exam by design) and practice-only tasks don't count.
+DRAW_FLOOR = 0.03
+DRAW_CEILING = 0.50
+
+
 @pytest.fixture(scope="module", params=EXAMS)
 def bank(request):
     return load_bank(request.param)
+
+
+@functools.cache
+def draw_shares(exam: str) -> dict[str, float]:
+    """task id -> share of the generated exams (no history) that contain it."""
+    bank = load_bank(exam)
+    seen = Counter(s.task.id for seed in SEEDS for s in generate(bank, seed))
+    return {t.id: seen[t.id] / len(SEEDS) for t in bank.tasks.values() if not t.anchor and not t.practice_only}
+
+
+def _listed(shares: dict[str, float]) -> str:
+    return ", ".join(f"{tid.split('.', 1)[1]} {share:.1%}" for tid, share in sorted(shares.items(), key=lambda x: x[1]))
+
+
+# 2026-11-11, 2,000 seeds. RHCSA (97 tasks): 7 under 1% (networking hosts-file,
+# connection-autoconnect, ipv6-address, firewall-remove-services, dns-client; software
+# package-group, install-remove-packages) and 5 above 50% (storage.lvm-create 72%). RHCE (51
+# tasks): 4 under 3% (core.multi-play 1.8%) and 11 above 50% (vscode.devcontainer-run and
+# playbooks.register-report 86%). The domain minimums add
+# up to 18 of 20 tasks and the difficulty mix is exact, so the generator's free picks are forced.
+# Strict: when the blueprint or the generator is fixed, these marks must go.
+_KNOWN = pytest.mark.xfail(strict=True, reason="blueprint leaves the generator almost no free picks")
+
+
+@pytest.mark.parametrize("exam", [pytest.param(e, marks=_KNOWN) for e in EXAMS])
+def test_no_exam_task_is_practically_never_drawn(exam):
+    rare = {tid: s for tid, s in draw_shares(exam).items() if s < DRAW_FLOOR}
+    assert not rare, f"drawn in under {DRAW_FLOOR:.0%} of exams: {_listed(rare)}"
+
+
+@pytest.mark.parametrize("exam", [pytest.param(e, marks=_KNOWN) for e in EXAMS])
+def test_no_task_is_in_most_exams(exam):
+    common = {tid: s for tid, s in draw_shares(exam).items() if s > DRAW_CEILING}
+    assert not common, f"drawn in over {DRAW_CEILING:.0%} of exams: {_listed(common)}"
 
 
 def test_bank_lints_clean(bank):
