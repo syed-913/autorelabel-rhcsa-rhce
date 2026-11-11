@@ -58,7 +58,7 @@ checks:
     desc: fstab uses the UUID
     run: |
       uuid="$(blkid -s UUID -o value /dev/{{vg}}/{{lv}})"
-      grep -Eq "^[[:space:]]*UUID=\"?$uuid\"?[[:space:]]+/mnt/{{lv}}[[:space:]]+xfs" /etc/fstab
+      grep -Eq "^[[:space:]]*UUID=\"?$uuid\"?[[:space:]]+/mnt/{{lv}}/?[[:space:]]+(xfs|auto)[[:space:]]" /etc/fstab
 
 references:
   - "RHEL 10: Configuring and managing logical volumes > Managing LVM volume groups / logical volumes"

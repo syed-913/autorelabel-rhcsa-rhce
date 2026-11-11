@@ -36,7 +36,7 @@ checks:
     desc: mounted by LABEL
     run: |
       test "$(findmnt -no SOURCE /mnt/{{label}})" = "$(blkid -L {{label}})"
-      grep -Eq '^[[:space:]]*LABEL="?{{label}}"?[[:space:]]+/mnt/{{label}}[[:space:]]+ext4' /etc/fstab
+      grep -Eq '^[[:space:]]*LABEL="?{{label}}"?[[:space:]]+/mnt/{{label}}/?[[:space:]]+(ext4|auto)[[:space:]]' /etc/fstab
 
 references:
   - "RHEL 10: Managing file systems > Mounting file systems persistently (file system labels)"

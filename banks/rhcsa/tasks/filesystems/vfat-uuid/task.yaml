@@ -35,7 +35,7 @@ checks:
     desc: fstab uses UUID=
     run: |
       uuid="$(blkid -s UUID -o value "$(findmnt -no SOURCE /mnt/{{dir}})")"
-      grep -Eq "^[[:space:]]*UUID=\"?$uuid\"?[[:space:]]+/mnt/{{dir}}[[:space:]]+vfat" /etc/fstab
+      grep -Eq "^[[:space:]]*UUID=\"?$uuid\"?[[:space:]]+/mnt/{{dir}}/?[[:space:]]+(vfat|auto)[[:space:]]" /etc/fstab
 
 references:
   - "RHEL 10: Managing file systems > Mounting file systems persistently"
