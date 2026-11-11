@@ -25,6 +25,7 @@ _log = log.get("grader")
 SHUTDOWN_GRACE = 90          # seconds for a normal reboot before ACPI
 ACPI_GRACE = 60              # seconds after ACPI before a hard reset
 BOOT_TIMEOUT = 300           # base wait for a node to come back
+SLOW_BOOT_EXTENSION = 300    # at most this much more while the console shows the boot moving
 RELABEL_EXTENSION = 900      # extra time while SELinux relabels
 CTRL_ALT_DEL_GRACE = 120     # an unreachable node's clean reboot before a hard reset
 BOOT_SETTLE = 150            # seconds for a node that answers again to finish booting
@@ -225,8 +226,17 @@ class Grader:
                 self.hv.start(dom)
             before = remote.boot_id(t)
             self.emit("reboot", {"node": node, "stage": "rebooting"})
+            escalated = None
             if before:
-                remote.run_cmd(t, "systemctl reboot", timeout=15)
+                res = remote.run_cmd(t, "systemctl reboot", timeout=15)
+                if res.rc not in (0, 255) and not res.timed_out:
+                    # The login works but the command didn't run (sudo, most likely): don't sit
+                    # out the shutdown grace, ask the hypervisor for the reboot now.
+                    self.s.incident(node, "reboot-refused",
+                                    "could not be rebooted from inside (the vagrant account's sudo no longer "
+                                    "works?); it was rebooted through the hypervisor")
+                    self.hv.reboot_acpi(dom)
+                    escalated = "acpi"
             else:
                 # Unreachable (emergency mode, broken network): ask systemd for a clean reboot, as
                 # someone at the console would. A hard reset can lose work that is not on disk yet
@@ -245,8 +255,7 @@ class Grader:
             remote.close_master(t)
             if before:
                 # wait for the node to actually go down (or come back with a new boot id)
-                start = time.monotonic()
-                escalated = None
+                start = time.monotonic() - (SHUTDOWN_GRACE if escalated else 0)
                 while True:
                     bid = remote.boot_id(t)
                     if bid is None or bid != before:
@@ -267,6 +276,7 @@ class Grader:
             deadline = time.monotonic() + BOOT_TIMEOUT
             next_probe = time.monotonic() + 90
             extended = False
+            slow = 0.0
             last_diag = None
             revived = 0
             while True:
@@ -304,6 +314,12 @@ class Grader:
                         self.emit("reboot", {"node": node, "stage": "relabelling"})
                     elif last_diag.terminal:
                         break
+                    elif (last_diag.kind == "booting" and slow < SLOW_BOOT_EXTENSION
+                          and deadline - time.monotonic() < 60):
+                        # Still starting units (a device that never appears holds a boot for 90 s,
+                        # and there can be more than one): a node about to answer is not given up.
+                        deadline += 60
+                        slow += 60
                 if time.monotonic() > deadline:
                     break
                 time.sleep(5)

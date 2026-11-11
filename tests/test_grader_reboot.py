@@ -25,6 +25,9 @@ class FakeHV:
     def reset(self, dom: str) -> None:
         self.calls.append("reset")
 
+    def reboot_acpi(self, dom: str) -> None:
+        self.calls.append("reboot_acpi")
+
 
 def _grader(hv: FakeHV, incidents: list[str], diagnosis: str = "emergency") -> Grader:
     g = Grader.__new__(Grader)
@@ -146,3 +149,56 @@ def test_a_boot_that_does_not_finish_is_an_incident_and_grading_goes_on(monkeypa
     monkeypatch.setattr(remote, "wait_reachable", lambda t, timeout: _back(boot_ids))
     assert _grader(hv, incidents).verified_reboot(["node2"]) == {}
     assert any("still starting" in i for i in incidents)
+
+
+def test_a_reboot_the_node_refuses_goes_to_the_hypervisor_at_once(monkeypatch):
+    """The login works but sudo doesn't: no waiting out the shutdown grace first."""
+    hv, incidents = FakeHV(), []
+    ids = _reachable_node(monkeypatch)
+    monkeypatch.setattr(remote, "run_cmd", lambda t, command, **k: proc.Result(
+        [command], *((1, "", "sudo: a password is required") if command == "systemctl reboot" else (0, "running", "")),
+        0.0))
+    acpi = hv.reboot_acpi
+    hv.reboot_acpi = lambda dom: (acpi(dom), ids.__setitem__(0, "boot-2"))
+    assert _grader(hv, incidents).verified_reboot(["node1"]) == {}
+    assert hv.calls == ["reboot_acpi"]
+    assert "rebooted through the hypervisor" in incidents[0]
+
+
+class FakeClock:
+    """time.monotonic and time.sleep for the grader: sleeping only moves the clock."""
+
+    def __init__(self) -> None:
+        self.now = 1000.0
+
+    def monotonic(self) -> float:
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        self.now += seconds
+
+
+@pytest.mark.parametrize(("console", "comes_back"), [("booting", True), ("unknown", False)])
+def test_a_boot_that_is_slow_but_moving_gets_more_time(monkeypatch, console, comes_back):
+    """Back 400 s after the reboot, past the base wait of 300 s: waited for while the console
+    shows units starting, given up on when it shows nothing."""
+    hv, incidents = FakeHV(), []
+    clock = FakeClock()
+    monkeypatch.setattr(grader, "time", clock)
+    monkeypatch.setattr(remote, "close_master", lambda t: None)
+    down = {"since": None}
+
+    def run_cmd(t, command, **k):
+        if command == "systemctl reboot":
+            down["since"] = clock.now
+        return proc.Result([command], 0, "running", "", 0.0)
+
+    def boot_id(t):
+        if down["since"] is None:
+            return "boot-1"
+        return "boot-2" if clock.now - down["since"] >= 400 else None
+    monkeypatch.setattr(remote, "run_cmd", run_cmd)
+    monkeypatch.setattr(remote, "boot_id", boot_id)
+    problems = _grader(hv, incidents, diagnosis=console).verified_reboot(["node1"])
+    assert (problems == {}) is comes_back
+    assert hv.calls == []
