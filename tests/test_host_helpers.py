@@ -173,3 +173,24 @@ def test_fixes_the_user_ran_are_ledgered_for_uninstall(tmp_path, monkeypatch):
     assert (entry.kind, entry.details) == ("user-action", "sudo gpasswd -d $USER libvirt")
     doctor.remember_user_actions([fixed])                  # recorded once
     assert len(ledger.entries()) == 1
+
+
+def test_vagrant_up_is_retried_when_vagrant_gives_up_on_a_booting_vm(tmp_path, monkeypatch):
+    """vagrant-libvirt's message is wrapped: "... a machine that is not\\nready for guest communication"."""
+    from pathlib import Path
+
+    from autorelabel import lab as lab_mod
+    from autorelabel import proc
+    from autorelabel.config import Settings
+
+    lab = lab_mod.Lab(Settings(provider="libvirt", storage_dir=str(tmp_path)), "rhcsa")
+    monkeypatch.setattr(lab, "guard_hypervisors", lambda: None)
+    monkeypatch.setattr(lab_mod.ledger, "record", lambda *a, **k: None)
+    monkeypatch.setattr(lab_mod.time, "sleep", lambda s: None)
+    gave_up = ("==> utility: Removing domain...\nGuest-specific operations were attempted on a machine that is not\n"
+               "ready for guest communication. This should not happen and a bug\nshould be reported.\n")
+    answers = [proc.Result(["vagrant"], 1, gave_up, "", 15.0), proc.Result(["vagrant"], 0, "", "", 60.0)]
+    calls, steps = [], []
+    monkeypatch.setattr(lab, "vagrant", lambda args, **k: calls.append(args) or answers[len(calls) - 1])
+    lab._vagrant_up(["utility"], steps.append, None, Path(tmp_path / "up.log"), None)
+    assert len(calls) == 2 and any("retrying" in s for s in steps)

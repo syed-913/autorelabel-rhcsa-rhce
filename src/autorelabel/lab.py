@@ -217,7 +217,8 @@ class Lab:
                     continue
                 # vagrant-libvirt occasionally gives up right after starting a domain ("not ready for
                 # guest communication ... a bug should be reported") and removes it again: retry once.
-                if "not ready for guest communication" in res.out and attempt == 1:
+                # (Vagrant wraps the message, so "not" and "ready" are on different lines.)
+                if "ready for guest communication" in " ".join(res.out.split()) and attempt == 1:
                     step("Vagrant gave up on a VM that was still booting; retrying")
                     time.sleep(10)
                     continue
