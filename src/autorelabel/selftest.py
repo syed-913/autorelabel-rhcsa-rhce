@@ -11,8 +11,10 @@ gives every choice parameter its value i mod n, so each value is verified at lea
 
 Compatible tasks run together in batches (one reboot per round) to keep this fast.
 Results are stored per task with a digest of the task's files, so edited tasks
-are re-tested and the coverage report can mark verified tasks. Each provider keeps its own
-results file; the coverage report uses libvirt's, the primary provider.
+are re-tested and the coverage report can mark verified tasks. Each record also holds digests
+of what every task shares (the check and setup libraries, the lab's provisioning, the box
+build), so a record made before one of those changed can be told apart. Each provider keeps
+its own results file; the coverage report uses libvirt's, the primary provider.
 """
 
 from __future__ import annotations
@@ -24,7 +26,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from . import box, console, labfacts, paths, remote
+from . import box, config, console, grader, labfacts, labspec, paths, remote
 from . import session as S
 from .bank import Bank, render
 from .bank.model import Task
@@ -42,6 +44,51 @@ def task_digest(task: Task) -> str:
             h.update(p.name.encode())
             h.update(p.read_bytes())
     return h.hexdigest()[:12]
+
+
+SHARED = {"checks": "the check and setup libraries", "lab": "the lab's provisioning", "box": "the box build"}
+
+
+def shared_inputs(exam: str) -> dict[str, list[Path | str]]:
+    """What every task's result depends on besides its own files, by component (see SHARED).
+    Files are hashed by content. Strings stand for code: how the grader wraps a check, and the
+    facts tasks are rendered with, so only a change to those counts, not any edit of the module."""
+    prov, lib = paths.VAGRANT_DIR / "provision", paths.BANKS / "lib"
+    scripts = {"rhcsa": ["node.sh"], "rhce": ["utility-rhce.sh", "managed.sh", "control.sh"]}[exam]
+    content = sorted(p for p in (paths.VAGRANT_DIR / "content").rglob("*") if p.is_file()) if exam == "rhce" else []
+    d = config.Settings()
+    facts = [json.dumps(labfacts.build(exam, profile, provider, subnet, d.mgmt_subnet), sort_keys=True, default=str)
+             for profile in config.PROFILES
+             for provider, subnet in (("libvirt", d.lab_subnet_libvirt), ("virtualbox", d.lab_subnet_virtualbox))]
+    return {
+        "checks": [lib / "check-lib.sh", lib / "setup-lib.sh", paths.BANKS / exam / "pools.yaml",
+                   grader.check_script("<lib>", "<check>"), remote._wrap("<script>", {"NAME": "value"})],
+        "lab": [paths.VAGRANT_DIR / "Vagrantfile", prov / "common.sh", prov / "utility.sh",
+                *(prov / name for name in scripts), *content,
+                *(repr(labspec.topology(exam, profile)) for profile in config.PROFILES), *facts],
+        "box": sorted(p for p in paths.PACKER_DIR.rglob("*") if p.is_file()),
+    }
+
+
+def shared_digests(exam: str) -> dict[str, str]:
+    out = {}
+    for component, inputs in shared_inputs(exam).items():
+        h = hashlib.sha256()
+        for item in inputs:
+            if isinstance(item, Path):
+                h.update(str(item.relative_to(paths.ROOT)).encode())
+                h.update(item.read_bytes())
+            else:
+                h.update(item.encode())
+        out[component] = h.hexdigest()[:12]
+    return out
+
+
+def outdated(record: dict[str, Any], current: dict[str, str]) -> list[str]:
+    """The shared components (keys of SHARED) that changed since this record was made; all of
+    them for a record from before they were recorded."""
+    then = record.get("shared") or {}
+    return [c for c in SHARED if then.get(c) != current.get(c)]
 
 
 PRIMARY_PROVIDER = "libvirt"
@@ -231,16 +278,23 @@ class SelfTest:
             raise EngineError(f"{', '.join(missing)} did not start after revert")
 
     # --- main ---------------------------------------------------------------------------------------
-    def run(self, task_ids: list[str] | None = None, *, only_changed: bool = False) -> dict[str, Any]:
+    def _stamp(self, provider: str) -> dict[str, Any]:
+        manifest = box.manifest(self.engine.settings, provider) or {}
+        return {"box": f"RHEL {manifest.get('rhel_version', '?')} {manifest.get('version', '')}".strip(),
+                "date": time.strftime("%Y-%m-%d"), "shared": shared_digests(self.exam)}
+
+    def run(self, task_ids: list[str] | None = None, *, only_changed: bool = False,
+            stale: bool = False) -> dict[str, Any]:
+        """only_changed: skip tasks that passed with their current files. stale: of those, still
+        run the ones last tested before the lab, the box build or the check libraries changed."""
         provider = self.engine.settings.provider
         tasks = [self.bank.tasks[t] for t in (task_ids or sorted(self.bank.tasks))]
-        if only_changed:
-            ok = verified(self.bank, provider)
-            tasks = [t for t in tasks if t.id not in ok]
         results = load_results(self.exam, provider)
-        manifest = box.manifest(self.engine.settings, provider) or {}
-        stamp = {"box": f"RHEL {manifest.get('rhel_version', '?')} {manifest.get('version', '')}".strip(),
-                 "date": time.strftime("%Y-%m-%d")}
+        if only_changed or stale:
+            ok = verified(self.bank, provider)
+            now = shared_digests(self.exam)
+            tasks = [t for t in tasks if t.id not in ok or (stale and outdated(results[t.id], now))]
+        stamp = self._stamp(provider)
         batches = plan_batches(self.bank, tasks)
         self.say(f"self-testing {len(tasks)} task(s) in {len(batches)} batch(es)")
         for n, batch in enumerate(batches, 1):
@@ -260,9 +314,7 @@ class SelfTest:
         tasks = [self.bank.tasks[t] for t in (task_ids or sorted(self.bank.tasks))]
         tasks = [t for t in tasks if sweep_draws(t) > 1]
         results = load_sweep(self.exam, provider)
-        manifest = box.manifest(self.engine.settings, provider) or {}
-        stamp = {"box": f"RHEL {manifest.get('rhel_version', '?')} {manifest.get('version', '')}".strip(),
-                 "date": time.strftime("%Y-%m-%d")}
+        stamp = self._stamp(provider)
         rounds = max((sweep_draws(t) for t in tasks), default=0)
         self.say(f"parameter sweep: {len(tasks)} task(s), {sum(sweep_draws(t) for t in tasks)} draw(s)")
         for i in range(rounds):

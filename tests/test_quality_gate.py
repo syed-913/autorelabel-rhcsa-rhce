@@ -47,3 +47,35 @@ def test_the_report_names_both_exams_and_both_hypervisors():
     table = quality.table([load_bank(exam) for exam in quality.EXAMS])
     assert "RHCSA (EX200)" in table and "RHCE (EX294)" in table
     assert "Self-tested on libvirt/KVM" in table and "Self-tested on VirtualBox" in table
+
+
+def test_a_record_made_before_a_shared_input_changed_is_named(tmp_path, monkeypatch):
+    bank = load_bank("rhce")
+    results, _ = _records("rhce")
+    now = selftest.shared_digests("rhce")
+    for recs in results.values():
+        for r in recs.values():
+            r["shared"] = dict(now)
+    assert quality.stale(bank, results) == []
+
+    tid = sorted(bank.tasks)[0]
+    results["virtualbox"][tid]["shared"]["lab"] = "000000000000"
+    assert quality.stale(bank, results) == [
+        f"{tid}: the virtualbox self-test ({results['virtualbox'][tid]['date']}) predates a change to "
+        "the lab's provisioning"]
+
+    del results["libvirt"][tid]["shared"]           # a record from before the digests existed
+    assert any(n.startswith(f"{tid}: the libvirt self-test") and "no record" in n for n in quality.stale(bank, results))
+
+
+def test_shared_digests_follow_the_files_of_their_own_exam(tmp_path, monkeypatch):
+    rhcsa, rhce = selftest.shared_inputs("rhcsa"), selftest.shared_inputs("rhce")
+    names = lambda inputs: {p.name for p in inputs if isinstance(p, Path)}          # noqa: E731
+    assert {"check-lib.sh", "setup-lib.sh", "pools.yaml"} <= names(rhcsa["checks"])
+    assert "control.sh" in names(rhce["lab"]) and "control.sh" not in names(rhcsa["lab"])
+    assert "node.sh" in names(rhcsa["lab"]) and "ks.cfg.pkrtpl" in names(rhcsa["box"])
+    # how the grader wraps a check is part of what a check is
+    before = selftest.shared_digests("rhcsa")
+    monkeypatch.setattr(selftest.grader, "check_script", lambda lib, check: f"{lib}\n{check}\n")
+    after = selftest.shared_digests("rhcsa")
+    assert after["checks"] != before["checks"] and after["lab"] == before["lab"] and after["box"] == before["box"]

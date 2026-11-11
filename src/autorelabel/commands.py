@@ -550,7 +550,7 @@ def cmd_selftest(args: argparse.Namespace) -> int:
                for d, v in sorted(draws.items()) if v["status"] != "pass"]
         print(f"\n{len(bad)} draw(s) failing: " + ", ".join(bad) if bad else "\nevery value of every choice passes")
         return 1 if bad else 0
-    res = st.run(ids, only_changed=args.changed)
+    res = st.run(ids, only_changed=args.changed, stale=args.stale)
     failed = [k for k, v in res.items() if v["status"] != "pass" and (ids is None or k in ids)]
     print(f"\n{len(failed)} task(s) failing self-test" if failed else "\nall selected tasks pass self-test")
     return 1 if failed else 0
@@ -561,6 +561,9 @@ def register_selftest(sub: argparse._SubParsersAction) -> None:
     s.add_argument("tasks", nargs="*", help="task ids or prefixes (e.g. security.selinux-port); default: all")
     s.add_argument("--exam", choices=("rhcsa", "rhce"), default="rhcsa")
     s.add_argument("--changed", action="store_true", help="only tasks not yet verified in their current form")
+    s.add_argument("--stale", action="store_true",
+                   help="like --changed, plus tasks last verified before the lab, the box build or the "
+                        "check libraries changed")
     s.add_argument("--sweep", action="store_true",
                    help="parameter sweep: run every task once per value of its choice parameters")
     s.set_defaults(func=cmd_selftest)

@@ -28,6 +28,17 @@ jobs:
           grep -qx "__version__ = \"$version\"" src/autorelabel/__init__.py
           grep -qx "version = \"$version\"" pyproject.toml
 
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Every task was self-tested with this release's lab, box build and check libraries
+        run: |
+          python -m pip install --require-hashes --no-deps -r requirements.lock
+          python scripts/dev/bank-quality.py --check --release
+        env:
+          PYTHONPATH: src
+
       - name: Notes from the changelog
         run: |
           version="${GITHUB_REF_NAME#v}"
