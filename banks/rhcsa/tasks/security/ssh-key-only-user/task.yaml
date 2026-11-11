@@ -36,9 +36,16 @@ checks:
   - id: no-password
     covers: [R2]
     on: node2
-    desc: "sshd -T for {{user}} reports passwordauthentication no"
+    desc: "sshd refuses a password for {{user}}"
     run: |
-      sshd -T -C user={{user}},host=node1,addr={{lab.node1.ip}} 2>/dev/null | grep -qx 'passwordauthentication no'
+      # Either way of refusing it: password authentication off for this user, or a list of
+      # allowed methods without it (AuthenticationMethods publickey).
+      cfg="$(sshd -T -C user={{user}},host=node1,addr={{lab.node1.ip}} 2>/dev/null)"
+      if grep -qx 'passwordauthentication no' <<<"$cfg"; then exit 0; fi
+      methods="$(sed -n 's/^authenticationmethods //p' <<<"$cfg")"
+      test -n "$methods"
+      test "$methods" != any
+      ! grep -Eq '(^|[ ,])(password|keyboard-interactive)' <<<"$methods"
   - id: others
     guard: true
     covers: [R3]
