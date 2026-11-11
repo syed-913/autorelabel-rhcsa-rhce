@@ -76,3 +76,37 @@ def test_exam_start_refuses_to_replace_an_open_session(tmp_path, monkeypatch, ca
     assert commands.cmd_exam_start(args) == 1
     assert "still open" in capsys.readouterr().err
     assert S.current().id == open_exam.id
+
+
+def test_two_copies_of_a_session_do_not_undo_each_other(sess):
+    """The proctor and the TUI each load the session and save later."""
+    sess.transition(S.PROVISIONING)
+    sess.transition(S.READY)
+    sess.transition(S.IN_PROGRESS)
+    proctor, tui = S.load("t1"), S.load("t1")
+
+    tui.marks["3"] = "done"
+    tui.save()
+    proctor.incident("node2", "grader-access", "cannot log in")          # saved from the older copy
+    on_disk = S.load("t1")
+    assert on_disk.marks == {"3": "done"}
+    assert [i["kind"] for i in on_disk.incidents] == ["grader-access"]
+    assert proctor.marks == {"3": "done"}                                 # and the copy caught up
+
+    proctor.transition(S.LOCKED, reason="time")
+    tui.marks["5"] = "flag"                                               # still thinks: in progress
+    del tui.marks["3"]
+    tui.incident("node1", "reset-to-start", "reset by the candidate")
+    on_disk = S.load("t1")
+    assert on_disk.state == S.LOCKED and tui.state == S.LOCKED
+    assert on_disk.marks == {"5": "flag"}
+    assert [i["kind"] for i in on_disk.incidents] == ["grader-access", "reset-to-start"]
+
+
+def test_a_new_session_and_a_changed_field_are_saved_whole(sess):
+    sess.started = 1234.0
+    sess.code_port = 18081
+    sess.save()
+    again = S.load("t1")
+    assert (again.started, again.code_port) == (1234.0, 18081)
+    assert oct(again.file.stat().st_mode & 0o777) == "0o600"

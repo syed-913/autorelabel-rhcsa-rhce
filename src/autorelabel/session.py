@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from . import paths
-from .fsutil import append_line, atomic_write_json, read_json
+from .fsutil import append_line, atomic_write_json, file_lock, read_json
 
 # States
 NEW = "new"
@@ -126,8 +126,17 @@ class Session:
         return self.dir / "proctor.lock"
 
     def save(self) -> None:
+        """Write what this object changed, onto the session as it is on disk now. The proctor,
+        the TUI and the CLI each hold a copy of their own: saving a whole copy would undo what
+        another process saved since this one was loaded (a mark, an incident, even the state)."""
         self.dir.mkdir(parents=True, exist_ok=True)
-        atomic_write_json(self.file, asdict(self), mode=0o600)
+        with file_lock(self.dir / "session.lock", blocking=True):
+            merged = _merge(getattr(self, "_base", {}), asdict(self), read_json(self.file) or {})
+            atomic_write_json(self.file, merged, mode=0o600)
+        for name in self.__dataclass_fields__:
+            if name in merged:
+                setattr(self, name, merged[name])
+        self._base = asdict(self)
 
     def event(self, event_name: str, /, **data: Any) -> None:
         self.dir.mkdir(parents=True, exist_ok=True)
@@ -193,6 +202,35 @@ class Session:
         atomic_write_json(self.heartbeat_file, hb)
 
 
+def _merge(base: dict[str, Any], mine: dict[str, Any], disk: dict[str, Any]) -> dict[str, Any]:
+    """`disk` with the changes between `base` (as loaded) and `mine` applied. A field this copy
+    didn't touch keeps the value on disk. Dictionaries (marks) merge key by key; the list of
+    incidents only ever grows."""
+    if not disk:
+        return mine
+    out = dict(disk)
+    for key, value in mine.items():
+        was, there = base.get(key), disk.get(key)
+        if key not in disk:
+            out[key] = value
+        elif key == "incidents":
+            out[key] = list(there) + [i for i in value if i not in (was or []) and i not in there]
+        elif value == was:
+            continue
+        elif isinstance(value, dict) and isinstance(was, dict) and isinstance(there, dict):
+            changed = dict(there)
+            for k in set(value) | set(was):
+                if value.get(k) != was.get(k):
+                    if k in value:
+                        changed[k] = value[k]
+                    else:
+                        changed.pop(k, None)
+            out[key] = changed
+        else:
+            out[key] = value
+    return out
+
+
 # --- persistence ------------------------------------------------------------------------------
 
 def _current_file() -> Path:
@@ -208,7 +246,9 @@ def load(session_id: str) -> Session:
     if raw is None:
         raise UnknownSession(f"no such session: {session_id}")
     known = {f for f in Session.__dataclass_fields__}
-    return Session(**{k: v for k, v in raw.items() if k in known})
+    s = Session(**{k: v for k, v in raw.items() if k in known})
+    s._base = asdict(s)        # what save() compares with, to write only what changed since
+    return s
 
 
 def current() -> Session | None:
