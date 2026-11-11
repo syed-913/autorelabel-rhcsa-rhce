@@ -4,6 +4,7 @@ lab storage directory chosen by the user; nothing is written elsewhere."""
 from __future__ import annotations
 
 import os
+import stat
 from pathlib import Path
 
 PREFIX = "autorelabel"
@@ -38,6 +39,33 @@ DATA = Path(__file__).resolve().parent / "data"
 def ensure_workspace() -> None:
     for d in (WORKSPACE, LOGS, SESSIONS, TMP, VAGRANT_DOTFILE):
         d.mkdir(parents=True, exist_ok=True)
+
+
+class UnsafeRuntimeDir(RuntimeError):
+    user_fixable = True      # the user's system, not a failure of autorelabel: no problem report
+
+    def __init__(self, path: Path, why: str):
+        super().__init__(f"{path} can't hold autorelabel's sockets: {why}")
+        self.hint = f"Remove {path}, or set XDG_RUNTIME_DIR to a directory only you can open."
+
+
+def runtime_dir() -> Path:
+    """Where the SSH control sockets and the VirtualBox console sockets live: a directory only
+    this user can open. Normally $XDG_RUNTIME_DIR/autorelabel. Without XDG_RUNTIME_DIR it is
+    /tmp/autorelabel-<uid>, a name anyone can create first, so an existing one is only used if
+    it is a real directory that belongs to this user (a socket in someone else's directory
+    could be swapped for theirs)."""
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    d = Path(runtime) / PREFIX if runtime else Path(f"/tmp/{PREFIX}-{os.getuid()}")
+    d.mkdir(mode=0o700, parents=True, exist_ok=True)
+    st = d.lstat()
+    if not stat.S_ISDIR(st.st_mode):
+        raise UnsafeRuntimeDir(d, "it is not a directory")
+    if st.st_uid != os.getuid():
+        raise UnsafeRuntimeDir(d, "it belongs to another user")
+    if st.st_mode & 0o077:
+        d.chmod(0o700)
+    return d
 
 
 def storage_root(storage_dir: str | os.PathLike[str]) -> Path:

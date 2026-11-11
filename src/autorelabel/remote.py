@@ -7,7 +7,6 @@ are streamed over stdin and run with `sudo -n bash -s`.
 
 from __future__ import annotations
 
-import os
 import shlex
 import socket
 import subprocess
@@ -15,7 +14,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import proc
+from . import paths, proc
 
 SSH_OPTS = [
     "-o", "BatchMode=yes",
@@ -32,10 +31,7 @@ SSH_OPTS = [
 
 
 def _control_dir() -> Path:
-    runtime = os.environ.get("XDG_RUNTIME_DIR")
-    d = Path(runtime) / "autorelabel" if runtime else Path(f"/tmp/autorelabel-{os.getuid()}")
-    d.mkdir(mode=0o700, parents=True, exist_ok=True)
-    return d
+    return paths.runtime_dir()
 
 
 @dataclass(frozen=True)

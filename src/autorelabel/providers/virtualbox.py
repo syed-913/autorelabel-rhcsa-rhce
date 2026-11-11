@@ -200,10 +200,7 @@ def snapshots(name: str) -> list[str]:
 
 
 def console_dir() -> Path:
-    runtime = os.environ.get("XDG_RUNTIME_DIR")
-    base = Path(runtime) / "autorelabel" if runtime else Path(f"/tmp/autorelabel-{os.getuid()}")
-    base.mkdir(mode=0o700, parents=True, exist_ok=True)
-    return base
+    return paths.runtime_dir()
 
 
 def console_socket(name: str) -> Path:

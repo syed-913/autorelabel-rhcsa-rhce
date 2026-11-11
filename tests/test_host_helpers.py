@@ -194,3 +194,27 @@ def test_vagrant_up_is_retried_when_vagrant_gives_up_on_a_booting_vm(tmp_path, m
     monkeypatch.setattr(lab, "vagrant", lambda args, **k: calls.append(args) or answers[len(calls) - 1])
     lab._vagrant_up(["utility"], steps.append, None, Path(tmp_path / "up.log"), None)
     assert len(calls) == 2 and any("retrying" in s for s in steps)
+
+
+def test_the_socket_directory_must_be_this_users_own(tmp_path, monkeypatch):
+    import os
+
+    from autorelabel import paths
+
+    monkeypatch.setenv("XDG_RUNTIME_DIR", str(tmp_path))
+    d = paths.runtime_dir()
+    assert d == tmp_path / "autorelabel" and oct(d.stat().st_mode & 0o777) == "0o700"
+
+    d.chmod(0o755)                                   # ours, but open to others: closed again
+    assert oct(paths.runtime_dir().stat().st_mode & 0o777) == "0o700"
+
+    real_uid = os.getuid()
+    monkeypatch.setattr(paths.os, "getuid", lambda: real_uid + 1)      # as if someone else had made it
+    with pytest.raises(paths.UnsafeRuntimeDir, match="belongs to another user"):
+        paths.runtime_dir()
+    monkeypatch.setattr(paths.os, "getuid", lambda: real_uid)
+
+    d.rmdir()
+    d.symlink_to(tmp_path)                           # a link planted under the expected name
+    with pytest.raises(paths.UnsafeRuntimeDir, match="not a directory"):
+        paths.runtime_dir()
