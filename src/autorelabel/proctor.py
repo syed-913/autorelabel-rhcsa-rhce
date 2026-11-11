@@ -16,6 +16,7 @@ from .fsutil import LockBusy, atomic_write_json, file_lock
 
 _log = log.get("proctor")
 HEALTH_EVERY = 120
+HEALTH_RECHECK = 30        # after a first failed check: look again soon, before warning
 
 
 def _notify(title: str, body: str) -> None:
@@ -52,6 +53,24 @@ def _health(engine: Engine, sess: S.Session) -> dict[str, Any]:
     return out
 
 
+def lost_access(health: dict[str, Any], failing: dict[str, int], warned: set[str]) -> list[str]:
+    """Nodes to warn about now: the grader could not log in on two checks in a row. One failed
+    check is usually a node that is rebooting, which candidates do to test their work.
+    `failing` (failed checks in a row) and `warned` are kept up to date for the next call."""
+    lost = []
+    for node, h in health["nodes"].items():
+        if h["grader_access"] is False:
+            failing[node] = failing.get(node, 0) + 1
+            if failing[node] >= 2 and node not in warned:
+                warned.add(node)
+                lost.append(node)
+        else:
+            failing.pop(node, None)
+            if h["grader_access"]:
+                warned.discard(node)
+    return lost
+
+
 def run(session_id: str) -> int:
     log.setup()
     sess = S.load(session_id)
@@ -67,6 +86,7 @@ def _loop(session_id: str) -> int:
     engine = Engine()
     last_health = 0.0
     warned_access: set[str] = set()
+    failing: dict[str, int] = {}
     while True:
         sess = S.load(session_id)
         if sess.state in (S.LOCKED, S.GRADING_INTERRUPTED, S.GRADING):
@@ -93,16 +113,17 @@ def _loop(session_id: str) -> int:
             last_health = time.time()
             try:
                 health = _health(engine, sess)
-                for node, h in health["nodes"].items():
-                    if h["grader_access"] is False and node not in warned_access:
-                        warned_access.add(node)
-                        sess.incident(node, "grader-access", "the grader cannot log in (mgmt0, the vagrant "
-                                                             "account, sshd or sudo was changed)")
-                        _wall(engine, sess, f"autorelabel WARNING: the grader can no longer reach {node}. "
-                                            "Revert changes to mgmt0 / the vagrant account / sshd, or "
-                                            f"{node} will score 0.")
-                    elif h["grader_access"]:
-                        warned_access.discard(node)
+                for node in lost_access(health, failing, warned_access):
+                    sess.incident(node, "grader-access", "the grader cannot log in (mgmt0, the vagrant "
+                                                         "account, sshd or sudo was changed)")
+                    msg = (f"autorelabel WARNING: the grader can no longer reach {node}. Revert changes to "
+                           f"mgmt0 / the vagrant account / sshd / sudo, or {node} will score 0.")
+                    # wall reaches the other nodes only: on this one it would need the very login
+                    # that stopped working. The desktop notification doesn't depend on the lab.
+                    _wall(engine, sess, msg)
+                    _notify("autorelabel", msg)
+                if failing:
+                    last_health = time.time() - HEALTH_EVERY + HEALTH_RECHECK
             except Exception:  # health is advisory; never kill the proctor
                 _log.exception("health check failed")
         time.sleep(S.HEARTBEAT_INTERVAL)
