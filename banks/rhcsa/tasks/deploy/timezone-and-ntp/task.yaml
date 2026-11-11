@@ -31,12 +31,18 @@ checks:
     timeout: 90
     run: |
       test "$(timedatectl show -p NTP --value)" = yes
-      ! grep -Eq '^[[:space:]]*pool[[:space:]]' /etc/chrony.conf || exit 1
-      # The name resolves to both addresses (IPv6 first); chronyd uses either.
+      # Every configured source names the lab server, whichever directive is used: the default
+      # line edited in place is still "pool". (From the configuration, not from chronyc: without
+      # internet the public pool resolves to nothing and would not show up as a source.)
+      conf="$(cat /etc/chrony.conf /etc/chrony.d/*.conf /etc/chrony.d/*.sources 2>/dev/null || true)"
+      named="$(awk '$1 ~ /^(server|pool|peer)$/ {print $2}' <<<"$conf")"
+      test -n "$named"
+      other="$(grep -vxF -e '{{lab.ntp_server}}' -e utility -e '{{lab.utility.ip}}' -e '{{lab.utility.ipv6}}' <<<"$named" || true)"
+      test -z "$other" || { echo "other time source: $(sed -n 1p <<<"$other")"; exit 1; }
+      # The name resolves to both addresses (IPv6 first); chronyd uses either, a pool both.
       lab() { chronyc -n sources 2>/dev/null | grep -qwF -e '{{lab.utility.ip}}' -e '{{lab.utility.ipv6}}'; }
       for i in $(seq 1 12); do lab && break; sleep 5; done
       lab
-      test "$(chronyc -n sources | grep -Ec '^\^')" = 1
 
 references:
   - "RHEL 10: Configuring time synchronization"
