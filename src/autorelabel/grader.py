@@ -27,6 +27,7 @@ ACPI_GRACE = 60              # seconds after ACPI before a hard reset
 BOOT_TIMEOUT = 300           # base wait for a node to come back
 RELABEL_EXTENSION = 900      # extra time while SELinux relabels
 CTRL_ALT_DEL_GRACE = 120     # an unreachable node's clean reboot before a hard reset
+BOOT_SETTLE = 150            # seconds for a node that answers again to finish booting
 MAX_BOOT_CYCLES = 3
 
 
@@ -194,6 +195,20 @@ class Grader:
         text = console.probe(dom, self.hv)
         return console.diagnose(text)
 
+    def _settle(self, node: str, t: remote.Target) -> None:
+        """Wait until the node's boot is over. It answers SSH as soon as logins open, which is
+        before multi-user.target: a check that ran then would find services still starting and
+        report finished work as not persistent. Whatever systemd says in the end, grading goes
+        on; a boot that is still not over is recorded as an incident."""
+        self.emit("reboot", {"node": node, "stage": "finishing"})
+        res = remote.run_cmd(t, f"timeout {BOOT_SETTLE} systemctl is-system-running --wait",
+                             timeout=BOOT_SETTLE + 30, as_root=False)
+        state = (res.out.split() or [""])[-1]
+        if res.timed_out or res.rc == 124 or state in ("initializing", "starting"):
+            self.s.incident(node, "boot-unfinished",
+                            f"was still starting services {BOOT_SETTLE} seconds after the grading reboot; "
+                            "its checks ran anyway")
+
     def verified_reboot(self, nodes: list[str]) -> dict[str, str]:
         """Reboot each node from inside, escalating to ACPI and hard reset if it hangs.
         Returns {node: problem} for nodes that did not come back."""
@@ -257,6 +272,7 @@ class Grader:
             while True:
                 bid = remote.boot_id(t)
                 if bid and bid != before:
+                    self._settle(node, t)
                     self.emit("reboot", {"node": node, "stage": "back"})
                     return
                 st, reason = self.hv.state(dom)
