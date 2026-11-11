@@ -104,11 +104,12 @@ if [[ "${AR_CODE_SERVER:-yes}" == "yes" ]] && compgen -G "$C/code-server/code-se
   step "code-server (VS Code in the browser) with the Red Hat Ansible extension"
   dnf -y -q install "$C"/code-server/code-server-*.rpm >/dev/null
   runuser -u student -- mkdir -p /home/student/.config/code-server
-  # The app reaches it through an SSH tunnel on the host's 127.0.0.1 (a secure context for the
-  # browser); the lab address works too, without clipboard and web views. No workspace-trust
-  # prompt (Restricted Mode would disable the Ansible extension) and nothing phoning home.
+  # It listens on loopback only: the app reaches it through an SSH tunnel on the host's
+  # 127.0.0.1 (a secure context for the browser), and nothing else on the lab network can.
+  # No workspace-trust prompt (Restricted Mode would disable the Ansible extension) and
+  # nothing phoning home.
   cat > /home/student/.config/code-server/config.yaml <<EOF
-bind-addr: 0.0.0.0:8080
+bind-addr: 127.0.0.1:8080
 auth: password
 password: $AR_STUDENT_PASSWORD
 cert: false
@@ -146,7 +147,6 @@ EOF
   done < "$C/code-server/extensions.txt"
   sudo -u student -i code-server --list-extensions | grep -qx redhat.ansible
   systemctl enable --now code-server@student >/dev/null
-  firewall-cmd -q --permanent --add-port=8080/tcp; firewall-cmd -q --reload
 fi
 
 step "Baseline marker"

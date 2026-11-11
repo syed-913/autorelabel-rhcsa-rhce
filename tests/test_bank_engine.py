@@ -232,3 +232,32 @@ def test_lint_needs_a_check_that_is_not_a_guard(synthetic_bank):
     msgs = [i.message for i in lint.lint_task(only_guards, synthetic_bank) if i.severity == "error"]
     assert any("every check is a guard" in m for m in msgs)
     assert not [i for i in lint.lint_task(base, synthetic_bank) if "guard" in i.message]
+
+
+def test_vs_code_is_only_ever_offered_through_the_tunnel(tmp_path, monkeypatch):
+    """code-server listens on control's loopback: there is no lab address to fall back to."""
+    from types import SimpleNamespace
+
+    from autorelabel import paths, remote
+    from autorelabel import session as S
+    from autorelabel.config import Settings
+    from autorelabel.engine import Engine
+
+    monkeypatch.setattr(paths, "SESSIONS", tmp_path)
+    eng = Engine(Settings(provider="libvirt", storage_dir=str(tmp_path), iso_path="x"))
+    monkeypatch.setattr(eng, "lab", lambda exam: SimpleNamespace(target=lambda name: name))
+    monkeypatch.setattr(remote, "tunnel_alive", lambda label: False)
+    monkeypatch.setattr(remote, "free_local_port", lambda preferred: preferred)
+    sess = S.Session(id="t1", exam="rhce", mode="exam", seed=1, created=0.0, state=S.IN_PROGRESS)
+    sess.save()
+
+    monkeypatch.setattr(remote, "open_tunnel", lambda t, label, local, remote_port: False)
+    answer = eng.code_server_url(sess)
+    assert answer.startswith("not available") and "http" not in answer
+
+    monkeypatch.setattr(remote, "open_tunnel", lambda t, label, local, remote_port: remote_port == 8080)
+    assert eng.code_server_url(sess) == "http://127.0.0.1:18080/?folder=/home/student/ansible"
+    assert S.load("t1").code_port == 18080
+
+    sess.state = S.GRADED
+    assert eng.code_server_url(sess) == ""

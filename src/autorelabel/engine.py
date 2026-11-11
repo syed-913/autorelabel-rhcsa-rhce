@@ -447,24 +447,26 @@ class Engine:
         return info
 
     def code_server_url(self, sess: S.Session) -> str:
-        """code-server through an SSH tunnel on 127.0.0.1: browsers only give the clipboard,
-        web views and service workers to secure contexts (HTTPS or localhost), and the lab
-        address is plain HTTP. Falls back to the lab address if the tunnel can't be opened."""
-        ctl = self.lab(sess.exam).vm("control")
-        direct = f"http://{ctl.lab_ip}:8080"
+        """Where the candidate opens code-server: an SSH tunnel on this host's 127.0.0.1.
+        code-server listens on control's loopback only, so the tunnel is the one way in (and
+        browsers give the clipboard, web views and service workers to localhost or HTTPS only).
+        "" outside a running exam; if the tunnel can't be opened, the reason, to show in the
+        address's place."""
         if sess.state not in (S.READY, S.IN_PROGRESS, S.INTERRUPTED):
-            return direct
+            return ""
         label = f"code-{sess.id}"
+        unavailable = ("not available right now: the SSH tunnel to control could not be opened "
+                       "(is control running? Open the instructions again to retry)")
         try:
             if not (sess.code_port and remote.tunnel_alive(label)):
                 port = remote.free_local_port(sess.code_port or CODE_SERVER_LOCAL_PORT)
                 if not remote.open_tunnel(self.lab(sess.exam).target("control"), label, port, 8080):
-                    return direct
+                    return unavailable
                 if port != sess.code_port:
                     sess.code_port = port
                     sess.save()
         except OSError:
-            return direct
+            return unavailable
         return f"http://127.0.0.1:{sess.code_port}/?folder={labfacts.PROJECT_DIR}"
 
     @staticmethod
