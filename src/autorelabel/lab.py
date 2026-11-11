@@ -473,6 +473,7 @@ class Lab:
                 self.hv.start(v.domain)
             elif self.hv.state(v.domain)[0] == "paused":
                 self.hv.resume(v.domain)
+                self.hv.time_sync(v.domain)
 
     def wait_all(self, names: list[str] | None = None, timeout: float = 600) -> list[str]:
         missing = []

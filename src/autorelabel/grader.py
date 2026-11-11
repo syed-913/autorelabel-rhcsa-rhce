@@ -8,6 +8,7 @@ checkpointed after every check so grading resumes exactly where it stopped.
 from __future__ import annotations
 
 import json
+import threading
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -146,6 +147,7 @@ class Grader:
             if not remote.reachable(self.lab.target(node), timeout=20):
                 unreachable[node] = self._diagnose(node).message
         total = len(self._check_jobs())
+        recording = threading.Lock()         # one node's thread at a time records and saves
 
         def run_node(node: str) -> None:
             t = self.lab.target(node)
@@ -156,10 +158,11 @@ class Grader:
                                       unreachable[node], chk.guard)
                 else:
                     res = self._run_check(t, node, chk, params)
-                done[key] = asdict(res)
-                self._save_cp(cp)
-                self.emit("check", {"phase": phase, "done": len(done), "total": total, "task": number,
-                                    "check": chk.id, "status": res.status})
+                with recording:
+                    done[key] = asdict(res)
+                    self._save_cp(cp)
+                    self.emit("check", {"phase": phase, "done": len(done), "total": total, "task": number,
+                                        "check": chk.id, "status": res.status})
 
         with ThreadPoolExecutor(max_workers=max(1, len(by_node))) as pool:
             list(pool.map(run_node, list(by_node)))
