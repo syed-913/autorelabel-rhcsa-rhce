@@ -24,6 +24,9 @@ checks:
     covers: [R1]
     desc: "NFS mount at /mnt/{{share}} from the utility server"
     run: |
+      # Open the directory first: with x-systemd.automount in fstab the share is mounted on
+      # first access, and until then only the automount point is there.
+      ls /mnt/{{share}} >/dev/null
       findmnt -no FSTYPE /mnt/{{share}} | grep -q '^nfs'
       findmnt -no SOURCE /mnt/{{share}} | grep -Eq '^(utility(\.lab\.example\.com)?|{{lab.utility.ip}}):/exports/{{share}}/?$'
   - id: readable
