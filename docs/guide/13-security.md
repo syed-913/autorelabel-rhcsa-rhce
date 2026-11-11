@@ -27,7 +27,7 @@ It doesn't edit your system configuration, your firewall, your shell or desktop 
 
 ## The lab's network
 
-The lab VMs can't reach the internet or your local network, and no other computer can reach them.
+The lab VMs can't reach the internet or your local network, and no other computer can reach them. They can talk to your computer itself, at its own address on the lab's networks, like any VM on a host-only network. Which of your computer's services answer there is up to its firewall.
 
 | | libvirt | VirtualBox |
 |---|---|---|
