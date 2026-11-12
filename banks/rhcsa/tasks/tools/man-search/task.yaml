@@ -24,10 +24,20 @@ requirements:
 checks:
   - id: search
     covers: [R1]
-    desc: "the file equals man -k {{keyword}}"
+    desc: "the file holds what man -k {{keyword}} finds"
     run: |
-      want="$(man -k {{keyword}} 2>/dev/null)"
-      test -n "$want" && diff <(echo "$want" | sort) <(sort /root/man-{{keyword}}.txt) >/dev/null
+      # Against the search result recorded by the setup, not only today's: software installed
+      # later in the exam adds manual pages, and the answer was right when it was saved.
+      then="/etc/autorelabel/man-{{keyword}}.expected"
+      test -s "$then"
+      got="$(LC_ALL=C sort /root/man-{{keyword}}.txt)"
+      now="$(man -k {{keyword}} 2>/dev/null || true)"
+      # nothing missing: every page the system had from the start
+      missing="$(LC_ALL=C comm -13 <(echo "$got") "$then")"
+      test -z "$missing" || { echo "missing: $(sed -n 1p <<<"$missing")"; exit 1; }
+      # nothing else: any further line is a page the search finds today
+      extra="$(LC_ALL=C comm -23 <(echo "$got") <(LC_ALL=C sort -u "$then" <(echo "$now")))"
+      test -z "$extra" || { echo "not a search result: $(sed -n 1p <<<"$extra")"; exit 1; }
   - id: section
     covers: [R2]
     desc: the section number is 5
