@@ -20,11 +20,11 @@ Many tasks draw random details, such as a user name, a port or a size. The sweep
 |---|---|---|
 | **Tasks** | 102 (2 practice-only) | 55 |
 | **Objective lines** | 62, each practised by 2 or more tasks | 57, each practised by 2 or more tasks |
-| **Accepted alternatives tested** | 23 | 12 |
+| **Accepted alternatives tested** | 39 | 14 |
 | **Classic mistakes tested** | 118 | 63 |
-| **Self-tested on libvirt/KVM** | 102 of 102 on their current files, RHEL 10.0, on 2026-10-19 | 55 of 55 on their current files, RHEL 10.0, 2026-10-20 to 2026-10-25 |
-| **Self-tested on VirtualBox** | 102 of 102 on their current files, RHEL 10.0, 2026-10-19 to 2026-10-25 | 55 of 55 on their current files, RHEL 10.0, 2026-10-24 to 2026-10-25 |
-| **Of those, with the current lab, box build and check libraries** | 0 of 102 on libvirt/KVM, 0 of 102 on VirtualBox | 0 of 55 on libvirt/KVM, 0 of 55 on VirtualBox |
+| **Self-tested on libvirt/KVM** | 102 of 102 on their current files, RHEL 10.0, 2026-11-11 to 2026-11-12 | 55 of 55 on their current files, RHEL 10.0, on 2026-11-12 |
+| **Self-tested on VirtualBox** | 85 of 102 on their current files, RHEL 10.0, 2026-10-19 to 2026-10-25 | 52 of 55 on their current files, RHEL 10.0, 2026-10-24 to 2026-10-25 |
+| **Of those, with the current lab, box build and check libraries** | 102 of 102 on libvirt/KVM, 0 of 102 on VirtualBox | 55 of 55 on libvirt/KVM, 0 of 55 on VirtualBox |
 | **Tasks with random details** | 59: 204 of 204 draws passed | 32: 106 of 106 draws passed |
 <!-- quality:end -->
 
