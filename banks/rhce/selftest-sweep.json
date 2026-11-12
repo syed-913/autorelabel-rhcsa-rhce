@@ -99,46 +99,66 @@
   },
   "rhce.automate.at-job": {
     "0": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-24",
+      "box": "RHEL 10.0 20261111.2208",
+      "date": "2026-11-12",
       "detail": "",
-      "digest": "384f6730c2a8",
+      "digest": "fa46e1b7b6df",
       "params": {
         "days": 2,
         "word": "alpha"
       },
+      "shared": {
+        "box": "cd77ead012d9",
+        "checks": "2312b28159c3",
+        "lab": "4d47fb575d63"
+      },
       "status": "pass"
     },
     "1": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-24",
+      "box": "RHEL 10.0 20261111.2208",
+      "date": "2026-11-12",
       "detail": "",
-      "digest": "384f6730c2a8",
+      "digest": "fa46e1b7b6df",
       "params": {
         "days": 3,
         "word": "bravo"
       },
+      "shared": {
+        "box": "cd77ead012d9",
+        "checks": "2312b28159c3",
+        "lab": "4d47fb575d63"
+      },
       "status": "pass"
     },
     "2": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-24",
+      "box": "RHEL 10.0 20261111.2208",
+      "date": "2026-11-12",
       "detail": "",
-      "digest": "384f6730c2a8",
+      "digest": "fa46e1b7b6df",
       "params": {
         "days": 5,
         "word": "delta"
       },
+      "shared": {
+        "box": "cd77ead012d9",
+        "checks": "2312b28159c3",
+        "lab": "4d47fb575d63"
+      },
       "status": "pass"
     },
     "3": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-24",
+      "box": "RHEL 10.0 20261111.2208",
+      "date": "2026-11-12",
       "detail": "",
-      "digest": "384f6730c2a8",
+      "digest": "fa46e1b7b6df",
       "params": {
         "days": 2,
         "word": "sierra"
+      },
+      "shared": {
+        "box": "cd77ead012d9",
+        "checks": "2312b28159c3",
+        "lab": "4d47fb575d63"
       },
       "status": "pass"
     }
@@ -1038,35 +1058,50 @@
   },
   "rhce.roles.selinux-system-role": {
     "0": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-24",
+      "box": "RHEL 10.0 20261111.2208",
+      "date": "2026-11-12",
       "detail": "",
-      "digest": "2b2f847c8f89",
+      "digest": "5bfe230ad571",
       "params": {
         "dir": "/srv/web",
         "port": 8085
       },
+      "shared": {
+        "box": "cd77ead012d9",
+        "checks": "2312b28159c3",
+        "lab": "4d47fb575d63"
+      },
       "status": "pass"
     },
     "1": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-24",
+      "box": "RHEL 10.0 20261111.2208",
+      "date": "2026-11-12",
       "detail": "",
-      "digest": "2b2f847c8f89",
+      "digest": "5bfe230ad571",
       "params": {
         "dir": "/srv/content",
         "port": 8090
       },
+      "shared": {
+        "box": "cd77ead012d9",
+        "checks": "2312b28159c3",
+        "lab": "4d47fb575d63"
+      },
       "status": "pass"
     },
     "2": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-24",
+      "box": "RHEL 10.0 20261111.2208",
+      "date": "2026-11-12",
       "detail": "",
-      "digest": "2b2f847c8f89",
+      "digest": "5bfe230ad571",
       "params": {
         "dir": "/srv/portal",
         "port": 9443
+      },
+      "shared": {
+        "box": "cd77ead012d9",
+        "checks": "2312b28159c3",
+        "lab": "4d47fb575d63"
       },
       "status": "pass"
     }
