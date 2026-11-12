@@ -27,11 +27,11 @@ It doesn't edit your system configuration, your firewall, your shell or desktop 
 
 ## The lab's network
 
-The lab VMs can't reach the internet or your local network, and no other computer can reach them. They can talk to your computer itself, at its own address on the lab's networks, like any VM on a host-only network. Which of your computer's services answer there is up to its firewall.
+As autorelabel sets them up, the lab VMs can't reach the internet or your local network, and no other computer can reach them. They can talk to your computer itself, at its own address on the lab's networks, like any VM on a host-only network. Which of your computer's services answer there is up to its firewall. A service that listens only on your computer's `127.0.0.1` is out of their reach.
 
 | | libvirt | VirtualBox |
 |---|---|---|
-| Management network (how autorelabel reaches the VMs) | Isolated: libvirt gives it no route out | NAT with no default route, so nothing goes out through it |
+| Management network (how autorelabel reaches the VMs) | Isolated: libvirt gives it no route out | VirtualBox NAT. The VMs are set up with no route through it, so nothing goes out. That is a setting inside each VM: whoever is root in a VM (you, during an exam) can add a route through it and be online from that VM. The way from a VM to your computer's own `127.0.0.1` is turned off |
 | Lab network (the one you configure) | Isolated in the same way | Host-only: only your computer joins it |
 | SSH into the VMs | Over the isolated management network | A port forward that listens only on `127.0.0.1` |
 | The VM screens | VNC on `127.0.0.1` only | None: the VMs run headless, and the serial console is a socket in a folder only you can open |
