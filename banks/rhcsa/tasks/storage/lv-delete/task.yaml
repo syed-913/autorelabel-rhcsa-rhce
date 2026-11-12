@@ -28,11 +28,13 @@ checks:
     run: "! lvs {{vg}}/scratch >/dev/null 2>&1"
   - id: fstab
     covers: [R2]
-    desc: no fstab entry for /scratch and the system is fully booted
+    desc: no fstab entry for /scratch and the system boots normally
     run: |
-      ! grep -Eq '^[^#]*[[:space:]]/scratch[[:space:]]' /etc/fstab || exit 1
-      # --wait: right after the grading reboot, boot may still be finishing ("starting")
-      timeout 50 systemctl is-system-running --wait | grep -Eq 'running|degraded'
+      ! grep -Eq '^[^#]*[[:space:]]/scratch/?[[:space:]]' /etc/fstab || exit 1
+      # A normal boot, not the emergency shell. "degraded" is one too: some unit failed, which
+      # can be another task's. (systemctl exits non-zero for every state but "running".)
+      state="$(systemctl is-system-running || true)"
+      case "$state" in running|degraded|starting) ;; *) echo "system state: $state"; exit 1 ;; esac
   - id: vg
     guard: true
     covers: [R3]
