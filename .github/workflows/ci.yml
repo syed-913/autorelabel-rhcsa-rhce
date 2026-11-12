@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies (hash-locked)
         run: |
           python -m pip install --require-hashes --no-deps -r requirements.lock
-          python -m pip install pytest ruff
+          python -m pip install --require-hashes --no-deps -r requirements-dev.lock
 
       - name: Lint Python
         run: ruff check src tests
@@ -43,7 +43,7 @@ jobs:
       - name: RHCE playbooks pass a syntax check (ansible-core 2.16, as in the lab)
         run: |
           python -m venv /tmp/ansible216
-          /tmp/ansible216/bin/pip install "ansible-core==2.16.14"
+          /tmp/ansible216/bin/pip install --require-hashes --no-deps -r requirements-ansible.lock
           /tmp/ansible216/bin/ansible-galaxy collection install -p /tmp/collections \
             ansible.posix:==2.2.2 community.general:==11.4.9
           PATH=/tmp/ansible216/bin:$PATH python scripts/dev/check-rhce-playbooks.py --collections /tmp/collections

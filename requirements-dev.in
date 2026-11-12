@@ -1,0 +1,3 @@
+# CI's lint and test tools. Lock: requirements-dev.lock (hashes; see the command in its header).
+pytest
+ruff
