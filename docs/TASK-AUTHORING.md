@@ -39,6 +39,7 @@ anchor: repos                        # only for the blueprint's anchor tasks
 breaks_boot: false                   # setup leaves the node unbootable (fixed on the console)
 console_only: false                  # node has no network at the start
 practice_only: false                 # valid drill, never drawn into a full exam
+selftest_alone: false                # a test of it destroys what other tasks hold: self-tested on its own
 params:
   vg: {choice: [datavg, appvg]}      # choice | range [lo, hi] | token <length> | value <x> | pool <name>
   when: {future_date: [20, 300]}     # YYYY-MM-DD, 20-300 days after the exam is created;
@@ -104,7 +105,7 @@ Helpers from `setup-lib.sh`:
 | `as_user <user> cmd...` | run as a user with a clean environment (never `sudo -u`: `flatpak --user` refuses it) |
 | `as_student cmd...`, `student_sh '...'`, `student_write <path> [mode]` | RHCE: act as the candidate in `~/ansible` |
 
-Reference solutions show *one* good way to do the task. Use `tests/alt-*.sh` for other valid ways (a YAML inventory instead of INI, `semanage` vs a system role). Mistake tests reproduce one classic error each; the first line comment says which.
+Reference solutions show *one* good way to do the task. Use `tests/alt-*.sh` for other valid ways (a YAML inventory instead of INI, `semanage` vs a system role). Mistake tests reproduce one classic error each; the first line comment says which. A test shares its lab with the other tasks of its batch: their solutions run in the same round and their partitions sit on the same disk. So a test makes its own starting condition (`tools/man-search` removes the index that a neighbour's package installation built). Which tasks share a batch changes with `--changed` and `--stale`. A test that cannot leave the neighbours alone (`storage/gpt-partitions` writes a new partition table to a disk other tasks use) needs `selftest_alone: true` in its task.
 
 Tasks whose setup leaves the node unbootable (`breaks_boot: true`) are solved by typing the solution on the serial console in the self-test; keep those scripts to plain commands.
 
@@ -135,7 +136,7 @@ Helpers from `check-lib.sh`: `as_student`, `student_sh`, `as_user`, `inventory_h
 
 In rounds 3 and 4, tasks of the batch that have no test of that number get their reference solution, so the task under test is judged in an otherwise solved lab.
 
-Compatible tasks share a lab (no common `exclusive` tag, disk budgets fit). Anchors and `breaks_boot` tasks always run alone, because their tests break what other tasks need. Results go to `banks/<exam>/selftest.json` (libvirt, the primary provider; the coverage report reads this one) or `banks/<exam>/selftest-virtualbox.json`, with a digest of the task's files; `--changed` re-tests only tasks whose files changed or that never passed on the current provider. Each record also holds digests of what all tasks share (`banks/lib/`, the provisioning scripts, the box build); `--stale` adds the tasks last tested before one of those changed, and the release workflow refuses a tag while any such record is left (`bank-quality.py --check --release`). Console transcripts and every grading round are kept in the session directory under `.workspace/sessions/`.
+Compatible tasks share a lab (no common `exclusive` tag, disk budgets fit). Anchors and `breaks_boot` tasks always run alone, because their tests break what other tasks need; so does a task marked `selftest_alone: true`. Results go to `banks/<exam>/selftest.json` (libvirt, the primary provider; the coverage report reads this one) or `banks/<exam>/selftest-virtualbox.json`, with a digest of the task's files; `--changed` re-tests only tasks whose files changed or that never passed on the current provider. Each record also holds digests of what all tasks share (`banks/lib/`, the provisioning scripts, the box build); `--stale` adds the tasks last tested before one of those changed, and the release workflow refuses a tag while any such record is left (`bank-quality.py --check --release`). Console transcripts and every grading round are kept in the session directory under `.workspace/sessions/`.
 
 A normal run draws one value for each parameter. `--sweep` runs the suites again once per value of each `choice` parameter (draw *i* gives every choice its value *i* mod *n*), so a value that doesn't work on RHEL 10, such as a port that already has an SELinux type, fails before a candidate draws it. Results go to `banks/<exam>/selftest-sweep[-virtualbox].json`.
 

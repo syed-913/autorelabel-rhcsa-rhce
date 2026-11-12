@@ -13,6 +13,7 @@ estimated_minutes: 8
 node: node2
 resources:
   disk: {node2.disk1: 1600}
+selftest_alone: true   # the wipe test writes a new partition table: nothing of another task survives on this disk
 params:
   word: {pool: words}
   size1: {choice: [600, 700]}

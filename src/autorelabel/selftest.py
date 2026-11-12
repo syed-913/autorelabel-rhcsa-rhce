@@ -135,14 +135,19 @@ def essence(output: str, limit: int = 600) -> str:
 def plan_batches(bank: Bank, tasks: list[Task], max_size: int = 8) -> list[list[Task]]:
     """Group tasks that can share a lab: no shared exclusive groups, disk budgets fit.
     Tasks that break boot run alone, and so do anchors: their alternative and mistake tests
-    deliberately break what everything else depends on (network, repositories, root access)."""
+    deliberately break what everything else depends on (network, repositories, root access).
+    So does a task marked selftest_alone: one of its tests destroys what its neighbours hold."""
+
+    def alone(x: Task) -> bool:
+        return bool(x.breaks_boot or x.anchor or x.selftest_alone)
+
     cap = _disk_capacity_mib(bank.exam)
     batches: list[list[Task]] = []
-    for t in sorted(tasks, key=lambda x: (x.breaks_boot or bool(x.anchor), x.id)):
+    for t in sorted(tasks, key=lambda x: (alone(x), x.id)):
         placed = False
-        if not (t.breaks_boot or t.anchor):
+        if not alone(t):
             for b in batches:
-                if len(b) >= max_size or any(x.breaks_boot or x.anchor for x in b):
+                if len(b) >= max_size or any(alone(x) for x in b):
                     continue
                 if set(t.exclusive) & {e for x in b for e in x.exclusive}:
                     continue

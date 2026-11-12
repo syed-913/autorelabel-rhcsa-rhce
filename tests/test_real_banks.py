@@ -171,3 +171,15 @@ def test_root_passwords_are_given_unless_a_task_resets_them(tmp_path, monkeypatc
     assert "not given" in eng.console_login(exam, "node2")
     expired = eng.create("rhcsa", mode="practice", task_ids=["rhcsa.operate.root-account-expired"], seed=7)
     assert sorted(expired.given) == ["node2"]
+
+
+def test_a_task_whose_test_wipes_a_disk_is_self_tested_alone():
+    """gpt-partitions' mistake test writes a new partition table to node2's disk: in one batch
+    with swap-partition and vg-extend, their tests then found their partitions gone."""
+    from autorelabel.selftest import plan_batches
+
+    bank = load_bank("rhcsa")
+    names = ["storage.gpt-partitions", "storage.swap-partition", "storage.vg-extend", "tools.archive-gzip-extract"]
+    batches = plan_batches(bank, [bank.tasks[f"rhcsa.{n}"] for n in names])
+    assert sorted(sorted(t.id.split(".", 1)[1] for t in b) for b in batches) == [
+        ["storage.gpt-partitions"], ["storage.swap-partition", "storage.vg-extend", "tools.archive-gzip-extract"]]

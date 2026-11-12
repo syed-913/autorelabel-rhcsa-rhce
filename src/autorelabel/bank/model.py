@@ -103,6 +103,7 @@ class Task:
     breaks_boot: bool = False        # the setup leaves the node unbootable until the candidate fixes it
     console_only: bool = False       # the node has no lab network at the start (use the console)
     practice_only: bool = False      # valid drill, but never drawn into a full exam
+    selftest_alone: bool = False     # a test of it destroys what other tasks hold (a whole disk)
 
     # scripts discovered on disk: node name -> path
     def scripts(self, stem: str) -> dict[str, Path]:
