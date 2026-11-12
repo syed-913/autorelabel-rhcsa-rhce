@@ -35,7 +35,15 @@ checks:
     run: |
       want="$(journalctl -b -u {{word}}-batch.service -p err -o cat --no-pager)"
       test -n "$want"
-      diff <(echo "$want") <(grep -v '^[[:space:]]*$' /root/{{word}}-errors.txt) >/dev/null
+      # The messages of one run of the service, in order; more than once if the service was
+      # started again by hand, because the boot's journal then held them once per run.
+      python3 - "$want" /root/{{word}}-errors.txt <<'PY'
+      import sys
+      want = sys.argv[1].splitlines()
+      got = [line.rstrip("\n") for line in open(sys.argv[2]) if line.strip()]
+      runs = [got[i:i + len(want)] for i in range(0, len(got), len(want))]
+      sys.exit(0 if runs and all(run == want for run in runs) else 1)
+      PY
   - id: logfile
     covers: [R2]
     desc: the syslog file is /var/log/messages
