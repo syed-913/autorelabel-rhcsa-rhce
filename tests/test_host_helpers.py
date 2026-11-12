@@ -122,8 +122,22 @@ def test_virtualbox_vms_start_without_the_kvm_clock(monkeypatch):
     monkeypatch.setattr(vb, "ensure_console_keeper", lambda: None)
     monkeypatch.setattr(vb.time, "sleep", lambda _s: None)
     assert vb.start("autorelabel-rhcsa-node1").ok
-    assert calls == [("modifyvm", "autorelabel-rhcsa-node1", "--paravirt-provider", "minimal")] * 2 + \
+    # and without a way to the host's own 127.0.0.1 through the NAT gateway (10.0.2.2)
+    assert calls == [("modifyvm", "autorelabel-rhcsa-node1", "--paravirt-provider", "minimal",
+                      "--nat-localhostreachable1", "off")] * 2 + \
         [("startvm", "autorelabel-rhcsa-node1", "--type", "headless")]
+
+
+def test_no_virtualbox_lab_vm_keeps_the_way_to_the_hosts_loopback():
+    """The box build needs it (the kickstart comes from 10.0.2.2); the box and the lab must not
+    keep it: with it on, a lab VM reads whatever listens on this computer's 127.0.0.1."""
+    from autorelabel import paths
+
+    packer = (paths.PACKER_DIR / "rhel10.pkr.hcl").read_text()
+    post = packer[packer.index("vboxmanage_post = ["):]
+    assert '"--nat-localhostreachable1", "off"' in post[:post.index("\n  ]")]
+    vagrantfile = (paths.VAGRANT_DIR / "Vagrantfile").read_text()
+    assert 'vb.customize ["modifyvm", :id, "--nat-localhostreachable1", "off"]' in vagrantfile
 
 
 def test_the_lab_network_gets_no_virtualbox_dhcp(monkeypatch):

@@ -137,10 +137,18 @@ source "virtualbox-iso" "rhel10" {
   ssh_timeout          = "90m"
   shutdown_command     = "sudo /usr/sbin/shutdown -P now"
   vboxmanage = [
+    # The installer fetches its kickstart from Packer's HTTP server on this computer, which
+    # the NAT adapter reaches as 10.0.2.2. For the build only: see vboxmanage_post.
     ["modifyvm", "{{ .Name }}", "--nat-localhostreachable1", "on"],
     # Not KVM's paravirtual clock: it at random stalls the boot right after the boot loader.
     ["modifyvm", "{{ .Name }}", "--paravirt-provider", "minimal"],
     ["modifyvm", "{{ .Name }}", "--uart1", "0x3F8", "4", "--uartmode1", "file", "${var.output_dir}/vbox-serial.log"],
+  ]
+  # Before the export: the box, and with it every lab VM, must not keep a way to this
+  # computer's own 127.0.0.1 (services that listen on loopback only trust that nothing else
+  # can reach them). The Vagrantfile and the app turn it off as well, for boxes built earlier.
+  vboxmanage_post = [
+    ["modifyvm", "{{ .Name }}", "--nat-localhostreachable1", "off"],
   ]
 }
 

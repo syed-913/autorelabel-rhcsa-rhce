@@ -86,6 +86,10 @@ Vagrant.configure("2") do |config|
         # jump by centuries right after the boot loader, and the boot stalls. The app sets the
         # same before every start (snapshots keep the settings they were taken with).
         vb.customize ["modifyvm", :id, "--paravirt-provider", lab.fetch("vbox_paravirt", "minimal")]
+        # No way from the VM to this computer's own 127.0.0.1 through the NAT gateway (10.0.2.2).
+        # A box built before 1.1.1 carries the setting from its build, where the installer
+        # needed it. The app sets the same before every start, like the clock above.
+        vb.customize ["modifyvm", :id, "--nat-localhostreachable1", "off"]
         vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4",
                       "--uartmode1", "server", File.join(lab["console_dir"], "console-#{name}.sock")]
         # The box (built by packer virtualbox-iso) has an AHCI controller named "SATA".
