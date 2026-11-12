@@ -202,10 +202,37 @@ def cmd_lab_destroy(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_dashboard(args: argparse.Namespace) -> int:
+    import webbrowser
+
+    from .dashboard.server import Dashboard
+
+    srv = Dashboard(args.port)
+    print(f"Results dashboard: {srv.launch_url}\n"
+          "The address works once, in one browser. It shows your graded attempts and changes nothing.\n"
+          "Press Ctrl+C here to stop it.", flush=True)
+    if not args.no_browser:
+        try:
+            webbrowser.open(srv.launch_url)
+        except Exception:        # no browser to open: the address is printed above
+            pass
+    try:
+        srv.serve_forever()
+    except KeyboardInterrupt:
+        print()
+    finally:
+        srv.server_close()
+    return 0
+
+
 def register(sub: argparse._SubParsersAction) -> None:
     register_exam(sub)
     register_selftest(sub)
     register_content(sub)
+    d = sub.add_parser("dashboard", help="your results over time, in the browser (read-only, this computer only)")
+    d.add_argument("--no-browser", action="store_true", help="only print the address")
+    d.add_argument("--port", type=int, default=0, help="port on 127.0.0.1 (default: any free one)")
+    d.set_defaults(func=cmd_dashboard)
     lab = sub.add_parser("lab", help="bring the lab VMs up, inspect or destroy them")
     lsub = lab.add_subparsers(dest="lab_cmd", required=True)
     lu = lsub.add_parser("up", help="create and provision the lab (no exam tasks)")
