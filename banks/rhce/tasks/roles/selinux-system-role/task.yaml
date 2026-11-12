@@ -57,7 +57,9 @@ checks:
     desc: selinux.yml uses the role
     run: |
       playbook_ok selinux.yml
-      grep -Eq 'rhel-system-roles\.selinux|rhel_system_roles\.selinux' {{lab.project_dir}}/selinux.yml
+      # any name the role is installed under: rhel-system-roles.selinux, its link
+      # linux-system-roles.selinux, or the collection's redhat.rhel_system_roles.selinux
+      grep -Eq '(rhel|linux)-system-roles\.selinux|rhel_system_roles\.selinux' {{lab.project_dir}}/selinux.yml
 
 references:
   - "/usr/share/doc/rhel-system-roles/selinux/README.md"

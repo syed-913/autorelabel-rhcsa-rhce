@@ -67,7 +67,9 @@ def check(task, script: Path, facts: dict) -> list[str]:
         shutil.copytree(LAB_ROLES / "lab_webserver", roles / "webserver")
         shutil.copytree(LAB_ROLES / "lab_balancer", roles / "balancer")
         shutil.copytree(LAB_ROLES / "lab_motd", roles / "motd")
-        for name in ("rhel-system-roles.timesync", "rhel-system-roles.selinux"):
+        # the system roles, under both names the rhel-system-roles package installs them with
+        for name in ("rhel-system-roles.timesync", "rhel-system-roles.selinux",
+                     "linux-system-roles.timesync", "linux-system-roles.selinux"):
             (roles / name / "tasks").mkdir(parents=True)
             (roles / name / "tasks/main.yml").write_text("---\n[]\n")
         (proj / "inventory").write_text(inventory(facts))
