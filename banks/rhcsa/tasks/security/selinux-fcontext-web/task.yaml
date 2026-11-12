@@ -38,10 +38,13 @@ checks:
     run: curl -fsS --max-time 5 http://localhost/ | grep -q "AR-{{token}}"
   - id: rule
     covers: [R2]
-    desc: "the default context of /srv/{{site}} (and new files in it) is httpd_sys_content_t"
+    desc: "the default context of /srv/{{site}} (and new files in it) is a web content type"
     run: |
-      matchpathcon -n /srv/{{site}}/index.html | grep -q httpd_sys_content_t
-      matchpathcon -n /srv/{{site}}/new-file.html | grep -q httpd_sys_content_t
+      # Any type meant for content a web server serves: the task doesn't name one, and the
+      # page being served (the other check) shows that httpd can read it.
+      web=':(httpd_sys_(rw_)?content_t|public_content(_rw)?_t):'
+      matchpathcon -n /srv/{{site}}/index.html | grep -Eq "$web"
+      matchpathcon -n /srv/{{site}}/new-file.html | grep -Eq "$web"
       matchpathcon -V /srv/{{site}}/index.html | grep -q verified
   - id: enforcing
     guard: true
