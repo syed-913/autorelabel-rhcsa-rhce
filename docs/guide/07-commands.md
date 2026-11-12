@@ -43,6 +43,7 @@ Run commands from the repository folder: `./autorelabel <command> [options]`. Th
 | `./autorelabel exam grade` | Grade the exam in this terminal. |
 | `./autorelabel exam results` | Print the graded report. |
 | `./autorelabel exam retake` | The same exam again, from its starting point. |
+| `./autorelabel dashboard` | Your results over time, in the browser. |
 | `./autorelabel exam resume` | Restart an exam's lab after your computer restarted. |
 | `./autorelabel exam abandon` | Give up the current session. |
 | `./autorelabel doctor` | Check that this computer can run the labs. `--fix` installs what's missing, after asking. |
@@ -145,6 +146,10 @@ Grades the exam in your terminal, showing each phase and each node's reboot. If 
 ### `exam results [session] [--solutions]`
 
 Prints the graded report of the current session, or of the session you name (the session IDs are the folder names in `.workspace/sessions/`). `--solutions` adds every task's solution after the report.
+
+### `dashboard [--no-browser] [--port N]`
+
+Shows your graded attempts in the browser: the scores over time against the pass mark, the objectives that keep costing points, the checks that failed more than once, and every attempt's full report. It reads the files in `.workspace/` and changes nothing. The pages come from a small server on `127.0.0.1` that runs until you press Ctrl+C; the address it prints works once, in one browser. `--no-browser` only prints the address.
 
 ### `exam retake`
 

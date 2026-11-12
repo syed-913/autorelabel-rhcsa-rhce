@@ -36,6 +36,8 @@ As autorelabel sets them up, the lab VMs can't reach the internet or your local 
 | SSH into the VMs | Over the isolated management network | A port forward that listens only on `127.0.0.1` |
 | The VM screens | VNC on `127.0.0.1` only | None: the VMs run headless, and the serial console is a socket in a folder only you can open |
 
+The results dashboard (`./autorelabel dashboard`) is a web server on `127.0.0.1` that runs only while you keep the command open. It is read-only, it has no script in its pages, it answers only to the browser that opened the address it printed, and it refuses requests made under any other host name.
+
 VS Code in the browser (RHCE) runs inside the control node. autorelabel forwards it through SSH to `127.0.0.1` on your computer (port 18080, or the next free one), and only while the exam runs.
 
 > **Why does the lab have no internet?**
