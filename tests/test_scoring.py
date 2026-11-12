@@ -120,3 +120,29 @@ def test_checks_are_told_when_the_session_started(monkeypatch, started, expected
     res = g._run_check("node1", "node1", Check("c", "a check", "true", ("R1",)), {})
     assert res.status == "pass"
     assert seen["AR_STARTED"] == expected and seen["AR_NODE"] == "node1"
+
+
+def test_the_last_two_exams_come_from_the_history(tmp_path, monkeypatch):
+    import json
+
+    from autorelabel import grader, paths
+    from autorelabel.bank.select import SEEN_EXAM_BEFORE, SEEN_LAST_EXAM, seen_factors
+
+    lines = [
+        {"exam": "rhcsa", "mode": "exam", "tasks": {"rhcsa.a.one": 1.0, "rhcsa.a.two": 0.5}},
+        {"exam": "rhcsa", "mode": "exam"},                                    # from before tasks were recorded
+        {"exam": "rhce", "mode": "exam", "tasks": {"rhce.b.one": 1.0}},
+        {"exam": "rhcsa", "mode": "exam", "tasks": {"rhcsa.a.two": 1.0, "rhcsa.a.three": 0.0}},
+        {"exam": "rhcsa", "mode": "practice", "tasks": {"rhcsa.a.four": 1.0}},  # chosen by hand
+        {"exam": "rhcsa", "mode": "exam", "tasks": {"rhcsa.a.five": 1.0}},
+    ]
+    history = tmp_path / "history.jsonl"
+    history.write_text("".join(json.dumps(ln) + "\n" for ln in lines) + "not json\n")
+    monkeypatch.setattr(paths, "HISTORY_FILE", history)
+    assert grader.previous_exams("rhcsa") == [["rhcsa.a.five"], ["rhcsa.a.two", "rhcsa.a.three"]]
+    assert grader.previous_exams("rhce") == [["rhce.b.one"]]
+    monkeypatch.setattr(paths, "HISTORY_FILE", tmp_path / "none")
+    assert grader.previous_exams("rhcsa") == []
+    assert seen_factors([["x", "y"], ["y", "z"], ["w"]]) == {"x": SEEN_LAST_EXAM, "y": SEEN_LAST_EXAM,
+                                                               "z": SEEN_EXAM_BEFORE}
+    assert seen_factors([]) == {}

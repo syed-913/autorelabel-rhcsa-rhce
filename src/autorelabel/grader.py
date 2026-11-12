@@ -496,6 +496,27 @@ def write_report(session: Session, bank: Bank, results: dict[str, Any]) -> str:
     return text
 
 
+def previous_exams(exam: str, count: int = 2) -> list[list[str]]:
+    """The task ids of the last `count` graded full exams of this kind, the latest first, for
+    the selector: the next exam should not be the last one again. Practice sets don't count
+    (their tasks are chosen by hand), nor do attempts from before the history recorded tasks."""
+    try:
+        lines = paths.HISTORY_FILE.read_text().splitlines()
+    except OSError:
+        return []
+    out: list[list[str]] = []
+    for line in reversed(lines):
+        try:
+            h = json.loads(line)
+        except ValueError:
+            continue
+        if h.get("exam") == exam and h.get("mode") == "exam" and h.get("tasks"):
+            out.append(list(h["tasks"]))
+            if len(out) == count:
+                break
+    return out
+
+
 def objective_recency(exam: str) -> dict[str, float]:
     """Weights for the selector: objectives not seen in recent attempts get more weight."""
     seen: dict[str, int] = {}

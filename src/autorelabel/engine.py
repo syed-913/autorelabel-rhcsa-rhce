@@ -17,9 +17,9 @@ from typing import Any
 from . import box, config, labfacts, ledger, log, paths, proc, remote, secrets_util
 from . import session as S
 from .bank import Bank, load_bank, render
-from .bank.select import SelectedTask, generate, practice
+from .bank.select import SelectedTask, generate, practice, seen_factors
 from .config import Settings
-from .grader import Grader, objective_recency, write_report
+from .grader import Grader, objective_recency, previous_exams, write_report
 from .lab import Lab, LabError
 
 _log = log.get("engine")
@@ -83,7 +83,7 @@ class Engine:
         bank = self.bank(exam)
         seed = seed if seed is not None else random.SystemRandom().randrange(1, 10**9)
         if mode == "exam":
-            selected = generate(bank, seed, objective_recency(exam))
+            selected = generate(bank, seed, objective_recency(exam), seen_factors(previous_exams(exam)))
         else:
             if not task_ids:
                 raise EngineError("no tasks chosen for practice", user_fixable=True)
