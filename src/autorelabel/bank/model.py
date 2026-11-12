@@ -153,7 +153,9 @@ class Blueprint:
     total_points: int
     pass_mark: int
     points: dict[str, int]
-    difficulty_mix: dict[str, int]
+    # How many easy, medium and hard tasks an exam has. More than one mix is allowed as long as
+    # each gives the same number of tasks and the same total: the generator picks one per exam.
+    difficulty_mixes: list[dict[str, int]]
     domains: dict[str, tuple[int, int]]
     require: list[list[str]]                 # each group: objective-id prefixes, ≥1 task must match
     anchors: list[str]
@@ -161,6 +163,11 @@ class Blueprint:
     # Anchors that everything else depends on (RHCE: Ansible configuration, SSH access). In
     # practice sessions that don't include them, their reference solution is applied for you.
     practice_prereqs: list[str] = field(default_factory=list)
+
+    @property
+    def difficulty_mix(self) -> dict[str, int]:
+        """The blueprint's `difficulty_mix`; its `alternative_mixes` follow in the list."""
+        return self.difficulty_mixes[0]
 
     def points_for(self, difficulty: str) -> int:
         return self.points[difficulty]

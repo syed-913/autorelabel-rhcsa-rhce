@@ -254,11 +254,19 @@ def lint_bank(bank: Bank) -> list[Issue]:
     issues = [Issue("error", "bank", e) for e in bank.load_errors]
     # blueprint sanity
     bp = bank.blueprint
-    total = sum(bp.points[d] * n for d, n in bp.difficulty_mix.items())
-    if total != bp.total_points:
-        issues.append(Issue("error", "blueprint", f"difficulty mix gives {total} points, expected {bp.total_points}"))
-    if sum(bp.difficulty_mix.values()) != bp.tasks:
-        issues.append(Issue("error", "blueprint", "difficulty mix does not add up to the task count"))
+    for mix in bp.difficulty_mixes:
+        name = "/".join(str(mix.get(d, 0)) for d in ("easy", "medium", "hard"))
+        if unknown := sorted(set(mix) - set(bp.points)):
+            issues.append(Issue("error", "blueprint", f"difficulty mix {name}: no points for {', '.join(unknown)}"))
+            continue
+        total = sum(bp.points[d] * n for d, n in mix.items())
+        if total != bp.total_points:
+            issues.append(Issue("error", "blueprint",
+                                f"difficulty mix {name} gives {total} points, expected {bp.total_points}"))
+        if sum(mix.values()) != bp.tasks:
+            issues.append(Issue("error", "blueprint", f"difficulty mix {name} does not add up to the task count"))
+    if len({tuple(sorted(m.items())) for m in bp.difficulty_mixes}) != len(bp.difficulty_mixes):
+        issues.append(Issue("error", "blueprint", "the same difficulty mix is listed twice"))
     domain_ids = {d.id for d in bank.objectives.domains}
     for dom in bp.domains:
         if dom not in domain_ids:

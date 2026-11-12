@@ -61,7 +61,8 @@ def load_blueprint(exam: str, root: Path | None = None) -> Blueprint:
         total_points=int(raw["total_points"]),
         pass_mark=int(raw["pass_mark"]),
         points={k: int(v) for k, v in raw["points"].items()},
-        difficulty_mix={k: int(v) for k, v in raw["difficulty_mix"].items()},
+        difficulty_mixes=[{k: int(v) for k, v in mix.items()}
+                          for mix in [raw["difficulty_mix"], *(raw.get("alternative_mixes") or [])]],
         domains={k: (int(v[0]), int(v[1])) for k, v in raw["domains"].items()},
         require=[list(g) for g in raw.get("require", [])],
         anchors=list(raw.get("anchors", [])),

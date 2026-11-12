@@ -44,26 +44,65 @@ def _listed(shares: dict[str, float]) -> str:
     return ", ".join(f"{tid.split('.', 1)[1]} {share:.1%}" for tid, share in sorted(shares.items(), key=lambda x: x[1]))
 
 
-# 2026-11-11, 2,000 seeds. RHCSA (97 tasks): 7 under 1% (networking hosts-file,
-# connection-autoconnect, ipv6-address, firewall-remove-services, dns-client; software
-# package-group, install-remove-packages) and 5 above 50% (storage.lvm-create 72%). RHCE (51
-# tasks): 4 under 3% (core.multi-play 1.8%) and 11 above 50% (vscode.devcontainer-run and
-# playbooks.register-report 86%). The domain minimums add
-# up to 18 of 20 tasks and the difficulty mix is exact, so the generator's free picks are forced.
-# Strict: when the blueprint or the generator is fixed, these marks must go.
-_KNOWN = pytest.mark.xfail(strict=True, reason="blueprint leaves the generator almost no free picks")
-
-
-@pytest.mark.parametrize("exam", [pytest.param(e, marks=_KNOWN) for e in EXAMS])
+# The floor holds since the generator looks ahead and the blueprints leave it room (1.2.0).
+# 2026-11-12, 2,000 seeds: the rarest RHCSA task is in 4.2% of exams (operate.tuned-profile), the
+# rarest RHCE task in 7.6% (core.multi-play). Before, 7 RHCSA tasks were in under 1%.
+@pytest.mark.parametrize("exam", EXAMS)
 def test_no_exam_task_is_practically_never_drawn(exam):
     rare = {tid: s for tid, s in draw_shares(exam).items() if s < DRAW_FLOOR}
     assert not rare, f"drawn in under {DRAW_FLOOR:.0%} of exams: {_listed(rare)}"
 
 
-@pytest.mark.parametrize("exam", [pytest.param(e, marks=_KNOWN) for e in EXAMS])
+# The ceiling does not hold, and no generator can make it: there are too few tasks.
+# 2026-11-12, 2,000 seeds. RHCSA: 1 task above 50%, storage.lvm-create at 74%, the only hard
+# storage task (10 hard tasks for 4 to 6 hard slots). RHCE: 8 above 50%, content.vault-users at
+# 79%: 51 tasks for 16 slots, so the average task is in 31% of exams whatever is done.
+# Strict: when new tasks bring a bank under the ceiling, its mark must go.
+_TOO_FEW_TASKS = pytest.mark.xfail(strict=True, reason="too few tasks: RHCSA 1 above 50% (74%), RHCE 8 (79%)")
+
+
+@pytest.mark.parametrize("exam", [pytest.param(e, marks=_TOO_FEW_TASKS) for e in EXAMS])
 def test_no_task_is_in_most_exams(exam):
     common = {tid: s for tid, s in draw_shares(exam).items() if s > DRAW_CEILING}
     assert not common, f"drawn in over {DRAW_CEILING:.0%} of exams: {_listed(common)}"
+
+
+@pytest.mark.parametrize("exam", EXAMS)
+def test_the_most_frequent_task_does_not_creep_up(exam):
+    """The ceiling test above is a known failure; this one keeps the number from getting worse."""
+    worst = {"rhcsa": 0.78, "rhce": 0.83}[exam]      # measured 74% and 79%
+    common = {tid: s for tid, s in draw_shares(exam).items() if s > worst}
+    assert not common, f"drawn in over {worst:.0%} of exams: {_listed(common)}"
+
+
+def test_every_difficulty_mix_comes_up(bank):
+    mixes = Counter(tuple(sorted(Counter(s.task.difficulty for s in generate(bank, seed)).items()))
+                    for seed in range(1, 301))
+    assert set(mixes) == {tuple(sorted(m.items())) for m in bank.blueprint.difficulty_mixes}
+    assert min(mixes.values()) >= 50, mixes
+
+
+def test_the_next_exam_is_not_the_last_one_again(bank):
+    """One candidate, 60 exams in a row, each knowing the two before it."""
+    from autorelabel.bank.select import seen_factors
+
+    free = bank.blueprint.tasks - len(bank.blueprint.anchors)
+
+    def repeats(with_history: bool) -> float:
+        earlier: list[list[str]] = []
+        counts = []
+        for i in range(60):
+            seen = seen_factors(earlier[:2]) if with_history else None
+            exam = [s.task.id for s in generate(bank, 5000 + i, None, seen) if not s.task.anchor]
+            if earlier:
+                counts.append(len(set(exam) & set(earlier[0])))
+            earlier.insert(0, exam)
+        return sum(counts) / len(counts)
+
+    without, held_back = repeats(False), repeats(True)
+    # measured over 400 exams: RHCSA 4.5 -> 1.8 of 17, RHCE 6.3 -> 3.4 of 16
+    assert held_back < without * 0.7, (without, held_back)
+    assert held_back < free * 0.3, held_back
 
 
 def test_bank_lints_clean(bank):
@@ -79,7 +118,7 @@ def test_generated_exams_follow_the_blueprint(bank):
         tasks = [s.task for s in exam]
         assert len(exam) == bp.tasks
         assert sum(s.points for s in exam) == bp.total_points
-        assert dict(Counter(t.difficulty for t in tasks)) == bp.difficulty_mix
+        assert dict(Counter(t.difficulty for t in tasks)) in bp.difficulty_mixes, seed
         dom = Counter(t.domain for t in tasks)
         for d, (lo, hi) in bp.domains.items():
             assert lo <= dom[d] <= hi, (seed, d, dom[d])

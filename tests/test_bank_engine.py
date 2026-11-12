@@ -31,8 +31,10 @@ def test_objectives_load_and_ids_unique(exam):
 @pytest.mark.parametrize("exam", EXAMS)
 def test_blueprint_arithmetic(exam):
     bp = load_blueprint(exam)
-    assert sum(bp.difficulty_mix.values()) == bp.tasks
-    assert sum(bp.points[d] * n for d, n in bp.difficulty_mix.items()) == bp.total_points == 300
+    assert bp.difficulty_mixes[0] == bp.difficulty_mix and len(bp.difficulty_mixes) == 3
+    for mix in bp.difficulty_mixes:
+        assert sum(mix.values()) == bp.tasks
+        assert sum(bp.points[d] * n for d, n in mix.items()) == bp.total_points == 300
     assert bp.pass_mark == 210
     lo = sum(v[0] for v in bp.domains.values())
     hi = sum(v[1] for v in bp.domains.values())
@@ -100,7 +102,7 @@ def _assert_valid(bank: Bank, exam) -> None:
     assert len(exam) == bp.tasks
     assert sum(s.points for s in exam) == bp.total_points
     diff = Counter(s.task.difficulty for s in exam)
-    assert dict(diff) == bp.difficulty_mix
+    assert dict(diff) in bp.difficulty_mixes
     dom = Counter(s.task.domain for s in exam)
     for d, (lo, hi) in bp.domains.items():
         assert lo <= dom[d] <= hi, (d, dom[d])
@@ -261,3 +263,61 @@ def test_vs_code_is_only_ever_offered_through_the_tunnel(tmp_path, monkeypatch):
 
     sess.state = S.GRADED
     assert eng.code_server_url(sess) == ""
+
+
+# --- the generator's look-ahead and the blueprint's mixes -----------------------------------------
+def test_the_look_ahead_agrees_with_trying_every_combination():
+    """_State.feasible answers "can the mix and every domain range still be met?" from eight
+    sums. Compare it with brute force on 400 small random cases."""
+    from types import SimpleNamespace
+
+    from autorelabel.bank.select import _State
+
+    rng = random.Random(7)
+    levels = ("easy", "medium", "hard")
+    agree = {True: 0, False: 0}
+    for _ in range(400):
+        names = [f"d{i}" for i in range(rng.randint(2, 4))]
+        left = {(n, lv): rng.randint(0, 3) for n in names for lv in levels}
+        domains = {}
+        for n in names:
+            lo = rng.randint(0, 2)
+            domains[n] = (lo, lo + rng.randint(0, 3))
+        mix = {lv: rng.randint(0, 4) for lv in levels}
+        pool = [SimpleNamespace(id=f"{n}-{lv}-{i}", domain=n, difficulty=lv, anchor=None)
+                for (n, lv), count in left.items() for i in range(count)]
+        bp = SimpleNamespace(domains=domains, tasks=sum(mix.values()))
+        st = _State(SimpleNamespace(blueprint=bp, exam="rhcsa"), mix, pool)
+
+        per_domain = [[c for c in itertools.product(*(range(left[(n, lv)] + 1) for lv in levels))
+                       if domains[n][0] <= sum(c) <= domains[n][1]] for n in names]
+        expected = any(tuple(map(sum, zip(*combo, strict=True))) == tuple(mix[lv] for lv in levels)
+                       for combo in itertools.product(*per_domain))
+        assert st.feasible() == expected, (left, domains, mix)
+        agree[expected] += 1
+    assert min(agree.values()) > 50, agree        # both answers were really exercised
+
+
+def test_no_exam_is_started_that_cannot_be_finished(synthetic_bank):
+    """With the look-ahead, the first attempt almost always yields an exam (it used to take
+    dozens of rejected ones): what is left to chance is only exclusive groups and disk space."""
+    from autorelabel.bank.select import _attempt
+
+    first = sum(1 for seed in range(500)
+                if _attempt(synthetic_bank, random.Random(f"{synthetic_bank.exam}:{seed}:0"), {}))
+    assert first >= 450, first
+
+
+def test_lint_checks_every_difficulty_mix(synthetic_bank):
+    bp = synthetic_bank.blueprint
+
+    def problems(mixes):
+        bank = replace(synthetic_bank, blueprint=replace(bp, difficulty_mixes=mixes))
+        return [i.message for i in lint.lint_bank(bank) if i.task == "blueprint"]
+
+    assert problems(bp.difficulty_mixes) == []
+    wrong_points = problems([bp.difficulty_mix, {"easy": 6, "medium": 9, "hard": 5}])
+    assert any("6/9/5 gives 295 points" in m for m in wrong_points), wrong_points
+    assert problems([bp.difficulty_mix, {"easy": 0, "medium": 20, "hard": 0}]) == []   # 20 tasks, 300 points
+    assert any("does not add up" in m for m in problems([{"easy": 30, "medium": 0, "hard": 0}]))
+    assert any("listed twice" in m for m in problems([bp.difficulty_mix, dict(bp.difficulty_mix)]))

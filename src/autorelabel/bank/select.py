@@ -1,9 +1,17 @@
 """Seeded exam generation that always satisfies the blueprint.
 
-Constraints: exact difficulty mix (so the total is always the blueprint's
-points), per-domain min/max, required objective groups, anchor tasks, exclusive
-groups, and per-disk space budgets. Among valid exams, tasks covering
-objectives you haven't been tested on recently are preferred, which rotates
+Constraints: one of the blueprint's difficulty mixes, exactly (so the total is
+always the blueprint's points), per-domain min/max, required objective groups,
+anchor tasks, exclusive groups, and per-disk space budgets.
+
+The generator looks ahead: a task is only added if the mix and every domain's
+range can still be met with the tasks that are left (`_State.feasible`). Picking
+first and rejecting the exams that don't come out right would favour whatever
+makes an exam come out right, and with a tight blueprint that meant the same
+few hard tasks in most exams and some tasks in practically none.
+
+Among valid exams, tasks covering objectives you haven't been tested on recently
+are preferred, and tasks of your last two exams are held back, which rotates
 coverage across attempts without biasing toward weak areas.
 """
 
@@ -14,6 +22,7 @@ import random
 import string
 from collections import Counter
 from dataclasses import dataclass
+from itertools import combinations
 from typing import Any
 
 from .. import labspec
@@ -22,6 +31,11 @@ from .model import Task
 
 MAX_ATTEMPTS = 3000
 DISK_HEADROOM = 0.9
+# A task of the previous exam is this much less likely to be picked early, one of the exam
+# before that somewhat less: the next exam should not be the last one again. They stay
+# possible, because a small bank cannot fill an exam without them.
+SEEN_LAST_EXAM = 0.15
+SEEN_EXAM_BEFORE = 0.5
 
 
 class SelectionError(RuntimeError):
@@ -47,11 +61,15 @@ def _disk_capacity_mib(exam: str) -> dict[str, int]:
     return cap
 
 
-def _weighted_order(tasks: list[Task], rng: random.Random, recency: dict[str, float]) -> list[Task]:
-    """Efraimidis-Spirakis weighted shuffle; weight grows for objectives not seen recently."""
+def _weighted_order(tasks: list[Task], rng: random.Random, recency: dict[str, float],
+                    seen: dict[str, float] | None = None) -> list[Task]:
+    """Efraimidis-Spirakis weighted shuffle; weight grows for objectives not seen recently and
+    shrinks for the tasks of the last exams (`seen`: task id -> factor)."""
+    seen = seen or {}
+
     def key(t: Task) -> float:
         w = 1.0 + max((recency.get(o, 1.0) for o in t.objectives), default=1.0)
-        return rng.random() ** (1.0 / w)
+        return rng.random() ** (1.0 / (w * seen.get(t.id, 1.0)))
     return sorted(tasks, key=key, reverse=True)
 
 
@@ -60,20 +78,64 @@ def _matches(task: Task, prefixes: list[str]) -> bool:
 
 
 class _State:
-    def __init__(self, bank: Bank):
+    def __init__(self, bank: Bank, mix: dict[str, int], pool: list[Task]):
         self.bank = bank
         self.bp = bank.blueprint
+        self.mix = mix
         self.chosen: list[Task] = []
         self.diff: Counter[str] = Counter()
         self.dom: Counter[str] = Counter()
         self.excl: set[str] = set()
         self.disk: Counter[str] = Counter()
         self.cap = _disk_capacity_mib(bank.exam)
+        # what is left to pick from, per (domain, difficulty); anchors are placed first and
+        # never picked again
+        self.left: Counter[tuple[str, str]] = Counter((t.domain, t.difficulty) for t in pool if not t.anchor)
+        self.levels = sorted(mix)
+        self.subsets = [frozenset(c) for n in range(len(self.levels) + 1) for c in combinations(self.levels, n)]
+
+    def feasible(self, t: Task | None = None) -> bool:
+        """Can the exam still be completed (after adding `t`): the mix exactly, every domain
+        within its range, counting only how many tasks are left per domain and difficulty?
+
+        That is a small transportation problem: each domain must supply between its remaining
+        minimum and maximum, each difficulty needs an exact number, and a domain has only so
+        many tasks of each difficulty left. By Hoffman's circulation theorem it has a solution
+        if and only if, for every set J of difficulties, the domains can supply at least what J
+        needs, and are not forced to supply more than that. Exclusive groups and disk budgets
+        are not counted here; they only cost the attempt when they bite at the very end."""
+        diff, dom, left = self.diff, self.dom, self.left
+        extra_dom = extra_diff = None
+        if t is not None:
+            extra_dom, extra_diff = t.domain, t.difficulty
+        need = {d: self.mix.get(d, 0) - diff[d] - (1 if d == extra_diff else 0) for d in self.levels}
+        if any(n < 0 for n in need.values()):
+            return False
+        domains = set(self.bp.domains) | {d for d, _ in left}
+        rows = []
+        for name in domains:
+            lo, hi = self.bp.domains.get(name, (0, self.bp.tasks))
+            have = dom[name] + (1 if name == extra_dom else 0)
+            if have > hi:
+                return False
+            avail = {d: left[(name, d)] - (1 if (name == extra_dom and d == extra_diff and not t.anchor) else 0)
+                     for d in self.levels}
+            rows.append((max(lo - have, 0), hi - have, avail))
+        for chosen in self.subsets:
+            needed = sum(need[d] for d in chosen)
+            can = must = 0
+            for lo, hi, avail in rows:
+                inside = sum(avail[d] for d in chosen)
+                can += min(hi, inside)
+                must += max(lo - (sum(avail.values()) - inside), 0)
+            if not must <= needed <= can:
+                return False
+        return True
 
     def can_add(self, t: Task, as_anchor: bool = False) -> bool:
         if t in self.chosen or (t.anchor and not as_anchor):
             return False
-        if self.diff[t.difficulty] >= self.bp.difficulty_mix.get(t.difficulty, 0):
+        if self.diff[t.difficulty] >= self.mix.get(t.difficulty, 0):
             return False
         lo_hi = self.bp.domains.get(t.domain)
         if lo_hi and self.dom[t.domain] >= lo_hi[1]:
@@ -83,12 +145,14 @@ class _State:
         for disk, mib in (t.resources.get("disk") or {}).items():
             if self.disk[disk] + int(mib) > self.cap.get(disk, 0):
                 return False
-        return True
+        return self.feasible(t)
 
     def add(self, t: Task) -> None:
         self.chosen.append(t)
         self.diff[t.difficulty] += 1
         self.dom[t.domain] += 1
+        if not t.anchor:
+            self.left[(t.domain, t.difficulty)] -= 1
         self.excl.update(t.exclusive)
         for disk, mib in (t.resources.get("disk") or {}).items():
             self.disk[disk] += int(mib)
@@ -96,7 +160,7 @@ class _State:
     def valid(self) -> bool:
         if len(self.chosen) != self.bp.tasks:
             return False
-        if any(self.diff[d] != n for d, n in self.bp.difficulty_mix.items()):
+        if any(self.diff[d] != n for d, n in self.mix.items()):
             return False
         for dom, (lo, hi) in self.bp.domains.items():
             if not lo <= self.dom[dom] <= hi:
@@ -104,9 +168,10 @@ class _State:
         return all(any(_matches(t, group) for t in self.chosen) for group in self.bp.require)
 
 
-def _attempt(bank: Bank, rng: random.Random, recency: dict[str, float]) -> list[Task] | None:
-    st = _State(bank)
+def _attempt(bank: Bank, rng: random.Random, recency: dict[str, float],
+             seen: dict[str, float] | None = None) -> list[Task] | None:
     pool = [t for t in bank.tasks.values() if not t.practice_only]
+    st = _State(bank, rng.choice(bank.blueprint.difficulty_mixes), pool)
     # 1. anchors
     for anchor in st.bp.anchors:
         variants = [t for t in pool if t.anchor == anchor and st.can_add(t, as_anchor=True)]
@@ -121,31 +186,30 @@ def _attempt(bank: Bank, rng: random.Random, recency: dict[str, float]) -> list[
         if any(_matches(t, group) for t in st.chosen):
             continue
         cands = [t for t in regular if _matches(t, group)]
-        for t in _weighted_order(cands, rng, recency):
+        for t in _weighted_order(cands, rng, recency, seen):
             if st.can_add(t):
                 st.add(t)
                 break
         else:
             return None
-    # 3. domain minimums
-    domains = list(st.bp.domains.items())
-    rng.shuffle(domains)
-    for dom, (lo, _hi) in domains:
-        cands = _weighted_order([t for t in regular if t.domain == dom], rng, recency)
-        for t in cands:
-            if st.dom[dom] >= lo:
-                break
-            if st.can_add(t):
-                st.add(t)
-        if st.dom[dom] < lo:
-            return None
-    # 4. fill the rest
-    for t in _weighted_order(regular, rng, recency):
+    # 3. everything else, in one weighted order. The domain minimums need no pass of their
+    # own: can_add refuses a task once the slots that are left are all owed to other domains.
+    for t in _weighted_order(regular, rng, recency, seen):
         if len(st.chosen) >= st.bp.tasks:
             break
         if st.can_add(t):
             st.add(t)
     return st.chosen if st.valid() else None
+
+
+def seen_factors(previous_exams: list[list[str]]) -> dict[str, float]:
+    """previous_exams: the task ids of earlier full exams, the latest first. Returns the factor
+    for each task of the last two."""
+    out: dict[str, float] = {}
+    for tasks, factor in zip(previous_exams, (SEEN_LAST_EXAM, SEEN_EXAM_BEFORE), strict=False):
+        for tid in tasks:
+            out.setdefault(tid, factor)
+    return out
 
 
 def _order(bank: Bank, tasks: list[Task]) -> list[Task]:
@@ -207,12 +271,15 @@ def resolve_params(tasks: list[Task], pools: dict[str, list[Any]], rng: random.R
     return out
 
 
-def generate(bank: Bank, seed: int, recency: dict[str, float] | None = None) -> list[SelectedTask]:
-    """A full blueprint-valid exam for `seed` (deterministic)."""
+def generate(bank: Bank, seed: int, recency: dict[str, float] | None = None,
+             seen: dict[str, float] | None = None) -> list[SelectedTask]:
+    """A full blueprint-valid exam for `seed` (deterministic for the same history).
+    recency: objective id -> weight (objectives not tested recently weigh more).
+    seen: task id -> factor below 1 for the tasks of the last exams (see `seen_factors`)."""
     recency = recency or {}
     for attempt in range(MAX_ATTEMPTS):
         rng = random.Random(f"{bank.exam}:{seed}:{attempt}")
-        chosen = _attempt(bank, rng, recency)
+        chosen = _attempt(bank, rng, recency, seen)
         if chosen:
             ordered = _order(bank, chosen)
             params = resolve_params(ordered, bank.pools, random.Random(f"{bank.exam}:{seed}:params"))
