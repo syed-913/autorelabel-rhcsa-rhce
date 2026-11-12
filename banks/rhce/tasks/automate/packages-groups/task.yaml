@@ -49,8 +49,27 @@ checks:
     desc: packages.yml with a full update on dev
     run: |
       playbook_ok packages.yml
-      grep -Eq "name:[[:space:]]*['\"]?\*['\"]?" {{lab.project_dir}}/packages.yml
-      grep -Eq 'state:[[:space:]]*latest' {{lab.project_dir}}/packages.yml
+      # a task that updates everything: name "*" (alone or as a one-item list), state latest
+      python3 - <<'PY'
+      import sys, yaml
+      def tasks(items):
+          for t in items or []:
+              if isinstance(t, dict):
+                  yield t
+                  for key in ("block", "rescue", "always"):
+                      yield from tasks(t.get(key))
+      def updates_all(task):
+          for args in task.values():
+              if isinstance(args, dict) and args.get("state") == "latest" and args.get("name") in ("*", ["*"]):
+                  return True
+              if isinstance(args, str) and "state=latest" in args and "name=" in args and "*" in args:
+                  return True
+          return False
+      plays = yaml.safe_load(open("/home/student/ansible/packages.yml")) or []
+      found = any(updates_all(t) for p in plays if isinstance(p, dict)
+                  for key in ("pre_tasks", "tasks", "post_tasks") for t in tasks(p.get(key)))
+      sys.exit(0 if found else 1)
+      PY
 
 references:
   - "ansible-doc ansible.builtin.dnf (name '@group', name '*', state latest)"
