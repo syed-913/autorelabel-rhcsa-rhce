@@ -118,6 +118,9 @@ Checks run **after the grading reboot**, read-only, with `set -e` and `pipefail`
 - Check the **result**, not the method: the effective configuration (`sshd -T`, `ansible-config dump --only-changed`, `firewall-cmd --list-all`, `ansible-inventory --list`), never the exact text of a file unless the task asks for it.
 - Act as the right user: NFS exports squash root (`runuser -u <user> -- cat ...`), RHCE checks use `as_student`.
 - Expected values that only setup knows (a generated digest, the users of a list) can be stored in `/etc/autorelabel/` on the node by the setup script.
+- Compare with what the setup recorded, not with the system as it is at grading time, whenever later work in the same exam can change it: the files of a directory, the manual page index, a log that rotates. The answer was right when it was given. (`tools/archive-bzip2` and `tools/man-search` record the starting point in `/etc/autorelabel/`.)
+- Accept every spelling the system accepts: a trailing slash on a mount point, `auto` as the file system type, `pool` as well as `server`, day names in a crontab, `(root)` as well as `(ALL)` in `sudo -l`. Each one that was missed has an `alt-` test now; add one when you find another.
+- Nothing else may fail the check: `systemctl is-system-running` exits non-zero for `degraded`, which is what one failed unit of another task makes of a healthy system.
 
 Helpers from `check-lib.sh`: `as_student`, `student_sh`, `as_user`, `inventory_hosts <group>`, `inv_var <host> <var>`, `same_words "a b" "b a"`, `playbook_ok <file>` (exists and passes `--syntax-check`).
 
