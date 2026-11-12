@@ -29,10 +29,19 @@ checks:
     covers: [R2]
     desc: "all of {{dir}} is inside"
     run: |
-      # every entry but directories: symlinks too (/etc/pam.d and /etc/sysconfig have some)
-      want="$(cd / && find "{{dir}}" ! -type d | sed 's|^/||' | sort)"
-      got="$(tar -tjf /root/{{name}}-backup.tar.bz2 | sed 's|^/||' | grep -v '/$' | sort)"
-      test -n "$want" && test "$want" = "$got"
+      # Against the directory as it was when the exam started (recorded by the setup), not as
+      # it is now: later work may add files to it (a drop-in, a backup copy of a file). Every
+      # entry but directories counts, symlinks too (/etc/pam.d and /etc/sysconfig have some).
+      then="/etc/autorelabel/{{name}}-backup.files"
+      test -s "$then"
+      got="$(tar -tjf /root/{{name}}-backup.tar.bz2 | sed 's|^\./||; s|^/||' | grep -v '/$' | LC_ALL=C sort)"
+      still="$(cd / && while read -r f; do if [ -e "$f" ] || [ -L "$f" ]; then echo "$f"; fi; done < "$then")"
+      test -n "$still"
+      missing="$(LC_ALL=C comm -23 <(echo "$still") <(echo "$got"))"
+      test -z "$missing" || { echo "not in the archive: $(sed -n 1p <<<"$missing")"; exit 1; }
+      # and nothing from outside the directory
+      dir="{{dir}}"
+      test -z "$(grep -v "^${dir#/}/" <<<"$got" || true)"
 
 references:
   - "man tar(1) (-j, --bzip2), man bzip2(1)"
