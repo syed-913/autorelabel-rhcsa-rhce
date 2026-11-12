@@ -32,7 +32,8 @@ checks:
     on: node2
     desc: "/var/log/secure records {{user}} running a command with sudo"
     run: |
-      grep -Eq "sudo\[[0-9]+\]: +{{user}} : .*USER=root ; COMMAND=.*" /var/log/secure
+      # secure*: the weekly rotation can fall between the work and the grading (secure-<date>)
+      grep -Eqh "sudo\[[0-9]+\]: +{{user}} : .*USER=root ; COMMAND=.*" /var/log/secure*
 
 references:
   - "man sudo(8) (-i, -s), man sudoers(5)"
