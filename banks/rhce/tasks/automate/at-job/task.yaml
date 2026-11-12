@@ -51,9 +51,11 @@ checks:
       done
       test "${#ids[@]}" -eq 1
       when="$(atq | awk -v id="${ids[0]}" '$1 == id {print $2, $3, $4, $5, $6}')"
-      hours=$(( ($(date -d "$when" +%s) - $(date +%s)) / 3600 ))
-      # scheduled at most a few hours before grading
-      test "$hours" -ge $(( {{days}} * 24 - 6 )) -a "$hours" -le $(( {{days}} * 24 ))
+      due="$(date -d "$when" +%s)"
+      # "{{days}} days from now", where "now" is any moment between the start of the session and
+      # the grading: a session that is resumed later can be graded the next day.
+      start="${AR_STARTED:-$(date +%s)}"
+      test "$due" -ge $(( start + {{days}} * 86400 - 300 )) -a "$due" -le $(( $(date +%s) + {{days}} * 86400 + 300 ))
   - id: playbook
     covers: [R3]
     desc: at-job.yml uses ansible.posix.at

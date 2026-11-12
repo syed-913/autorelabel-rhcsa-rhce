@@ -176,7 +176,10 @@ class Grader:
         except render.RenderError as exc:
             return CheckResult(chk.id, chk.desc, node, "error", chk.weight, list(chk.covers),
                                f"template error: {exc}", chk.guard)
-        env = {**render.env_for(params, self.facts), "AR_NODE": node}
+        # AR_STARTED: when the work began (epoch seconds), for checks of things scheduled
+        # "N days from now": between starting and grading, hours or days can pass.
+        env = {**render.env_for(params, self.facts), "AR_NODE": node,
+               "AR_STARTED": str(int(self.s.started or self.s.created))}
         res = remote.run_script(t, check_script(self.check_lib, script), env=env, timeout=chk.timeout)
         if res.timed_out:
             status, detail = "error", f"check timed out after {chk.timeout}s"

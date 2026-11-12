@@ -100,3 +100,23 @@ def test_the_history_line_names_the_tasks_of_the_attempt(tmp_path, monkeypatch):
     grader.write_report(session, bank, r)
     line = json.loads((tmp_path / "history.jsonl").read_text())
     assert line["tasks"] == {r["tasks"][0]["task_id"]: pytest.approx(20 / 30)}
+
+
+@pytest.mark.parametrize("started, expected", [(1700000500.7, "1700000500"), (None, "1700000000")])
+def test_checks_are_told_when_the_session_started(monkeypatch, started, expected):
+    """A check of "3 days from now" needs the start: grading can come hours or days later."""
+    from autorelabel import remote
+
+    seen: dict = {}
+
+    def run_script(t, script, *, env, timeout):
+        seen.update(env)
+        return SimpleNamespace(rc=0, out="", err="", timed_out=False)
+
+    monkeypatch.setattr(remote, "run_script", run_script)
+    g = Grader.__new__(Grader)
+    g.facts, g.check_lib = {}, ""
+    g.s = SimpleNamespace(started=started, created=1700000000.2)
+    res = g._run_check("node1", "node1", Check("c", "a check", "true", ("R1",)), {})
+    assert res.status == "pass"
+    assert seen["AR_STARTED"] == expected and seen["AR_NODE"] == "node1"

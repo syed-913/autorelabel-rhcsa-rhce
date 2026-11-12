@@ -84,7 +84,7 @@ A check of something the candidate must **not** break (SELinux stays enforcing, 
 - `{{ name }}` (with spaces) is left untouched, so prompts and `solution.md` can show Ansible and Jinja2 code verbatim. `{{ {{var}} }}` renders as `{{ env_name }}` when `var` is `env_name`.
 - `lab.inventory_md` renders the RHCE inventory groups as a Markdown list.
 
-Scripts get the same values as environment variables: `P_<NAME>` (`P_CASE_DESC` for dict fields, `P_PKGS` and `P_PKGS_0`… for lists) and `LAB_<PATH>` (`LAB_NODE1_IP`, `LAB_GROUPS_PROD`), plus `AR_NODE`, `AR_TASK` and, in RHCE, `AR_STUDENT_PASSWORD` and `AR_ANSIBLE_PASSWORD`.
+Scripts get the same values as environment variables: `P_<NAME>` (`P_CASE_DESC` for dict fields, `P_PKGS` and `P_PKGS_0`… for lists) and `LAB_<PATH>` (`LAB_NODE1_IP`, `LAB_GROUPS_PROD`), plus `AR_NODE`, `AR_TASK` and, in RHCE, `AR_STUDENT_PASSWORD` and `AR_ANSIBLE_PASSWORD`. Checks also get `AR_STARTED`, the time the session started (epoch seconds): a check of something relative to "now" (an `at` job "in 3 days") must accept any moment between the start and the grading, which can be days apart when a session is resumed.
 
 ## Scripts (setup, solution, tests)
 
