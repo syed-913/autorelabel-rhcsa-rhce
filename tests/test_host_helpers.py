@@ -232,3 +232,61 @@ def test_the_socket_directory_must_be_this_users_own(tmp_path, monkeypatch):
     d.symlink_to(tmp_path)                           # a link planted under the expected name
     with pytest.raises(paths.UnsafeRuntimeDir, match="not a directory"):
         paths.runtime_dir()
+
+
+def test_every_pinned_wheel_has_its_hash():
+    """The lock is the pins plus one sha256 each: pip refuses anything else (--require-hashes)."""
+    import re
+
+    from autorelabel import content
+
+    pins = {ln.strip().lower() for ln in content.WHEEL_PINS.read_text().splitlines()
+            if "==" in ln and not ln.startswith("#")}
+    locked = content.locked_hashes()
+    assert set(locked) == pins and len(pins) > 40
+    assert all(re.fullmatch(r"[0-9a-f]{64}", h) for h in locked.values())
+    assert len(set(locked.values())) == len(locked)
+
+
+def test_a_wheel_that_is_not_the_recorded_file_is_found(tmp_path, monkeypatch):
+    import hashlib
+
+    from autorelabel import content
+
+    good = tmp_path / "good-1.0-py3-none-any.whl"
+    good.write_bytes(b"the real wheel")
+    (tmp_path / "bad-1.0-py3-none-any.whl").write_bytes(b"something else")
+    lock = tmp_path / "lock"
+    lock.write_text(f"# comment\ngood==1.0 \\\n    --hash=sha256:{hashlib.sha256(b'the real wheel').hexdigest()}\n"
+                    f"bad==1.0 \\\n    --hash=sha256:{'0' * 64}\n")
+    monkeypatch.setattr(content, "WHEEL_LOCK", lock)
+    assert content.locked_hashes()["good==1.0"] == hashlib.sha256(b"the real wheel").hexdigest()
+    assert content.unexpected_wheels(tmp_path) == ["bad-1.0-py3-none-any.whl"]
+
+
+def test_the_wheel_download_is_hash_checked(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from autorelabel import content, proc
+    from autorelabel.config import Settings
+
+    seen: list[list[str]] = []
+
+    def stream(cmd, **kwargs):
+        seen.append(cmd)
+        return SimpleNamespace(ok=False)
+
+    monkeypatch.setattr(proc, "stream", stream)
+    with pytest.raises(content.ContentError):
+        content.download(Settings(provider="libvirt", storage_dir=str(tmp_path)))
+    cmd = seen[0]
+    assert "--require-hashes" in cmd and "--no-deps" in cmd and "-c" not in cmd
+    assert cmd[cmd.index("-r") + 1] == str(content.WHEEL_LOCK)
+
+
+def test_the_control_node_installs_only_hash_checked_wheels():
+    from autorelabel import paths
+
+    script = (paths.VAGRANT_DIR / "provision" / "control.sh").read_text()
+    install = script[script.index("/opt/ansible-navigator/bin/pip install"):].split("\nfi\n")[0]
+    assert "--require-hashes" in install and "--no-deps" in install and "rhce-wheels.lock" in install

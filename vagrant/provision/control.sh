@@ -62,7 +62,9 @@ if [[ ! -x /opt/ansible-navigator/bin/ansible-navigator ]]; then
   # System site packages: navigator (and ansible-lint) use the DVD's ansible-core, the same
   # ansible-playbook the candidate runs, instead of a second copy from PyPI.
   python3 -m venv --system-site-packages /opt/ansible-navigator
-  /opt/ansible-navigator/bin/pip install -q --no-index --find-links "$C/wheels" ansible-navigator
+  # Exactly the pinned wheels, each checked against its recorded sha256.
+  /opt/ansible-navigator/bin/pip install -q --no-index --find-links "$C/wheels" --require-hashes --no-deps \
+      -r "$C/rhce-wheels.lock"
 fi
 ln -sfn /opt/ansible-navigator/bin/ansible-navigator /usr/local/bin/ansible-navigator
 ln -sfn /opt/ansible-navigator/bin/ansible-lint /usr/local/bin/ansible-lint

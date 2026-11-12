@@ -47,7 +47,7 @@ The lab itself is always offline. autorelabel downloads only these, once each, a
 
 - **The first run:** its Python libraries from PyPI, each verified by checksum.
 - **The box build:** Packer's plugins from GitHub. Your ISO is checked against Red Hat's published SHA-256 for the RHEL 10.0 and 10.2 DVDs, so a damaged or altered DVD image is refused. For a version with no published checksum, autorelabel says so and shows the ISO's checksum, for you to compare with Red Hat's download page.
-- **Before the first RHCE exam:** the Ansible collections, Python wheels and VS Code in the browser with its extensions (`./autorelabel content download`).
+- **Before the first RHCE exam:** the Ansible collections, Python wheels (each verified by checksum, at download and again when the lab installs them) and VS Code in the browser with its extensions (`./autorelabel content download`).
 
 Nothing is uploaded. There is no telemetry and no account, and autorelabel turns off Vagrant's and Packer's own update checks. A problem report is a file on your computer. It reaches the project only if you attach it to an issue yourself, and it hides your home folder, user name and host name, and masks passwords.
 

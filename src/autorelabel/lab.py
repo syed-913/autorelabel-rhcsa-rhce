@@ -331,8 +331,12 @@ class Lab:
         if not ok:
             raise LabError(f"RHCE content is missing: {msg}",
                            "Run once (needs internet): ./autorelabel content download", user_fixable=True)
+        if bad := content.unexpected_wheels(root / "wheels"):
+            raise LabError(f"RHCE content: {len(bad)} wheel(s) differ from their recorded sha256: {', '.join(bad[:3])}",
+                           "Run again (needs internet): ./autorelabel content download", user_fixable=True)
         return {"wheels": root / "wheels", "collections": root / "collections",
-                "code-server": root / "code-server", "roles": paths.VAGRANT_DIR / "content" / "roles"}
+                "code-server": root / "code-server", "roles": paths.VAGRANT_DIR / "content" / "roles",
+                "rhce-wheels.lock": content.WHEEL_LOCK}
 
     def discovered_facts(self) -> dict[str, dict[str, str]]:
         out: dict[str, dict[str, str]] = {}
@@ -415,7 +419,7 @@ class Lab:
                 if role == "control":
                     items = self._rhce_content()
                     res = remote.upload(self.target(n), {k: items[k] for k in ("wheels", "collections",
-                                                                               "code-server")})
+                                                                               "code-server", "rhce-wheels.lock")})
                     if not res.ok:
                         raise LabError(f"could not copy content to {n}", res.tail(3), log_file)
                 self.provision(n, script, root_password=root_passwords.get(n, ""), line=on_line,

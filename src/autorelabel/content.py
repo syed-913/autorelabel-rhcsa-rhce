@@ -5,7 +5,8 @@ internet). Everything else in the RHCE lab is offline:
   collections/  ansible.posix, community.general (versions compatible with the DVD's ansible-core)
   code-server/  code-server RPM, the Red Hat Ansible extension and its dependencies (Open VSX)
 
-All versions are pinned (below, and vagrant/content/rhce-wheels.txt for the wheels).
+All versions are pinned (below, and vagrant/content/rhce-wheels.txt for the wheels), and every
+wheel by its sha256 as well (rhce-wheels.lock): pip checks it at download and at install.
 
 The execution-environment / development-container image is built inside the lab from
 the RHEL 10 DVD's own packages plus these wheels, so no registry login is ever needed.
@@ -33,8 +34,11 @@ UA = {"User-Agent": "autorelabel (RHCE lab content download)"}
 # new upstream release can't change the lab under the tasks. Update them together, then self-test.
 ANSIBLE_CORE_VERSION = (2, 16, 14)       # what the RHEL 10.0 DVD ships
 COLLECTIONS = {"ansible.posix": "2.2.2", "community.general": "11.4.9"}
-PIP_PACKAGES = ["ansible-navigator", "ansible-runner"]
 WHEEL_PINS = paths.VAGRANT_DIR / "content" / "rhce-wheels.txt"   # every wheel, exact versions
+# The same list with the sha256 of each file, as a pip requirements file for --require-hashes.
+# Beside the pins and not in them: the pins' digest decides whether a download is current, and
+# adding hashes must not send everyone to the internet again for the files they already have.
+WHEEL_LOCK = paths.VAGRANT_DIR / "content" / "rhce-wheels.lock"
 CODE_SERVER_VERSION = "4.141.0"
 # The Ansible extension and everything it depends on. 26.3.0 and later also depend on
 # ms-python.vscode-python-envs, which needs a native helper that Open VSX builds don't ship:
@@ -64,6 +68,25 @@ def pins_digest() -> str:
     h = hashlib.sha256(WHEEL_PINS.read_bytes())
     h.update(json.dumps([COLLECTIONS, EXTENSIONS, CODE_SERVER_VERSION], sort_keys=True).encode())
     return h.hexdigest()[:16]
+
+
+def locked_hashes() -> dict[str, str]:
+    """pinned requirement ("name==version", lower case) -> sha256, from the lock."""
+    out: dict[str, str] = {}
+    req = ""
+    for ln in WHEEL_LOCK.read_text().splitlines():
+        ln = ln.strip().rstrip("\\").strip()
+        if ln.startswith("--hash=sha256:"):
+            out[req] = ln.removeprefix("--hash=sha256:")
+        elif ln and not ln.startswith("#"):
+            req = ln.lower()
+    return out
+
+
+def unexpected_wheels(wheels: Path) -> list[str]:
+    """Wheel files whose sha256 is not one the lock names (changed on disk, or not ours)."""
+    known = set(locked_hashes().values())
+    return sorted(p.name for p in wheels.glob("*.whl") if hashlib.sha256(p.read_bytes()).hexdigest() not in known)
 
 
 def status(settings: Settings) -> tuple[bool, str]:
@@ -184,7 +207,8 @@ def download(settings: Settings, *, on_line: LineFn | None = None, on_step: Line
                        "--dest", str(root / "wheels"), "--only-binary=:all:", "--python-version", "3.12",
                        "--implementation", "cp", "--platform", "manylinux_2_28_x86_64",
                        "--platform", "manylinux_2_17_x86_64", "--platform", "manylinux2014_x86_64",
-                       "-c", str(WHEEL_PINS), *PIP_PACKAGES], on_line=line, timeout=1800, env=paths.tool_env())
+                       "--require-hashes", "--no-deps", "-r", str(WHEEL_LOCK)],
+                      on_line=line, timeout=1800, env=paths.tool_env())
     if not res.ok:
         raise ContentError("pip download failed", "Check your internet connection (pypi.org) and retry.")
     pinned = {ln.strip().lower() for ln in WHEEL_PINS.read_text().splitlines() if "==" in ln}
@@ -192,6 +216,9 @@ def download(settings: Settings, *, on_line: LineFn | None = None, on_step: Line
         name, version = whl.name.split("-")[:2]
         if f"{name.lower().replace('_', '-')}=={version}" not in pinned:
             whl.unlink()
+    if bad := unexpected_wheels(root / "wheels"):
+        raise ContentError(f"{len(bad)} downloaded wheel(s) do not match their recorded sha256: {', '.join(bad[:3])}",
+                           "Delete the wheels folder and download again.")
 
     step("Downloading Ansible collections from Galaxy")
     keep = {f"{fqcn.replace('.', '-')}-{v}.tar.gz" for fqcn, v in COLLECTIONS.items()}
