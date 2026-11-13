@@ -358,3 +358,20 @@ def test_the_vendored_files_are_the_recorded_ones():
     for licence in ("xterm-LICENSE.txt", "addon-fit-LICENSE.txt"):
         text = (vendor / licence).read_text()
         assert "MIT" in text or "Permission is hereby granted" in text
+
+
+def test_the_text_interface_starts_one_desk_and_reuses_it(tmp_path, monkeypatch):
+    """w on the exam screen: a second press must not start another desk, or the shells of the
+    first would be out of reach."""
+    from autorelabel import desk
+
+    monkeypatch.setattr(paths, "SESSIONS", tmp_path / "sessions")
+    first = desk.start_in_background()
+    try:
+        assert desk.start_in_background() is first
+        response, page = http_get(first, "/")
+        assert response.status == 200 and b"Exam Desk" in page
+    finally:
+        first.shutdown()
+        first.thread.join(10)
+        desk._running.clear()

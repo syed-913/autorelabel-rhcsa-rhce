@@ -180,6 +180,7 @@ class ExamScreen(Screen[None]):
         Binding("r", "check(True)", "Check w/ reboot", show=False),
         Binding("v", "solution", "Solution", show=False),
         Binding("x", "submit", "Submit"),
+        Binding("w", "desk", "Exam Desk (browser)"),
         Binding("escape", "leave", "Home (exam keeps running)"),
     ]
 
@@ -416,6 +417,23 @@ class ExamScreen(Screen[None]):
         label = "End the exam now and grade it?" if not self.practice else "Finish this practice session?"
         self.app.push_screen(Confirm(label, "The lab is frozen and every node is rebooted before grading. "
                                             "You cannot continue afterwards.", yes="Submit"), go)
+
+    def action_desk(self) -> None:
+        from ..dashboard import open_in_browser
+        from ..desk import start_in_background
+
+        try:
+            desk = start_in_background()
+        except OSError as exc:
+            self.notify(f"The Exam Desk could not start: {exc}", severity="error")
+            return
+        opened = open_in_browser(desk.url)
+        self.app.push_screen(Message("Exam Desk", (
+            f"{'Opened in your browser' if opened else 'Open this address in your browser'}: {desk.url}\n\n"
+            f"Type this code there:  {desk.code}\n\n"
+            "The tasks, terminals and consoles to every node, and the clock, in one window. Your shells "
+            "keep running when you close or reload the tab. The Exam Desk stops when you quit autorelabel; "
+            "the exam and the clock don't. You can keep using this screen at the same time.")))
 
     def action_leave(self) -> None:
         if self.sess.duration_s and self.sess.mode == "exam":
