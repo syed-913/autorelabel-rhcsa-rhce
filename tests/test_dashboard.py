@@ -117,13 +117,13 @@ def test_text_from_the_lab_is_escaped_everywhere(workspace):
     for html in out:
         assert "<script" not in html and "<img" not in html and "onerror=alert(2)>" not in html
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in out[3]
-    assert "not persistent" in pages.attempt_page(stats.session_results("s1"), {})
+    assert "worked before the reboot" in pages.attempt_page(stats.session_results("s1"), {})
 
 
 def test_pages_say_so_when_there_is_nothing_yet(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, "HISTORY_FILE", tmp_path / "none.jsonl")
     h = stats.load()
-    assert "No graded RHCE attempt yet" in pages.overview(h, "rhce", False, {}, {})
+    assert "Nothing graded yet" in pages.overview(h, "rhce", False, {}, {})
     assert "No task has been graded yet" in pages.tasks_page(h, "rhce", False, {})
 
 
@@ -155,7 +155,7 @@ def _request(srv, path, method="GET", host=None, cookie=None):
         headers["Cookie"] = cookie
     conn.request(method, path, headers=headers)
     response = conn.getresponse()
-    body = response.read().decode()
+    body = response.read().decode(errors="replace")
     conn.close()
     return response, body
 
@@ -207,12 +207,12 @@ def test_it_is_read_only(running):
 
 def test_pages_and_headers(running):
     cookie = _login(running)
-    for path, expect in (("/", "Objectives that keep costing points"), ("/?exam=rhce", "Overview"),
+    for path, expect in (("/", "What keeps costing you points"), ("/?exam=rhce", "Overview"),
                          ("/objectives?exam=rhcsa&only=exams", "Never tested"), ("/tasks", "First task"),
-                         ("/attempt/s1", "not persistent"), ("/?exam=<script>", "Overview")):
+                         ("/attempt/s1", "worked before the reboot"), ("/?exam=<script>", "Overview")):
         response, body = _request(running, path, cookie=cookie)
         assert response.status == 200 and expect in body, path
-        assert "<script" not in body
+        assert "<script" not in body and " style=" not in body      # nothing inline for the policy to refuse
         csp = response.getheader("Content-Security-Policy")
         assert csp.startswith("default-src 'none'") and "script" not in csp and "frame-ancestors 'none'" in csp
         assert response.getheader("X-Content-Type-Options") == "nosniff"
@@ -220,9 +220,63 @@ def test_pages_and_headers(running):
         assert response.getheader("Referrer-Policy") == "no-referrer"
     response, body = _request(running, "/style.css", cookie=cookie)
     assert response.status == 200 and response.getheader("Content-Type").startswith("text/css")
+    assert "prefers-reduced-motion" in body
+    assert "font-src 'self'" in response.getheader("Content-Security-Policy")
+    for font in server.FONTS:
+        response, _ = _request(running, font, cookie=cookie)
+        assert response.status == 200 and response.getheader("Content-Type") == "font/woff2", font
 
 
 @pytest.mark.parametrize("path", ["/attempt/../../etc/passwd", "/attempt/..%2f..%2fetc%2fpasswd", "/attempt/none",
                                   "/attempt/", "/etc/passwd", "/style.css/../x", "/tasks/"])
 def test_unknown_paths_and_sessions_are_not_found(running, path):
     assert _request(running, path, cookie=_login(running))[0].status == 404
+
+
+def test_another_user_of_this_computer_is_refused(running, monkeypatch):
+    """Other users can reach a port on 127.0.0.1; the owner of the client's socket is checked first."""
+    from autorelabel import localweb
+
+    monkeypatch.setattr(localweb, "same_user", lambda conn: False)
+    response, body = _request(running, running.launch_url.split(str(running.port), 1)[1])
+    assert response.status == 403 and "another user" in body
+    assert not running.token_used                      # the launch address is still good for its owner
+
+
+def test_the_owner_of_a_loopback_connection_is_found():
+    """Against the real /proc/net/tcp: this process connected, so the client end is this uid."""
+    import os
+    import socket
+
+    from autorelabel import localweb
+
+    listener = socket.socket()
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(1)
+    client = socket.create_connection(listener.getsockname())
+    conn, _ = listener.accept()
+    try:
+        assert localweb.peer_uid(conn) == os.getuid() and localweb.same_user(conn)
+    finally:
+        for s in (conn, client, listener):
+            s.close()
+
+
+def test_a_connection_from_another_uid_is_not_this_user(tmp_path):
+    from autorelabel import localweb
+
+    class Conn:
+        def getpeername(self):
+            return ("127.0.0.1", 40000)
+
+        def getsockname(self):
+            return ("127.0.0.1", 8080)
+
+    peer, own = localweb._proc_address(("127.0.0.1", 40000)), localweb._proc_address(("127.0.0.1", 8080))
+    table = tmp_path / "tcp"
+    table.write_text("  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  inode\n"
+                     f"   0: {own} 00000000:0000 0A 00000000:00000000 00:00000000 00000000  1000  0 1\n"
+                     f"   1: {peer} {own} 01 00000000:00000000 00:00000000 00000000  1001  0 2\n")
+    assert localweb.peer_uid(Conn(), table) == 1001                 # type: ignore[arg-type]
+    assert localweb._proc_address(("127.0.0.1", 8080)) == "0100007F:1F90"
+    assert not localweb.same_user(Conn(), tmp_path / "missing")      # type: ignore[arg-type]

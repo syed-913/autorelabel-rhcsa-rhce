@@ -6,11 +6,13 @@ browser tab it was opened for.
 to resolve to 127.0.0.1 (DNS rebinding). So every request is checked, in this order:
 
 1. Host must be 127.0.0.1:<port> or localhost:<port> (rebinding sends the attacker's name).
-2. GET or HEAD only: nothing here changes anything.
-3. A token made at launch, known only to whoever saw the launch address. The first request
+2. The program at the other end runs as this user (`localweb.same_user`, from /proc/net/tcp):
+   another user of this computer is refused before anything else is looked at.
+3. GET or HEAD only: nothing here changes anything.
+4. A token made at launch, known only to whoever saw the launch address. The first request
    carries it in the path and is answered with a cookie (HttpOnly, SameSite=Strict) and a
    redirect, so the token does not stay in the address bar; every other request needs the cookie.
-4. Routes are a fixed table. No file is ever served by a name taken from the request.
+5. Routes are a fixed table. No file is ever served by a name taken from the request.
 
 Every response forbids scripts, frames and remote content (Content-Security-Policy), and the
 pages contain no script to begin with.
@@ -23,23 +25,33 @@ import secrets
 from http import HTTPStatus
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
-from .. import stats
+from .. import localweb, stats
 from ..bank import cached_bank
 from . import pages
 
 HOST = "127.0.0.1"
 COOKIE = "autorelabel_dashboard"
 HEADERS = {
-    "Content-Security-Policy": "default-src 'none'; style-src 'self'; img-src 'self'; frame-ancestors 'none'; "
-                               "base-uri 'none'; form-action 'none'",
+    "Content-Security-Policy": "default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; "
+                               "frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",
     "Cache-Control": "no-store",
     "Cross-Origin-Resource-Policy": "same-origin",
     "Cross-Origin-Opener-Policy": "same-origin",
+}
+FONT_DIR = Path(__file__).with_name("fonts")
+# the fixed table of font files: published name -> file in FONT_DIR (licences beside them)
+FONTS = {
+    "/fonts/fraunces-650.woff2": "fraunces-650-latin-normal.woff2",
+    "/fonts/atkinson-400.woff2": "atkinson-hyperlegible-next-latin-400-normal.woff2",
+    "/fonts/atkinson-700.woff2": "atkinson-hyperlegible-next-latin-700-normal.woff2",
+    "/fonts/jetbrains-400.woff2": "jetbrains-mono-latin-400-normal.woff2",
+    "/fonts/jetbrains-700.woff2": "jetbrains-mono-latin-700-normal.woff2",
 }
 
 
@@ -81,9 +93,7 @@ class Handler(BaseHTTPRequestHandler):
         return                                                    # no request log: nothing to keep
 
     # --- answers ----------------------------------------------------------------------------------
-    def _send(self, status: int, body: str = "", content_type: str = "text/html; charset=utf-8",
-              extra: dict[str, str] | None = None) -> None:
-        data = body.encode("utf-8")
+    def _send_bytes(self, status: int, data: bytes, content_type: str, extra: dict[str, str] | None = None) -> None:
         self.send_response(status)
         for name, value in {**HEADERS, **(extra or {})}.items():
             self.send_header(name, value)
@@ -93,12 +103,16 @@ class Handler(BaseHTTPRequestHandler):
         if self.command != "HEAD":
             self.wfile.write(data)
 
+    def _send(self, status: int, body: str = "", content_type: str = "text/html; charset=utf-8",
+              extra: dict[str, str] | None = None) -> None:
+        self._send_bytes(status, body.encode("utf-8"), content_type, extra)
+
     def _refuse(self, status: HTTPStatus, why: str) -> None:
         self._send(status, f"{status.value} {why}\n", "text/plain; charset=utf-8")
 
     # --- checks -----------------------------------------------------------------------------------
     def _host_ok(self) -> bool:
-        return self.headers.get("Host", "") in (f"{HOST}:{self.server.port}", f"localhost:{self.server.port}")
+        return localweb.host_ok(self.headers.get("Host", ""), self.server.port)
 
     def _cookie_ok(self) -> bool:
         try:
@@ -112,6 +126,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         if not self._host_ok():
             return self._refuse(HTTPStatus.MISDIRECTED_REQUEST, "this server only answers as 127.0.0.1")
+        if not localweb.same_user(self.connection):
+            return self._refuse(HTTPStatus.FORBIDDEN, "this dashboard belongs to another user of this computer")
         url = urlsplit(self.path)
         path = url.path
         if path.startswith("/open/"):
@@ -126,6 +142,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._refuse(HTTPStatus.FORBIDDEN, "open the address the dashboard command printed")
         if path == "/style.css":
             return self._send(HTTPStatus.OK, pages.STYLE, "text/css; charset=utf-8")
+        if path in FONTS:
+            return self._send_bytes(HTTPStatus.OK, (FONT_DIR / FONTS[path]).read_bytes(), "font/woff2",
+                                    {"Cache-Control": "private, max-age=86400"})
         query = parse_qs(url.query)
         exam = query.get("exam", ["rhcsa"])[0]
         exam = exam if exam in pages.EXAMS else "rhcsa"
