@@ -1,0 +1,150 @@
+/* The Exam Desk. The website's identity: paper by day, night by dark preference, the heat hairline,
+   flat ruled surfaces, 2 px corners. Terminals are dark in both, as command blocks are on the site.
+   No state is told by colour alone: every chip and bar carries a word, most a mark as well. */
+
+@font-face {font-family: Fraunces; src: url("/fonts/fraunces-650.woff2") format("woff2"); font-weight: 650; font-display: swap}
+@font-face {font-family: Atkinson; src: url("/fonts/atkinson-400.woff2") format("woff2"); font-weight: 400; font-display: swap}
+@font-face {font-family: Atkinson; src: url("/fonts/atkinson-700.woff2") format("woff2"); font-weight: 600 700; font-display: swap}
+@font-face {font-family: JetBrains; src: url("/fonts/jetbrains-400.woff2") format("woff2"); font-weight: 400; font-display: block}
+@font-face {font-family: JetBrains; src: url("/fonts/jetbrains-700.woff2") format("woff2"); font-weight: 700; font-display: block}
+
+:root {
+  color-scheme: light;
+  --bg: #F3EEE4; --surface: #E9E2D4; --text: #151413; --muted: #5E5A54; --rule: #D6CDBB;
+  --link: #B23C0C; --ok: #23663F; --bad: #B42318; --warn: #8A5A00; --info: #1D5FA8;
+  --accent: #151413; --on-accent: #F3EEE4;
+  --term-bg: #0E0E10; --term-rule: #2C2C30; --term-text: #ECE8E1; --term-muted: #8C8A86;
+  --display: Fraunces, Georgia, serif; --sans: Atkinson, system-ui, sans-serif;
+  --mono: JetBrains, ui-monospace, "DejaVu Sans Mono", monospace;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #0A0A0B; --surface: #141416; --text: #ECE8E1; --muted: #8C8A86; --rule: #2C2C30;
+    --link: #FF6A2B; --ok: #4EBF71; --bad: #F0566B; --warn: #FFD15C; --info: #5AA9F0;
+    --accent: #FFD15C; --on-accent: #0A0A0B;
+  }
+}
+
+* {box-sizing: border-box}
+html, body {height: 100%; margin: 0}
+body {background: var(--bg); color: var(--text); font: 15px/1.5 var(--sans); overflow: hidden}
+[hidden] {display: none !important}
+.heat {position: fixed; inset: 0 0 auto; height: 3px; z-index: 5;
+       background: linear-gradient(90deg, #CC0000, #EE2222, #FF6A2B, #FFA52E, #FFD15C)}
+.brand {margin: 0; font-family: var(--mono); font-weight: 700; font-size: 15px; white-space: nowrap}
+.brand span {font-weight: 400; color: var(--muted)}
+.muted {color: var(--muted)}
+code {font-family: var(--mono); font-size: .92em; background: var(--surface); border: 1px solid var(--rule); padding: 0 .3em}
+
+.btn {font: inherit; font-size: 14px; color: var(--text); background: transparent; border: 1px solid var(--muted);
+      border-radius: 2px; padding: 6px 12px; cursor: pointer; white-space: nowrap;
+      transition: background-color .15s, border-color .15s, color .15s}
+.btn:hover {background: var(--surface); border-color: var(--text)}
+.btn:focus-visible, .task-num:focus-visible, .node-tab:focus-visible, input:focus-visible {outline: 2px solid var(--link); outline-offset: 2px}
+.btn:disabled {opacity: .45; cursor: not-allowed}
+.btn.primary {background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 700}
+.btn.danger {color: var(--bad); border-color: var(--bad)}
+.btn.danger:hover {background: var(--bad); color: var(--bg)}
+.btn.danger-quiet {color: var(--bad); border-color: var(--rule)}
+.btn[aria-pressed="true"] {background: var(--surface); border-color: var(--text); font-weight: 700}
+
+/* signing in */
+.login {display: grid; place-items: center; height: 100%; padding: 24px}
+.login-card {width: min(460px, 100%); display: grid; gap: 12px}
+.login-card h1 {margin: 6px 0 0; font-family: var(--display); font-weight: 650; font-size: 40px; letter-spacing: -.03em; line-height: 1.05}
+.label {font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted)}
+#code {font: 700 28px/1.2 var(--mono); letter-spacing: .12em; text-transform: uppercase; padding: 10px 14px;
+       background: var(--surface); color: var(--text); border: 1px solid var(--muted); border-radius: 2px}
+.login-msg {min-height: 1.5em; margin: 0; color: var(--bad)}
+
+/* the window: top bar, bars, then tasks beside terminals */
+.app {display: grid; grid-template-rows: auto auto minmax(0, 1fr); height: 100%; padding-top: 3px}
+.top {display: flex; align-items: center; gap: 12px 18px; padding: 10px 18px; border-bottom: 1px solid var(--rule)}
+.chip {font-family: var(--mono); font-size: 13px; padding: 3px 10px; border: 1px solid var(--rule); border-radius: 999px; white-space: nowrap}
+.chip.ok {color: var(--ok); border-color: currentColor}
+.chip.warn {color: var(--warn); border-color: currentColor}
+.chip.bad {color: var(--bad); border-color: currentColor}
+.clock {margin-left: auto; display: flex; align-items: baseline; gap: 10px}
+.clock-time {font: 700 30px/1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em}
+.clock-note {font-size: 13px; color: var(--muted); white-space: nowrap}
+.clock.warn .clock-time {color: var(--warn)} .clock.bad .clock-time {color: var(--bad)}
+.top-actions {display: flex; gap: 8px}
+
+.bars:empty {display: none}
+.bar {display: flex; gap: 12px; align-items: baseline; padding: 9px 18px; border-bottom: 1px solid var(--rule); font-size: 14px}
+.bar b {font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap}
+.bar.warn {background: var(--surface)} .bar.warn b {color: var(--warn)}
+.bar.bad {background: var(--surface)} .bar.bad b {color: var(--bad)}
+.bar.info b {color: var(--info)}
+.bar .btn {padding: 3px 10px; font-size: 13px}
+
+.work {display: grid; grid-template-columns: clamp(340px, 29%, 520px) minmax(0, 1fr); min-height: 0}
+
+.tasks {display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; border-right: 1px solid var(--rule)}
+.task-grid {display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; padding: 14px 16px 10px}
+.task-num {font: 700 13px/1 var(--mono); color: var(--text); background: transparent; border: 1px solid var(--rule); border-radius: 2px;
+           padding: 6px 0 4px; display: grid; gap: 2px; justify-items: center; cursor: pointer; transition: background-color .15s, border-color .15s}
+.task-num small {font-size: 11px; font-weight: 400; min-height: 1em; color: var(--muted)}
+.task-num:hover {border-color: var(--text)}
+.task-num[aria-selected="true"] {background: var(--accent); color: var(--on-accent); border-color: var(--accent)}
+.task-num[aria-selected="true"] small {color: inherit}
+.task-num.done small {color: var(--ok)} .task-num.flag small {color: var(--warn)}
+.task {overflow-y: auto; padding: 6px 18px 18px; outline: none}
+.task h2 {margin: 4px 0 2px; font-family: var(--display); font-weight: 650; font-size: 22px; letter-spacing: -.02em; line-height: 1.2}
+.task .meta {font-size: 13px; color: var(--muted); font-family: var(--mono)}
+.task p, .task li {max-width: 62ch}
+.task pre {background: var(--term-bg); color: var(--term-text); padding: 10px 12px; overflow-x: auto; font: 13px/1.5 var(--mono)}
+.task-actions {display: flex; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--rule)}
+.task-actions .spacer {flex: 1}
+.empty-note {padding: 28px 22px; color: var(--muted); max-width: 52ch}
+.empty-note h2 {font-family: var(--display); font-weight: 650; font-size: 26px; color: var(--text); margin: 0 0 8px}
+
+.terms {display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0}
+.term-bar {display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid var(--rule)}
+.node-tabs {display: flex; gap: 4px; flex-wrap: wrap}
+.node-tab {font: inherit; font-size: 14px; color: var(--text); background: transparent; border: 1px solid transparent; border-bottom-width: 2px;
+           border-radius: 2px; padding: 5px 12px; cursor: pointer; display: flex; gap: 8px; align-items: baseline}
+.node-tab small {font-family: var(--mono); font-size: 12px; color: var(--muted)}
+.node-tab:hover {background: var(--surface)}
+.node-tab[aria-selected="true"] {border-bottom-color: var(--link); font-weight: 700}
+.node-tab .ok {color: var(--ok)} .node-tab .warn {color: var(--warn)} .node-tab .bad {color: var(--bad)}
+.term-actions {display: flex; gap: 6px; flex-wrap: wrap}
+
+.stage {display: grid; gap: 10px; padding: 10px; min-height: 0; background: var(--bg)}
+.stage.two {grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)}
+.stage-note {display: grid; place-content: center; text-align: center; color: var(--muted); padding: 24px}
+.stage-note h2 {font-family: var(--display); font-weight: 650; color: var(--text); margin: 0 0 6px}
+.tile {display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; background: var(--term-bg); border: 1px solid var(--term-rule);
+       border-radius: 2px; color: var(--term-text)}
+.tile.focus {border-color: var(--link)}
+.tile-head {display: flex; gap: 10px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--term-rule); font: 12px/1.4 var(--mono)}
+.tile-head .what {font-weight: 700}
+.tile-head .how {color: var(--term-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1}
+.tile-head .state {white-space: nowrap}
+.tile-head .x {font: inherit; color: var(--term-muted); background: none; border: 0; cursor: pointer; padding: 0 4px}
+.tile-head .x:hover {color: var(--term-text)}
+.tile-body {position: relative; min-height: 0; padding: 6px 4px 4px 10px}
+.tile-body .xterm {height: 100%}
+.tile-strip {font: 12px/1.4 var(--mono); padding: 6px 10px; border-top: 1px solid var(--term-rule); color: #FFD15C}
+.tile.dim .tile-body {opacity: .45}
+
+.dialog {border: 1px solid var(--rule); background: var(--bg); color: var(--text); padding: 22px 24px; width: min(480px, 92vw); border-radius: 2px}
+.dialog::backdrop {background: rgba(10, 10, 11, .6)}
+.dialog h2 {margin: 0 0 8px; font-family: var(--display); font-weight: 650; font-size: 24px}
+.dialog .loss {font-weight: 700}
+.dialog-actions {display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px}
+.toast {position: fixed; right: 18px; bottom: 18px; max-width: 420px; padding: 12px 16px; background: var(--text); color: var(--bg);
+        border-radius: 2px; font-size: 14px; z-index: 10; box-shadow: 0 8px 22px rgba(0, 0, 0, .3)}
+.narrow {display: none}
+.noscript {padding: 24px}
+
+@media (max-width: 1099px) {
+  body.in-app .app {display: none !important}
+  body.in-app .narrow {display: grid; align-content: center; gap: 10px; height: 100%; padding: 24px; max-width: 520px; margin: 0 auto}
+  .narrow h1 {font-family: var(--display); font-weight: 650; font-size: 34px; margin: 0}
+}
+@media (prefers-reduced-motion: reduce) {
+  * {transition: none !important; animation: none !important}
+}

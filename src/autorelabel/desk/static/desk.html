@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Exam Desk · autorelabel</title>
+<link rel="stylesheet" href="/vendor/xterm.css">
+<link rel="stylesheet" href="/desk.css">
+<script src="/desk-boot.js" nonce="{{nonce}}"></script>
+<script src="/vendor/xterm.js" defer></script>
+<script src="/vendor/addon-fit.js" defer></script>
+<script src="/desk.js" defer></script>
+</head>
+<body>
+<div class="heat"></div>
+
+<main id="login" class="login" hidden>
+  <form id="login-form" class="login-card" autocomplete="off">
+    <p class="brand">autorelabel <span>Exam Desk</span></p>
+    <h1>Type your code.</h1>
+    <p class="muted">The terminal where you started the Exam Desk shows an eight-character code. It keeps anyone else on this computer, and any other web page, away from your shells.</p>
+    <label for="code" class="label">Code</label>
+    <input id="code" name="code" inputmode="text" spellcheck="false" autocapitalize="characters" maxlength="9" placeholder="XXXX-XXXX" required>
+    <button type="submit" class="btn primary">Open the Exam Desk</button>
+    <p id="login-msg" class="login-msg" role="alert"></p>
+  </form>
+</main>
+
+<div id="app" class="app" hidden>
+  <header class="top">
+    <p class="brand">autorelabel <span>Exam Desk</span></p>
+    <span id="exam-name" class="chip"></span>
+    <span id="lab-state" class="chip" role="status"></span>
+    <div class="clock"><span id="clock" class="clock-time">-:--:--</span><span id="clock-note" class="clock-note"></span></div>
+    <div class="top-actions">
+      <button type="button" id="fullscreen" class="btn">Full screen</button>
+      <button type="button" id="end-exam" class="btn danger">End exam</button>
+    </div>
+  </header>
+  <div id="bars" class="bars" aria-live="polite"></div>
+
+  <div class="work">
+    <section class="tasks" aria-label="Tasks">
+      <div id="task-grid" class="task-grid" role="tablist" aria-label="Task numbers"></div>
+      <article id="task" class="task" tabindex="-1"></article>
+      <div class="task-actions">
+        <button type="button" id="mark-done" class="btn">Mark done</button>
+        <button type="button" id="mark-flag" class="btn">Mark for review</button>
+        <span class="spacer"></span>
+        <button type="button" id="prev" class="btn" aria-label="Previous task">←</button>
+        <button type="button" id="next" class="btn" aria-label="Next task">→</button>
+      </div>
+    </section>
+
+    <section class="terms" aria-label="Terminals">
+      <div class="term-bar">
+        <div id="node-tabs" class="node-tabs" role="tablist" aria-label="Nodes"></div>
+        <div class="term-actions">
+          <button type="button" id="new-shell" class="btn">New shell</button>
+          <button type="button" id="new-console" class="btn">Open console</button>
+          <button type="button" id="split" class="btn" aria-pressed="false">Split</button>
+          <button type="button" id="reset-node" class="btn danger-quiet">Reset node</button>
+          <button type="button" id="vscode" class="btn" hidden>Open VS Code</button>
+        </div>
+      </div>
+      <div id="stage" class="stage"></div>
+    </section>
+  </div>
+</div>
+
+<div id="narrow" class="narrow" role="note">
+  <p class="brand">autorelabel <span>Exam Desk</span></p>
+  <h1>Use a wider window.</h1>
+  <p>The tasks and the terminals need about 1100 pixels side by side. Your shells and the clock keep running.</p>
+</div>
+
+<dialog id="confirm" class="dialog" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-body"></p>
+    <p id="confirm-loss" class="loss"></p>
+    <div class="dialog-actions">
+      <button value="cancel" class="btn primary" autofocus>Keep working</button>
+      <button value="ok" id="confirm-ok" class="btn danger"></button>
+    </div>
+  </form>
+</dialog>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<noscript><p class="noscript">The Exam Desk needs JavaScript. The text interface (./autorelabel) works without it.</p></noscript>
+</body>
+</html>
