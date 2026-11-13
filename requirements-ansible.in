@@ -1,3 +1,5 @@
-# ansible-core as on the RHEL 10.0 DVD, for CI's syntax check of the RHCE playbooks.
+# ansible-core for CI's syntax check of the RHCE playbooks: the RHEL 10.0 DVD ships 2.16.14, and
+# this is the newest 2.16 patch release, the same language with its security fixes
+# (2.16.19: CVE-2026-11332 in ansible-galaxy role install, which CI never runs).
 # Lock: requirements-ansible.lock (hashes; see the command in its header).
-ansible-core==2.16.14
+ansible-core==2.16.19
