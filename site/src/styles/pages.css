@@ -264,6 +264,26 @@
   .docs-outline {position:sticky;top:calc(var(--header-height) + 1.8rem);max-height:calc(100dvh - var(--header-height) - 3rem);overflow-y:auto;padding-bottom:1rem}
   .docs-outline p {font-family:var(--font-mono);font-size:.6rem;color:var(--text-muted);margin-bottom:.6rem}
   .docs-outline a {display:block;font-size:.82rem;line-height:1.55;padding:.35rem 0}
+  .changelog-page {padding-bottom:4rem}
+  .changelog-layout {display:grid;grid-template-columns:12rem minmax(0,1fr);gap:3rem;align-items:start;border-top:1px solid var(--rule);padding-top:2rem}
+  .changelog-versions {position:sticky;top:calc(var(--header-height) + 1.8rem);display:grid;gap:.15rem}
+  .changelog-versions>p {font-size:.6rem;color:var(--text-muted);margin-bottom:.5rem}
+  .changelog-versions .toc-link {display:grid;grid-template-columns:auto 1fr;column-gap:.5rem;padding:.4rem 0;font-size:.9rem}
+  .changelog-versions .toc-link small {grid-column:1 / -1;color:var(--text-muted);font-family:var(--font-mono);font-size:.68rem}
+  .changelog-versions .text-link {margin-top:1rem;justify-self:start}
+  .changelog-latest {justify-self:start;align-self:center;font-family:var(--font-mono);font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;padding:.1rem .45rem;border-radius:999px;border:1px solid var(--rule);color:var(--text-muted)}
+  .changelog-body {max-width:72ch}
+  .changelog-body h2 {font-family:var(--font-mono);font-size:1.35rem;letter-spacing:-.01em;padding-top:2.2rem;margin-top:0;scroll-margin-top:calc(var(--header-height) + 1rem)}
+  .changelog-body h2:first-of-type {padding-top:0}
+  .changelog-body h2+* {margin-top:.4rem}
+  .changelog-body h3 {font-size:.72rem;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.09em;color:var(--text-muted);margin-top:1.6rem}
+  .changelog-body h2:not(:first-of-type) {border-top:1px solid var(--rule);margin-top:2.4rem}
+  .changelog-foot {margin-top:3rem;max-width:72ch}
+  @media(max-width:860px) {
+    .changelog-layout {grid-template-columns:1fr;gap:1.5rem}
+    .changelog-versions {position:static;grid-template-columns:repeat(auto-fill,minmax(8rem,1fr));gap:.4rem 1rem}
+    .changelog-versions>p,.changelog-versions .text-link {grid-column:1 / -1}
+  }
   .docs-outline .outline-child {padding-left:.7rem;color:var(--text-muted);font-size:.78rem}
   .edit-link {font-size:.9rem}
   .not-found {padding-block:4rem;background:var(--bg)}
