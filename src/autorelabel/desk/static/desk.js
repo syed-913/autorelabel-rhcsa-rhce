@@ -57,7 +57,17 @@
     if (msg.error === 'login') { showLogin('Sign in again: the Exam Desk was started again since this tab last used it.'); return; }
     if (msg.error) toast(msg.error);
     if (msg.busy !== undefined) { busy = msg.busy; renderBars(); }
-    if (msg.codeServer) { if (msg.codeServer.startsWith('http')) window.open(msg.codeServer, '_blank', 'noopener'); else toast(`VS Code is ${msg.codeServer}`); }
+    if (msg.codeServer) openVsCode(msg.codeServer);
+  }
+  // VS Code is only ever this computer's SSH tunnel to the control node. The address is rebuilt from
+  // fixed parts and a port number, so whatever arrives, nothing else can be opened from here.
+  function openVsCode(address) {
+    let url = null;
+    try { url = new URL(address); } catch { url = null; }
+    const port = url && url.protocol === 'http:' && url.hostname === '127.0.0.1' ? Number(url.port) : 0;
+    if (!Number.isInteger(port) || port < 1024 || port > 65535) { toast(`VS Code is ${address}`); return; }
+    const folder = url.searchParams.get('folder') || '';
+    window.open(`http://127.0.0.1:${port}/?folder=${encodeURIComponent(folder)}`, '_blank', 'noopener');
   }
   const send = (action) => { if (control && control.readyState === 1) control.send(JSON.stringify(action)); };
 
