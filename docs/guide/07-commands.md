@@ -43,6 +43,7 @@ Run commands from the repository folder: `./autorelabel <command> [options]`. Th
 | `./autorelabel exam grade` | Grade the exam in this terminal. |
 | `./autorelabel exam results` | Print the graded report. |
 | `./autorelabel exam retake` | The same exam again, from its starting point. |
+| `./autorelabel desk` | The current exam in your browser: tasks, terminals and consoles, the clock. |
 | `./autorelabel dashboard` | Your results over time, in the browser. |
 | `./autorelabel exam resume` | Restart an exam's lab after your computer restarted. |
 | `./autorelabel exam abandon` | Give up the current session. |
@@ -146,6 +147,10 @@ Grades the exam in your terminal, showing each phase and each node's reboot. If 
 ### `exam results [session] [--solutions]`
 
 Prints the graded report of the current session, or of the session you name (the session IDs are the folder names in `.workspace/sessions/`). `--solutions` adds every task's solution after the report.
+
+### `desk [--no-browser] [--port N]`
+
+Opens the [Exam Desk](03-exam-screen.md#the-exam-desk-the-exam-in-your-browser): the current exam in your browser, with the tasks beside terminals and consoles to every node, and the clock. It prints an address on `127.0.0.1` and a code, and opens the address; type the code in the page. The shells live in this command, so they survive a closed or reloaded tab, and end when you press Ctrl+C here. The exam and the clock carry on. `--no-browser` only prints the address and the code. In the text interface, `w` on the exam screen does the same.
 
 ### `dashboard [--no-browser] [--port N]`
 

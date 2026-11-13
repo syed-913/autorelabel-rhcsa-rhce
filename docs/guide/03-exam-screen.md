@@ -26,6 +26,7 @@ This page is a reference for everything on the exam screen: its parts, its keys,
 | `f` | Flag the selected task (press again to clear). |
 | `i` | Show the instructions again, including the root passwords. |
 | `x` | Submit: end the exam now and grade it. You are asked to confirm. |
+| `w` | Open the [Exam Desk](#the-exam-desk-the-exam-in-your-browser): the same exam in your browser, with terminals beside the tasks. |
 | Escape | Go to the home screen. A timed exam keeps running. |
 
 In [practice mode](06-practice.md) three more keys work: `k` checks your work now, `r` checks it after rebooting the nodes, and `v` shows the selected task's solution. They do nothing during an exam.
@@ -69,3 +70,34 @@ Press Escape to go to the home screen. A timed exam keeps running while you are 
 
 > **My computer restarted in the middle of an exam. Is it lost?**
 > No. When you open autorelabel again, it notices the restart and offers **Resume your interrupted exam**. The lab starts again with your work as it was on disk, and the time your computer was off is not counted (unless you turned off *Forgive host downtime* in Settings).
+
+## The Exam Desk: the exam in your browser
+
+The Exam Desk shows the exam in one browser window: the tasks on the left, terminals and consoles to the nodes on the right, and the clock on top. It looks and works like an exam workstation, and you can use it next to this screen or on its own.
+
+Open it with `w` on this screen, or run `./autorelabel desk` in a terminal. Your browser opens a page on your own computer that asks for a code. The code is shown in the dialog (or printed by the command); type it in once. It keeps anyone else, and any other web page, away from your shells.
+
+| Part | What it does |
+|---|---|
+| The number grid | Every task, with `✓` for done and `⚑` for review. Select one to read it. |
+| Mark done, Mark for review | The same marks as `d` and `f` here. They never affect your score. |
+| The node tabs | One per node, with its state in words: running, off, rebooting, unreachable. |
+| New shell | SSH to the node, as root (on RHCE's control node, as student). You type the password, as in the exam. |
+| Open console | The node's serial console, for the tasks without a network and for interrupting the boot. |
+| Split | Two terminals side by side. On a wide screen this is the default. |
+| Reset node | Back to how the node was when the exam started. Everything you changed on it is lost, and you are asked first. |
+| Open VS Code | RHCE only: VS Code in the browser, on the control node. |
+| End exam | The same as `x` here. You are asked first. |
+
+**Your shells survive the tab.** Close it, reload it or open the address in a second window: the same shells come back with their output. They end when you quit autorelabel (or stop `./autorelabel desk`); the exam and the clock carry on.
+
+**At time up the terminals become read-only.** You can still read and scroll them; typing goes nowhere, here and on the server. Then grading reboots every node, as always.
+
+**Full screen** gives the page the whole screen. In Chrome, Chromium and Edge it also gives the shells the keys a browser normally keeps for itself, such as Ctrl+W (Vim's window key), Ctrl+T and Ctrl+N. Firefox keeps them: there, Ctrl+W closes the tab, but your shells keep running, and opening the address again brings them back. The page asks before you close it while the exam runs.
+
+> **Do I need the Exam Desk?**
+> No. It is another way to sit the same exam: this screen, SSH and the console all keep working, and you can switch between them at any time.
+
+> **Why does the Exam Desk need a window at least 1100 pixels wide?**
+> The tasks and the terminals sit side by side, as on the exam. In a narrower window the page says so, and your shells and the clock keep running.
+

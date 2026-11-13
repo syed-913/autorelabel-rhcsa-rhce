@@ -36,6 +36,15 @@ As autorelabel sets them up, the lab VMs can't reach the internet or your local 
 | SSH into the VMs | Over the isolated management network | A port forward that listens only on `127.0.0.1` |
 | The VM screens | VNC on `127.0.0.1` only | None: the VMs run headless, and the serial console is a socket in a folder only you can open |
 
+The Exam Desk (`./autorelabel desk`, or `w` on the exam screen) is the one part of autorelabel that takes input from a browser, and that input ends in a root shell on a lab VM. So it checks every request, whatever its address:
+
+- It listens on `127.0.0.1` only, and answers only requests made to that address under its own port. A web page that reaches it under another name (DNS rebinding) is turned away.
+- It refuses connections from programs of another user of your computer, which it checks with the kernel first.
+- A terminal or the page's live updates can only be opened from the Exam Desk's own page: browsers state truthfully which page a connection comes from, so no other website you have open can reach your shells.
+- Nothing works until you type the code shown in your terminal or in autorelabel. The code is never on a command line, in an address or in your browser's history, and three wrong tries end it. The page then keeps a secret in that tab's own storage, which no other site, and no other port on your computer, can read. There is no cookie.
+- The page runs only its own scripts, from autorelabel itself: no inline script, and styles only with a code that changes on every load. Its terminal library (xterm.js) is included in autorelabel and checked against recorded checksums.
+- When time is up, typing is refused by the server, not just by the page.
+
 The results dashboard (`./autorelabel dashboard`) is a web server on `127.0.0.1` that runs only while you keep the command open. It is read-only, it has no script in its pages, and it loads nothing from elsewhere: its fonts come from autorelabel itself. It answers only to the browser that opened the address it printed, it refuses requests made under any other host name, and it refuses connections from programs of another user of your computer, which it checks with the kernel before it looks at what was asked for.
 
 VS Code in the browser (RHCE) runs inside the control node. autorelabel forwards it through SSH to `127.0.0.1` on your computer (port 18080, or the next free one), and only while the exam runs.
