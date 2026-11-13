@@ -4,6 +4,26 @@ Changes to the program, newest first. Planned versions are in [ROADMAP.md](ROADM
 
 Versions follow [semantic versioning](https://semver.org): a patch release (1.0.1) only fixes things, a minor release (1.1.0) adds something without breaking what you use, and a major release (2.0.0) may change how things work. The website and documentation aren't versioned. Check yours with `./autorelabel --version`.
 
+## 1.3.0 (2026-11-13)
+
+### Added
+
+- **The results dashboard: your graded attempts in the browser.** Start it with `./autorelabel dashboard`, or press **o** on **Progress and history** in the text interface. It shows:
+  - your scores over time against the pass mark: point at a result for its details, select it for its report;
+  - the objectives that keep costing you points;
+  - the checks you failed more than once;
+  - the answers that worked before the grading reboot and not after it;
+  - every objective of the exam, tested or not, with your share of its points and its trend;
+  - every task you have met, with each of its checks;
+  - each attempt's full report, every check before and after the reboot.
+
+  You can count full exams only, or practice sets as well. It reads the files autorelabel already keeps and changes nothing.
+- It runs on your computer only, at `127.0.0.1`, and loads nothing from the internet. The address it opens works once and only for your own user, it answers to no other host name, and its pages hold no script. The [security guide](https://autorelabel.dpdns.org/docs/security/) has the details.
+
+### Fixed
+
+- **Progress and history** in the text interface no longer stops at a damaged line in your attempt history.
+
 ## 1.2.0 (2026-11-13)
 
 ### Changed
