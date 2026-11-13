@@ -38,8 +38,6 @@ export async function run(page, url) {
   await typeLine(page, 'nmcli -g NAME,DEVICE connection show', 1600);
   await page.click('#mark-flag', 700);
   await page.wait(900);
-  await page.click('#split', 700);
-  await page.wait(500);
   await page.click('.node-tab:nth-of-type(2)', 700);      // node2: SSH works, and asks for root's password
   await page.wait(600);
   await page.click('#new-shell', 600);
@@ -47,5 +45,13 @@ export async function run(page, url) {
   await page.click('#mark-done', 700);
   await page.wait(1500);
   await page.moveTo('#end-exam', 900);
-  await page.wait(1200);
+  await page.wait(1600);
+}
+
+// After the take: log node1's console out again, so the next take starts at its login prompt.
+export async function after(page) {
+  await page.click('.tile:last-child .tile-body', 300);
+  await page.type('exit', 20);
+  await page.key('Enter', 'Enter', 13);
+  await page.wait(800);
 }

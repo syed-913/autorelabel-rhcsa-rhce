@@ -189,6 +189,7 @@ try {
 } finally {
   await sleep(300);
   recording = false;
+  if (scene.after) await scene.after(page).catch(() => {});      // tidying up, off camera
   await send('Page.stopScreencast').catch(() => {});
   ws.close();
   await closeBrowser();
