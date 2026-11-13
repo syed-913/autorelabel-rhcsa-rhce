@@ -16,6 +16,10 @@ Versions follow [semantic versioning](https://semver.org): a patch release (1.0.
   Your shells survive a closed or reloaded tab. At time up the terminals become read-only, and that is enforced by autorelabel, not by the page. Full screen hands Ctrl+W, Ctrl+T and Ctrl+N to your shell in Chrome, Chromium and Edge. The text interface keeps working beside it.
 - It is reachable only from your own computer, by your own user, and only from its own page. It opens after you type a code that autorelabel shows you, and it keeps no cookie. The [security guide](https://autorelabel.dpdns.org/docs/security/) has the details.
 
+### Fixed
+
+- With `AUTORELABEL_WORKSPACE` set (a second, separate setup), the proctor now finds its exam. Before, it exited at once and the clock stopped counting.
+
 ## 1.3.1 (2026-11-14)
 
 ### Changed
