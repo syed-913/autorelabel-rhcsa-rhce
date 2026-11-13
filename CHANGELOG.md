@@ -8,8 +8,12 @@ Versions follow [semantic versioning](https://semver.org): a patch release (1.0.
 
 ### Changed
 
-- **Installing takes less typing.** If Python's `venv` module is missing, `./autorelabel` now offers to install it with the one command for your distribution, and carries on. Together with **Fix for me** on the host check, which installs Vagrant, Packer and the hypervisor, you only need `git` and three commands to start.
+- **Installing takes less typing.** If Python's `venv` module is missing, `./autorelabel` now offers to install it with the one command for your distribution, and carries on. Together with **Fix for me** on the host check, which installs Vagrant, Packer and libvirt for you, you only need `git` and three commands to start.
 - The results dashboard's exam filter is now matched against a fixed list in a way code scanning can follow. It was already limited to RHCSA and RHCE.
+
+### Fixed
+
+- **Fix for me** no longer starts the VirtualBox step where VirtualBox comes from Oracle's download page (Debian, Ubuntu, Fedora and RHEL families). It used to add you to the `vboxusers` group, which fails until VirtualBox is installed, and stop there. The step is now listed for you, with the download page.
 
 ## 1.3.0 (2026-11-13)
 
