@@ -4,6 +4,13 @@ Changes to the program, newest first. Planned versions are in [ROADMAP.md](ROADM
 
 Versions follow [semantic versioning](https://semver.org): a patch release (1.0.1) only fixes things, a minor release (1.1.0) adds something without breaking what you use, and a major release (2.0.0) may change how things work. The website and documentation aren't versioned. Check yours with `./autorelabel --version`.
 
+## 1.3.1 (2026-11-14)
+
+### Changed
+
+- **Installing takes less typing.** If Python's `venv` module is missing, `./autorelabel` now offers to install it with the one command for your distribution, and carries on. Together with **Fix for me** on the host check, which installs Vagrant, Packer and the hypervisor, you only need `git` and three commands to start.
+- The results dashboard's exam filter is now matched against a fixed list in a way code scanning can follow. It was already limited to RHCSA and RHCE.
+
 ## 1.3.0 (2026-11-13)
 
 ### Added
