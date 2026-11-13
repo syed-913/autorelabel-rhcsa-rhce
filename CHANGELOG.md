@@ -13,8 +13,9 @@ Versions follow [semantic versioning](https://semver.org): a patch release (1.0.
   - The objective domains have wider ranges.
   - The generator plans ahead, so a task is no longer crowded out by the others.
 
-  Before, 8 RHCSA tasks and 4 RHCE tasks came up in fewer than 3 exams in 100, some of them almost never. Now every task comes up in at least 4 RHCSA exams in 100, or 7 RHCE exams in 100.
+  Before, 8 RHCSA tasks and 4 RHCE tasks came up in fewer than 3 exams in 100, some of them almost never. Now even the rarest task comes up in about 4 RHCSA exams in 100, or about 7 RHCE exams in 100.
 - **Your last two exams are held back.** A task from your previous graded exam is much less likely to come up in the next one, and a task from the exam before that somewhat less. Measured over many exams in a row, an RHCSA exam now repeats about 2 of the previous exam's 17 drawn tasks, where it used to repeat 5. Practice sets don't count. Attempts graded before 1.1.1 don't record their tasks, so this starts with your first exam graded on 1.1.1 or later.
+- A damaged line in your attempt history no longer stops a new exam from starting.
 - The same seed gives a different exam than in 1.1, and it also depends on your last two exams. **Retake** still repeats an exam exactly.
 
 ### For contributors
