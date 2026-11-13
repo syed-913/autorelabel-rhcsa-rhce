@@ -260,8 +260,10 @@ class Engine:
     def launch_proctor(self, sess: S.Session) -> None:
         unit = f"autorelabel-proctor-{sess.id}"
         python = sys.executable
+        # systemd-run gives the proctor only these: without the workspace it would look for the
+        # session in the default one, find nothing and exit, and the clock would stop
         envs = {"PYTHONPATH": str(paths.ROOT / "src"), "AUTORELABEL_ROOT": str(paths.ROOT),
-                "PYTHONPYCACHEPREFIX": str(paths.WORKSPACE / "pycache")}
+                "AUTORELABEL_WORKSPACE": str(paths.WORKSPACE), "PYTHONPYCACHEPREFIX": str(paths.WORKSPACE / "pycache")}
         if shutil.which("systemd-run") and self._systemd_user_ok():
             ledger.record("systemd-unit", unit, "proctor (transient)", storage_dir=self.settings.storage_dir)
             cmd = ["systemd-run", "--user", "--quiet", "--collect", f"--unit={unit}",

@@ -161,3 +161,22 @@ def test_a_damaged_history_line_does_not_stop_the_next_exam(tmp_path, monkeypatc
     monkeypatch.setattr(paths, "HISTORY_FILE", history)
     weights = grader.objective_recency("rhcsa")
     assert weights and all(0.0 <= w <= 2.0 for w in weights.values())
+
+
+def test_the_proctor_gets_the_workspace(tmp_path, monkeypatch):
+    """systemd-run starts the proctor with only the variables it is given: without the workspace it
+    looked for the session in the default one, exited, and the clock stopped."""
+    from types import SimpleNamespace
+
+    from autorelabel import engine as E
+    from autorelabel import ledger, paths, proc
+
+    seen: list[list[str]] = []
+    monkeypatch.setattr(proc, "run", lambda cmd, **kw: seen.append(cmd) or SimpleNamespace(ok=True))
+    monkeypatch.setattr(E.shutil, "which", lambda name: "/usr/bin/" + name)
+    monkeypatch.setattr(ledger, "record", lambda *a, **k: None)
+    monkeypatch.setattr(paths, "WORKSPACE", tmp_path / "ws")
+    sess = SimpleNamespace(id="abc", event=lambda *a, **k: None)
+    fake = SimpleNamespace(settings=SimpleNamespace(storage_dir=str(tmp_path)), _systemd_user_ok=lambda: True)
+    E.Engine.launch_proctor(fake, sess)
+    assert f"--setenv=AUTORELABEL_WORKSPACE={tmp_path / 'ws'}" in seen[0]
