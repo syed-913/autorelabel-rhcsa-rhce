@@ -24,7 +24,10 @@ const profile = await mkdtemp(join(tmpdir(), 'autorelabel-record-'));
 const frames = join(profile, 'frames');
 await mkdir(frames);
 
-const chrome = spawn(process.env.CHROME_PATH || 'google-chrome', [
+const browserPath = process.env.CHROME_PATH ||
+  ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'].find(name => spawnSync('which', [name]).status === 0);
+if (!browserPath) throw new Error('no Chrome or Chromium found: set CHROME_PATH');
+const chrome = spawn(browserPath, [
   '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--hide-scrollbars',
   '--mute-audio', `--user-data-dir=${profile}`, '--remote-debugging-port=0', `--window-size=${width},${height}`,
   'about:blank'], {stdio: ['ignore', 'ignore', 'pipe']});
@@ -37,6 +40,18 @@ const endpoint = await new Promise((done, fail) => {
   });
   chrome.on('exit', code => fail(new Error(`chrome exited (${code})`)));
 });
+chrome.on('error', () => {});                               // a snap-confined browser may refuse a kill
+// Close the whole browser through DevTools: works for a snap-confined Chromium too, where a kill is refused.
+async function closeBrowser() {
+  try {
+    const browser = new WebSocket(endpoint);
+    await new Promise(done => browser.addEventListener('open', done, {once: true}));
+    browser.send(JSON.stringify({id: 1, method: 'Browser.close'}));
+    await sleep(400);
+    browser.close();
+  } catch { /* already gone */ }
+  try { chrome.kill(); } catch { /* the snap keeps its own processes */ }
+}
 const targets = await (await fetch(endpoint.replace('ws://', 'http://').replace(/\/devtools\/browser\/.*/, '/json/list'))).json();
 const ws = new WebSocket(targets.find(t => t.type === 'page').webSocketDebuggerUrl);
 await new Promise(done => ws.addEventListener('open', done, {once: true}));
@@ -76,23 +91,41 @@ listeners.push(async msg => {
 });
 
 const pointer = {x: width * 0.6, y: height * 0.55};
-const POINTER = `(() => { if (document.getElementById('__rec_pointer')) return;
+function drawPointerIn(x, y) {               // runs in the page
+  if (document.getElementById('__rec_pointer')) return;
   const p = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   p.id = '__rec_pointer'; p.setAttribute('viewBox', '0 0 24 24'); p.setAttribute('width', '26'); p.setAttribute('height', '26');
-  p.innerHTML = '<path d="M3 2 L3 19 L8 14.5 L11.5 22 L14.5 20.6 L11 13.4 L17.5 13.4 Z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/>';
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  for (const [k, v] of Object.entries({d: 'M3 2 L3 19 L8 14.5 L11.5 22 L14.5 20.6 L11 13.4 L17.5 13.4 Z', fill: '#fff', stroke: '#111',
+                                       'stroke-width': '1.4', 'stroke-linejoin': 'round'})) path.setAttribute(k, v);
+  p.append(path);
   Object.assign(p.style, {position: 'fixed', left: '0', top: '0', zIndex: 2147483647, pointerEvents: 'none',
-                          filter: 'drop-shadow(0 2px 3px rgba(0,0,0,.45))', transform: 'translate(${pointer.x}px, ${pointer.y}px)'});
-  document.documentElement.appendChild(p); })()`;
-const drawPointer = () => send('Runtime.evaluate', {expression: POINTER});
+                          filter: 'drop-shadow(0 2px 3px rgba(0,0,0,.45))', transform: `translate(${x}px, ${y}px)`});
+  document.documentElement.appendChild(p);
+}
+function placePointerIn(x, y) {              // runs in the page
+  const p = document.getElementById('__rec_pointer');
+  if (p) p.style.transform = `translate(${x}px, ${y}px)`;
+}
+const drawPointer = () => call(drawPointerIn, pointer.x, pointer.y);
 listeners.push(msg => { if (msg.method === 'Page.loadEventFired') drawPointer().catch(() => {}); });
-const placePointer = (x, y) => send('Runtime.evaluate', {expression:
-  `document.getElementById('__rec_pointer') && (document.getElementById('__rec_pointer').style.transform = 'translate(${x}px, ${y}px)')`});
-const centre = async selector => {
-  const {result} = await send('Runtime.evaluate', {returnByValue: true, expression:
-    `(() => { const e = document.querySelector(${JSON.stringify(selector)}); if (!e) return null;
-              const r = e.getBoundingClientRect(); return {x: r.x + r.width / 2, y: r.y + r.height / 2}; })()`});
-  if (!result.value) throw new Error(`not found: ${selector}`);
+const placePointer = (x, y) => call(placePointerIn, x, y);
+// Runs a fixed function in the page with the scene's values as arguments: no code is built from them.
+const call = async (fn, ...args) => {
+  const {result: global} = await send('Runtime.evaluate', {expression: 'globalThis'});
+  const {result} = await send('Runtime.callFunctionOn', {objectId: global.objectId, functionDeclaration: fn.toString(),
+                                                         arguments: args.map(value => ({value})), returnByValue: true});
   return result.value;
+};
+const centre = async selector => {
+  const at = await call(function (s) {
+    const e = document.querySelector(s);
+    if (!e) return null;
+    const r = e.getBoundingClientRect();
+    return {x: r.x + r.width / 2, y: r.y + r.height / 2};
+  }, selector);
+  if (!at) throw new Error(`not found: ${selector}`);
+  return at;
 };
 const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
@@ -124,13 +157,12 @@ const page = {
     }
   },
   async scrollTo(selector, ms = 900, offset = 80) {
-    const {result} = await send('Runtime.evaluate', {returnByValue: true, expression:
-      `document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect().top + scrollY - ${offset}`});
-    const {result: start} = await send('Runtime.evaluate', {returnByValue: true, expression: 'scrollY'});
+    const target = await call(function (s, o) { return document.querySelector(s).getBoundingClientRect().top + scrollY - o; },
+                              selector, offset);
+    const start = await call(function () { return scrollY; });
     const steps = Math.max(2, Math.round(ms / 16));
     for (let i = 1; i <= steps; i++) {
-      const y = start.value + (result.value - start.value) * ease(i / steps);
-      await send('Runtime.evaluate', {expression: `scrollTo(0, ${y})`});
+      await call(function (y) { scrollTo(0, y); }, start + (target - start) * ease(i / steps));
       await sleep(16);
     }
     await send('Input.dispatchMouseEvent', {type: 'mouseMoved', x: pointer.x, y: pointer.y});
@@ -159,7 +191,7 @@ try {
   recording = false;
   await send('Page.stopScreencast').catch(() => {});
   ws.close();
-  chrome.kill();
+  await closeBrowser();
 }
 if (shots.length < 2) throw new Error('no frames were recorded');
 // a concat list with each frame's real duration, so the video keeps the tour's own timing
