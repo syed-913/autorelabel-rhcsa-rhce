@@ -34,6 +34,9 @@ from ..bank import cached_bank
 from . import pages
 
 HOST = "127.0.0.1"
+# A value from a request never reaches a path itself: it is looked up here, and what the bank loader
+# gets is one of these constants.
+EXAM_KEYS = {"rhcsa": "rhcsa", "rhce": "rhce"}
 COOKIE = "autorelabel_dashboard"
 HEADERS = {
     "Content-Security-Policy": "default-src 'none'; style-src 'self'; img-src 'self'; font-src 'self'; "
@@ -146,8 +149,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_bytes(HTTPStatus.OK, (FONT_DIR / FONTS[path]).read_bytes(), "font/woff2",
                                     {"Cache-Control": "private, max-age=86400"})
         query = parse_qs(url.query)
-        exam = query.get("exam", ["rhcsa"])[0]
-        exam = exam if exam in pages.EXAMS else "rhcsa"
+        exam = EXAM_KEYS.get(query.get("exam", ["rhcsa"])[0], "rhcsa")
         exams_only = query.get("only", [""])[0] == "exams"
         try:
             if path.startswith("/attempt/"):
@@ -155,7 +157,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not results:
                     return self._refuse(HTTPStatus.NOT_FOUND, "no such attempt, or its results are gone")
                 exam_of = results.get("exam")
-                names = bank_names(exam_of if isinstance(exam_of, str) and exam_of in pages.EXAMS else "rhcsa")
+                names = bank_names(EXAM_KEYS.get(exam_of, "rhcsa") if isinstance(exam_of, str) else "rhcsa")
                 return self._send(HTTPStatus.OK, pages.attempt_page(results, names[2]))
             if path not in ("/", "/objectives", "/tasks"):
                 return self._refuse(HTTPStatus.NOT_FOUND, "no such page")
