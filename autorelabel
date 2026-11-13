@@ -82,6 +82,38 @@ distro_hint() {
   esac
 }
 
+venv_install_cmd() {
+  # The one command that adds Python's venv module, for the distributions with an install
+  # section in the README; empty where we don't know it.
+  local id="" like=""
+  if [[ -r /etc/os-release ]]; then
+    # shellcheck disable=SC1091
+    id="$(. /etc/os-release; echo "${ID:-}")"
+    # shellcheck disable=SC1091
+    like="$(. /etc/os-release; echo "${ID_LIKE:-}")"
+  fi
+  case " $id $like " in
+    *" debian "*|*" ubuntu "*) echo "sudo apt-get install -y python3-venv";;
+    *" fedora "*|*" rhel "*|*" centos "*) echo "sudo dnf install -y python3";;
+    *" arch "*) echo "sudo pacman -S --needed --noconfirm python";;
+    *" suse "*|*" opensuse "*) echo "sudo zypper --non-interactive install python3";;
+  esac
+}
+
+offer_venv_install() {
+  # The only thing the launcher installs itself, and only when asked: without Python's venv
+  # module it can't start the app, whose host check installs everything else (Fix for me).
+  local cmd
+  cmd="$(venv_install_cmd)"
+  [[ -n "$cmd" && -t 0 && -t 2 ]] || return 0
+  warn "Python's 'venv' module is missing. autorelabel needs it for its private Python environment."
+  printf '%s\n' "  It can be installed with:  ${C_GRN}$cmd${C_OFF}" "  sudo asks for your password itself." >&2
+  local answer=""
+  read -r -p "Run it now? [y/N] " answer || true
+  [[ "$answer" =~ ^[Yy] ]] || return 0
+  bash -c "$cmd" || warn "that did not work; see the message below."
+}
+
 lock_digest() {
   { sha256sum "$LOCK" | cut -d' ' -f1; "$1" -c 'import sys; print(sys.version)'; } | sha256sum | cut -d' ' -f1
 }
@@ -93,7 +125,8 @@ ensure_venv() {
   [[ -x "$VENV/bin/python" && "$want" == "$have" ]] && return 0
 
   if ! "$py" -c 'import venv, ensurepip' >/dev/null 2>&1; then
-    die "Python's 'venv' module is missing. Install it, then re-run ./autorelabel:
+    offer_venv_install "$py"
+    "$py" -c 'import venv, ensurepip' >/dev/null 2>&1 || die "Python's 'venv' module is missing. Install it, then re-run ./autorelabel:
        $(distro_hint "$py")"
   fi
 
