@@ -524,11 +524,19 @@ def objective_recency(exam: str) -> dict[str, float]:
         lines = paths.HISTORY_FILE.read_text().splitlines()
     except OSError:
         return {}
-    recent = [json.loads(line) for line in lines[-10:] if line.strip()]
+    recent = []
+    for line in lines[-10:]:
+        try:
+            h = json.loads(line)
+        except ValueError:
+            continue           # a damaged line costs its own weights, not the next exam
+        if isinstance(h, dict):
+            recent.append(h)
     for age, h in enumerate(reversed(recent)):
         if h.get("exam") != exam:
             continue
-        for o in h.get("objectives", {}):
+        objectives = h.get("objectives")
+        for o in objectives if isinstance(objectives, dict) else {}:
             seen.setdefault(o, age)
     from .bank import cached_bank
 

@@ -146,3 +146,18 @@ def test_the_last_two_exams_come_from_the_history(tmp_path, monkeypatch):
     assert seen_factors([["x", "y"], ["y", "z"], ["w"]]) == {"x": SEEN_LAST_EXAM, "y": SEEN_LAST_EXAM,
                                                                "z": SEEN_EXAM_BEFORE}
     assert seen_factors([]) == {}
+
+
+def test_a_damaged_history_line_does_not_stop_the_next_exam(tmp_path, monkeypatch):
+    """objective_recency feeds every exam start: a line cut short by a crash (or edited by
+    hand) must cost only its own weights."""
+    from autorelabel import grader, paths
+
+    history = tmp_path / "history.jsonl"
+    history.write_text('{"exam": "rhcsa", "objectives": {"rhcsa.tools.shell": 1.0}}\n'
+                       '{"exam": "rhcsa", "objec\n'
+                       '[1, 2]\n'
+                       '{"exam": "rhcsa", "objectives": ["not", "a", "dict"]}\n')
+    monkeypatch.setattr(paths, "HISTORY_FILE", history)
+    weights = grader.objective_recency("rhcsa")
+    assert weights and all(0.0 <= w <= 2.0 for w in weights.values())
