@@ -149,7 +149,7 @@ Prints the graded report of the current session, or of the session you name (the
 
 ### `dashboard [--no-browser] [--port N]`
 
-Shows your graded attempts in the browser: the scores over time against the pass mark, the objectives that keep costing points, the checks that failed more than once, and every attempt's full report. It reads the files in `.workspace/` and changes nothing. The pages come from a small server on `127.0.0.1` that runs until you press Ctrl+C; the address it prints works once, in one browser. `--no-browser` only prints the address.
+Shows your graded attempts in the browser: the scores over time against the pass mark, the objectives that keep costing points, the checks that failed more than once, and every attempt's full report. It reads the files in `.workspace/` and changes nothing. The pages come from a small server on `127.0.0.1` that runs until you press Ctrl+C; the address it prints works once, in one browser, and only for your own user on this computer. `--no-browser` only prints the address. In the text interface, **o** on **Progress and history** does the same, and the server stops when you quit autorelabel.
 
 ### `exam retake`
 

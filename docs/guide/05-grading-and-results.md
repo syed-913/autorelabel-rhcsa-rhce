@@ -91,7 +91,7 @@ When a check **passed before the reboot but failed after it**, the results add t
 
 ## Where the results are kept
 
-Each session has its own folder, `.workspace/sessions/<session>/`, with `results.json` (everything above, machine-readable) and `report.md` (a readable report). Every graded attempt is also added to `.workspace/history.jsonl`, which the **Progress and history** screen reads to show your scores over time and your weakest objectives.
+Each session has its own folder, `.workspace/sessions/<session>/`, with `results.json` (everything above, machine-readable) and `report.md` (a readable report). Every graded attempt is also added to `.workspace/history.jsonl`, which the **Progress and history** screen reads to show your scores over time and your weakest objectives. Press **o** there for the results dashboard in your browser: a chart of your scores against the pass mark, every objective with your share of its points, the checks you failed more than once, the answers lost in the reboot, and every attempt's full report, each check before and after the reboot. `./autorelabel dashboard` opens the same pages from a terminal.
 
 From the command line:
 

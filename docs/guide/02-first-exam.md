@@ -12,7 +12,7 @@ Start autorelabel with `./autorelabel`. The home screen lists what you can do, w
 |---|---|
 | **New RHCSA exam** / **New RHCE exam** | Draws a new 20-task exam and prepares the lab for it. |
 | **Practice RHCSA / RHCE** | Untimed practice on tasks you choose. See [Practice mode](06-practice.md). |
-| **Progress and history** | Your past scores and your weakest objectives so far. |
+| **Progress and history** | Your past scores and your weakest objectives so far. **o** opens the results dashboard in your browser. |
 | **Lab and box** | The state of the box and the lab VMs; rebuild the box or destroy the lab. |
 | **Doctor** | Checks your computer again (`d` from anywhere on the home screen). |
 | **Settings** | See [Settings](08-settings.md) (`s`). |
