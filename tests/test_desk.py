@@ -124,7 +124,8 @@ def test_the_page_carries_a_fresh_nonce_and_a_strict_policy(sess):
             policy = response.getheader("Content-Security-Policy")
             nonce = re.search(r"'nonce-([^']+)'", policy).group(1)
             assert f'nonce="{nonce}"' in page.decode()
-            assert "unsafe-inline" not in policy and "script-src 'self'" in policy and "frame-ancestors 'none'" in policy
+            assert "unsafe-inline" not in policy and "script-src 'self'" in policy
+            assert "frame-ancestors 'none'" in policy
             assert not re.search(rb"<script(?![^>]*\bsrc=)", page)           # no inline script at all
             assert b" style=" not in page
             seen.add(nonce)
@@ -309,7 +310,8 @@ def test_a_client_that_stops_reading_pauses_the_shell():
     """Flow control: output is read from the PTY only as fast as the slowest tab draws it."""
     async def main():
         loop = asyncio.get_running_loop()
-        term = Terminal("t", "local", "sh", ["/bin/sh", "-c", "head -c 8000000 /dev/zero | tr '\\0' x; echo; echo done"])
+        flood = "head -c 8000000 /dev/zero | tr '\\0' x; echo; echo done"
+        term = Terminal("t", "local", "sh", ["/bin/sh", "-c", flood])
         got = bytearray()
         client = term.attach(got.extend)
         term.start(loop)
@@ -354,4 +356,5 @@ def test_the_vendored_files_are_the_recorded_ones():
     for name, digest in listed.items():
         assert hashlib.sha256((vendor / name).read_bytes()).hexdigest() == digest, name
     for licence in ("xterm-LICENSE.txt", "addon-fit-LICENSE.txt"):
-        assert "MIT" in (vendor / licence).read_text() or "Permission is hereby granted" in (vendor / licence).read_text()
+        text = (vendor / licence).read_text()
+        assert "MIT" in text or "Permission is hereby granted" in text
