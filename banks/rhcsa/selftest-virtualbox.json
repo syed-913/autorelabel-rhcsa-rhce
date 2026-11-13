@@ -1,7 +1,7 @@
 {
   "rhcsa.deploy.at-job": {
-    "box": "RHEL 10.0 20261112.2149",
-    "date": "2026-11-12",
+    "box": "RHEL 10.0 20261112.2213",
+    "date": "2026-11-13",
     "detail": "",
     "digest": "a245c73a1f4e",
     "shared": {
