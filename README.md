@@ -25,6 +25,7 @@ autorelabel builds a small RHEL 10 lab on your Linux computer and turns it into 
 - **157 tasks, every objective covered.** 102 RHCSA and 55 RHCE tasks practise every objective line on Red Hat's current exam pages, each line with at least two tasks.
 - **Every task tested on real VMs.** Before a task ships, its reference solution, its accepted alternatives and its classic mistakes (`chcon` in place of `semanage fcontext`, a firewall rule without `--permanent`, a vault file left unencrypted) are all run on RHEL 10 and graded.
 - **One command, one terminal app.** A text interface takes you through setup, the exam, node power controls, the serial console and your results, with a solution and links to Red Hat's documentation for every task. Every action also exists as a command for scripting.
+- **Or sit it in your browser.** The Exam Desk puts the tasks beside terminals and serial consoles to every node, with the clock on top, like an exam workstation. Your shells survive a closed tab, and at time up they become read-only. The results dashboard shows your scores over time, the objectives that keep costing you points, and every check before and after the reboot. Both run on your own computer only.
 - **Leaves your computer clean.** Everything it creates is recorded as it goes, and one command removes all of it.
 
 ## Supported platforms

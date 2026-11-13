@@ -15,6 +15,26 @@ export interface Feature {
 
 export const features: Feature[] = [
   {
+    version: '1.4.0',
+    id: 'desk',
+    name: 'the Exam Desk',
+    heading: ['The exam,', 'in one window.'],
+    lede: ['The Exam Desk, new in 1.4.0.', 'Tasks, terminals and the clock, in your browser.'],
+    frame: ['autorelabel desk', '127.0.0.1'],
+    media: {
+      webm: '/media/exam-desk.webm', mp4: '/media/exam-desk.mp4', poster: '/media/exam-desk-poster.webp',
+      label: 'A tour of the Exam Desk on a real RHCSA lab',
+      description: 'A recording of the Exam Desk on a real RHCSA lab: signing in with the code, reading the first task, logging in on node1\u2019s serial console, and an SSH session to node2 beside it.',
+    },
+    points: [
+      ['Tasks beside terminals.', 'The task on the left, shells and serial consoles to every node on the right, two side by side if you like.'],
+      ['Shells that survive the tab.', 'Close or reload it: the same shells come back with their output.'],
+      ['Time up means time up.', 'At 0:00:00 the terminals become read-only. autorelabel enforces it, not the page.'],
+    ],
+    how: 'Press <kbd>w</kbd> on the exam screen, or run <code>./autorelabel desk</code>, and type the code it shows. It answers only your own browser, on your own computer.',
+    guide: ['The Exam Desk ↗', '/docs/exam-screen/#the-exam-desk-the-exam-in-your-browser'],
+  },
+  {
     version: '1.3.0',
     id: 'results',
     name: 'the results dashboard',
