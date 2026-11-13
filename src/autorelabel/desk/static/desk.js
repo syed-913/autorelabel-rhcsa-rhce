@@ -9,6 +9,9 @@
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const wsUrl = (path) => `ws://${location.host}${path}`;
+  // state arrives every second; a part of the page is rebuilt only when what it shows has changed,
+  // so a button is never replaced between a press and its release
+  const unchanged = (node, value) => { const sig = JSON.stringify(value); if (node.dataset.sig === sig) return true; node.dataset.sig = sig; return false; };
   const fmt = (s) => { s = Math.max(0, Math.round(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}`; };
   const LOCKED = new Set(['locked', 'grading', 'grading_interrupted', 'graded']);
   const WORDS = {running: ['✓', 'running', 'ok'], 'shut off': ['✗', 'off', 'bad'], paused: ['‖', 'paused', 'warn'],
@@ -109,7 +112,9 @@
     drawBars();
   }
   function drawBars() {
-    const box = $('bars'); box.replaceChildren();
+    const box = $('bars');
+    if (unchanged(box, [...bars.values()].map(({tone, label, text}) => [tone, label, text]))) return;
+    box.replaceChildren();
     for (const {tone, label, text, actions = []} of bars.values()) {
       const bar = el('div', `bar ${tone}`); bar.append(el('b', '', label), el('span', '', text));
       for (const [name, fn] of actions) { const b = el('button', 'btn', name); b.type = 'button'; b.onclick = fn; bar.append(b); }
@@ -117,10 +122,11 @@
     }
   }
   function renderTasks() {
-    const grid = $('task-grid'), tasks = state.tasks || [];
-    if (!tasks.length) { grid.replaceChildren(); $('task').replaceChildren(emptyTasks()); return; }
+    // before the clock starts the tasks stay hidden, as on the exam: reading time is exam time
+    const grid = $('task-grid'), tasks = state.state === 'ready' ? [] : state.tasks || [];
+    if (!tasks.length) { grid.replaceChildren(); grid.dataset.sig = ''; if (!unchanged($('task'), ['empty', state.state, state.taskCount])) $('task').replaceChildren(emptyTasks()); return; }
     if (!tasks.some((t) => t.number === currentTask)) currentTask = tasks[0].number;
-    grid.replaceChildren(...tasks.map((t) => {
+    if (!unchanged(grid, [tasks.map((t) => t.number), state.marks, currentTask])) grid.replaceChildren(...tasks.map((t) => {
       const mark = state.marks[String(t.number)] || '';
       const b = el('button', `task-num ${mark}`); b.type = 'button'; b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', String(t.number === currentTask));
@@ -132,17 +138,22 @@
     const t = tasks.find((x) => x.number === currentTask);
     if (!t) return;
     const mark = state.marks[String(t.number)] || '';
-    const art = $('task'); const scroll = art.dataset.task === String(t.number) ? art.scrollTop : 0;
+    const art = $('task');
+    if (unchanged(art, ['task', t.number, t.prompt])) { setMarkButtons(mark); return; }
+    const scroll = art.dataset.task === String(t.number) ? art.scrollTop : 0;
     const meta = [`Task ${t.number} of ${tasks.length}`, `${t.points} points`, `on ${t.node}`, t.difficulty, t.consoleOnly ? 'console' : ''].filter(Boolean).join(' · ');
     art.replaceChildren(el('p', 'meta', meta), el('h2', '', t.title), ...markdown(t.prompt));
     art.dataset.task = String(t.number); art.scrollTop = scroll;
+    setMarkButtons(mark);
+  }
+  function setMarkButtons(mark) {
     $('mark-done').textContent = mark === 'done' ? '✓ Done (undo)' : 'Mark done';
     $('mark-flag').textContent = mark === 'flag' ? '⚑ For review (undo)' : 'Mark for review';
   }
   function emptyTasks() {
     const note = el('div', 'empty-note');
     if (state.state === 'ready') {
-      note.append(el('h2', '', 'Ready when you are.'), el('p', '', 'The lab is prepared. The clock starts when you start the exam, here or in autorelabel.'));
+      note.append(el('h2', '', 'Ready when you are.'), el('p', '', `The lab is prepared. Your ${state.taskCount || 20} tasks appear when you start the exam, here or in autorelabel, and the clock starts with them.`));
       const go = el('button', 'btn primary', 'Start the exam'); go.type = 'button'; go.onclick = () => send({do: 'begin'}); note.append(go);
     } else note.append(el('h2', '', 'Your tasks appear here when the lab is ready.'));
     return note;
@@ -178,7 +189,7 @@
   function renderNodes() {
     const nodes = state.nodes || [];
     if (!nodes.some((n) => n.name === currentNode)) currentNode = nodes.length ? nodes[0].name : '';
-    $('node-tabs').replaceChildren(...nodes.map((n) => {
+    if (!unchanged($('node-tabs'), [nodes.map((n) => [n.name, n.power]), state.unreachable, currentNode])) $('node-tabs').replaceChildren(...nodes.map((n) => {
       const [mark, word, tone] = state.unreachable.includes(n.name) ? ['✗', 'unreachable', 'bad'] : WORDS[n.power] || ['?', n.power, ''];
       const b = el('button', 'node-tab'); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(n.name === currentNode));
       const small = el('small'); small.append(el('span', tone, mark), document.createTextNode(` ${word}`));
@@ -197,12 +208,13 @@
   function renderStage() {
     const stage = $('stage');
     if (state.state === 'graded' && state.result) {
+      if (unchanged(stage, ['graded', state.result.score])) return;
       const r = state.result, n = el('div', 'stage-note');
       n.append(el('h2', '', `${Math.round(r.score)} of ${r.total}: ${r.passed ? '✓ Pass' : '✗ Fail'}`),
                el('p', '', `The pass mark is ${r.passMark}. See every check of this attempt in the results dashboard (./autorelabel dashboard, or o on Progress and history), or in autorelabel itself.`));
       stage.replaceChildren(n); return;
     }
-    if (state.state === 'grading') { stage.replaceChildren(stageNote('Grading.', 'Every node reboots first, then each task is checked. You can close this window: autorelabel finishes on its own.')); return; }
+    if (state.state === 'grading') { if (unchanged(stage, ['grading'])) return; stage.replaceChildren(stageNote('Grading.', 'Every node reboots first, then each task is checked. You can close this window: autorelabel finishes on its own.')); return; }
     const mine = (state.terminals || []).filter((t) => t.node === currentNode);     // an ended shell stays until closed
     for (const t of state.terminals || []) if (!tiles.has(t.id)) attachTile(t, false);
     for (const [id, tile] of tiles) if (!(state.terminals || []).some((t) => t.id === id)) { tile.dispose(); tiles.delete(id); }
@@ -214,9 +226,11 @@
     $('split').setAttribute('aria-pressed', String(split));
     if (!shown.length) {
       const running = state.state === 'in_progress';
+      if (unchanged(stage, ['note', currentNode, running])) return;
       stage.replaceChildren(stageNote(currentNode ? `No shell on ${currentNode} yet.` : 'No node.', running ? 'Open a new shell (SSH) or the serial console from the buttons above.' : 'Shells open once the exam is running.'));
       return;
     }
+    stage.dataset.sig = '';
     if (stage.children.length !== shown.length || shown.some((t, i) => stage.children[i] !== t.root)) stage.replaceChildren(...shown.map((t) => t.root));
     for (const t of shown) { t.update(); t.fit(); }
   }

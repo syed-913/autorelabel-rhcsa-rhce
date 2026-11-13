@@ -375,3 +375,19 @@ def test_the_text_interface_starts_one_desk_and_reuses_it(tmp_path, monkeypatch)
         first.shutdown()
         first.thread.join(10)
         desk._running.clear()
+
+
+def test_no_task_text_before_the_exam_starts(sess):
+    """Reading time is exam time: before the start the page gets the number of tasks, not their text."""
+    s = S.load(sess.id)
+    s.state = S.READY
+    s.save()
+
+    async def body(desk):
+        secret = await sign_in(desk)
+        async with ws(desk, "/ws/control") as c:
+            await c.send(json.dumps({"secret": secret}))
+            await c.recv()
+            state = (await until(c, lambda m: "state" in m and m["state"].get("open")))["state"]
+        assert state["tasks"] == [] and state["taskCount"] == 1 and "Task one" not in json.dumps(state)
+    run(make_desk(sess), body)

@@ -82,6 +82,7 @@ CODE_ALPHABET = "ABCDEFGHJKMNPQRSTVWXYZ23456789"    # no 0/O, 1/I/L, U: easy to 
 CODE_TRIES = 3
 AUTH_TIMEOUT = 2.0
 MAX_TERMINALS = 12
+NOT_STARTED = {S.NEW, S.PROVISIONING, S.PROVISION_FAILED, S.READY}
 
 
 def csp(nonce: str) -> str:
@@ -380,7 +381,10 @@ class Desk:
 
     # --- state for the page ------------------------------------------------------------------------
     def public_state(self) -> dict[str, Any]:
-        return {**self.snapshot, "terminals": [t.describe() for t in self.terminals.values()]}
+        out = {**self.snapshot, "terminals": [t.describe() for t in self.terminals.values()]}
+        if out.get("state") in NOT_STARTED:        # reading time is exam time: no task text before the start
+            out["taskCount"], out["tasks"] = len(out.get("tasks") or []), []
+        return out
 
     async def _broadcast(self, message: dict[str, Any]) -> None:
         data = json.dumps(message)
