@@ -4,6 +4,18 @@ Changes to the program, newest first. Planned versions are in [ROADMAP.md](ROADM
 
 Versions follow [semantic versioning](https://semver.org): a patch release (1.0.1) only fixes things, a minor release (1.1.0) adds something without breaking what you use, and a major release (2.0.0) may change how things work. The website and documentation aren't versioned. Check yours with `./autorelabel --version`.
 
+## 1.4.0 (2026-11-14)
+
+### Added
+
+- **The Exam Desk: the exam in your browser.** Press `w` on the exam screen, or run `./autorelabel desk`. It shows:
+  - the tasks on the left, with done and review marks;
+  - a terminal or the serial console to every node on the right, one or two side by side;
+  - the clock on top, with warnings at 15 and 5 minutes, and reset node and end exam, each with a confirmation.
+
+  Your shells survive a closed or reloaded tab. At time up the terminals become read-only, and that is enforced by autorelabel, not by the page. Full screen hands Ctrl+W, Ctrl+T and Ctrl+N to your shell in Chrome, Chromium and Edge. The text interface keeps working beside it.
+- It is reachable only from your own computer, by your own user, and only from its own page. It opens after you type a code that autorelabel shows you, and it keeps no cookie. The [security guide](https://autorelabel.dpdns.org/docs/security/) has the details.
+
 ## 1.3.1 (2026-11-14)
 
 ### Changed
