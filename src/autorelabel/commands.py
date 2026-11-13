@@ -203,8 +203,7 @@ def cmd_lab_destroy(args: argparse.Namespace) -> int:
 
 
 def cmd_dashboard(args: argparse.Namespace) -> int:
-    import webbrowser
-
+    from .dashboard import open_in_browser
     from .dashboard.server import Dashboard
 
     srv = Dashboard(args.port)
@@ -212,10 +211,7 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
           "The address works once, in one browser. It shows your graded attempts and changes nothing.\n"
           "Press Ctrl+C here to stop it.", flush=True)
     if not args.no_browser:
-        try:
-            webbrowser.open(srv.launch_url)
-        except Exception:        # no browser to open: the address is printed above
-            pass
+        open_in_browser(srv.launch_url)      # no browser to open: the address is printed above
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

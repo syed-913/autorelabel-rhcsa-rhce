@@ -504,7 +504,7 @@ class LabScreen(Screen[None]):
 
 # --------------------------------------------------------------------------- History
 class HistoryScreen(Screen[None]):
-    BINDINGS = [("escape", "back", "Back")]
+    BINDINGS = [("escape", "back", "Back"), ("o", "open_dashboard", "Open in the browser")]
 
     def compose(self) -> ComposeResult:
         yield Static("Progress and history", classes="title")
@@ -519,9 +519,16 @@ class HistoryScreen(Screen[None]):
         t.add_columns("Date", "Exam", "Mode", "Score", "Result")
         rows = []
         try:
-            rows = [json.loads(line) for line in paths.HISTORY_FILE.read_text().splitlines() if line.strip()]
+            lines = paths.HISTORY_FILE.read_text().splitlines()
         except OSError:
-            pass
+            lines = []
+        for line in lines:
+            try:
+                h = json.loads(line)
+            except ValueError:
+                continue                  # a damaged line: the dashboard counts these, this screen skips them
+            if isinstance(h, dict):
+                rows.append(h)
         import time as _t
 
         for h in reversed(rows):
@@ -543,7 +550,22 @@ class HistoryScreen(Screen[None]):
             for ratio, o in worst:
                 text = bank.objectives.objectives.get(o)
                 s.append(f"  {ratio * 100:3.0f}%  {text.text if text else o}\n", style="yellow")
+        s.append("\nPress o for the results dashboard in your browser: scores over time, every objective and "
+                 "every check.", style="dim")
         self.query_one("#hist-summary", Static).update(s)
+
+    def action_open_dashboard(self) -> None:
+        from ..dashboard import open_in_browser, start_in_background
+
+        try:
+            srv = start_in_background()
+        except OSError as exc:
+            self.notify(f"The results dashboard could not start: {exc}", severity="error")
+            return
+        opened = open_in_browser(srv.launch_url)
+        self.notify(("Opened in your browser. " if opened else "Open this address in your browser: ")
+                    + f"{srv.launch_url}\nIt works once, shows your results read-only, and stops when you quit "
+                    "autorelabel.", title="Results dashboard", timeout=20)
 
     def action_back(self) -> None:
         self.dismiss(None)

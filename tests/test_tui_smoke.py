@@ -190,3 +190,34 @@ def test_doctor_offers_to_run_tested_fixes(configured, monkeypatch):
 
     asyncio.run(run(broken, True))
     asyncio.run(run([doctor.Check("packer", "Packer", doctor.Status.OK)], False))
+
+
+def test_the_history_screen_opens_the_results_dashboard(configured, monkeypatch):
+    """o starts the dashboard in this process and hands its launch address to the browser; a damaged
+    history line doesn't stop the screen."""
+    from autorelabel import dashboard
+
+    paths.HISTORY_FILE.write_text('{"exam": "rhcsa", "mode": "exam", "score": 220, "passed": true}\n{"broken\n')
+    opened: list[str] = []
+    monkeypatch.setattr(dashboard, "open_in_browser", lambda url: opened.append(url) or True)
+
+    async def run() -> None:
+        app = AutorelabelApp()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            app.push_screen(HistoryScreen())
+            await pilot.pause()
+            await pilot.press("o")
+            await pilot.pause()
+            await pilot.press("o")              # again: a fresh server, the first one is stopped
+            await pilot.pause()
+
+    try:
+        asyncio.run(run())
+        assert len(opened) == 2 and opened[0] != opened[1]
+        assert len(dashboard._running) == 1 and dashboard._running[0].launch_url == opened[1]
+    finally:
+        for srv in dashboard._running:
+            srv.shutdown()
+            srv.server_close()
+        dashboard._running.clear()
