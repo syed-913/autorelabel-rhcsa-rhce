@@ -35,6 +35,7 @@ SCROLLBACK = 1 << 20
 HIGH_WATER = 512 * 1024
 LOW_WATER = 128 * 1024
 READ_SIZE = 64 * 1024
+MAX_PENDING = 1 << 20    # typed or pasted input waiting for the program to read it
 ALT_ON = re.compile(rb"\x1b\[\?(?:1049|1047|47)h")
 ALT_OFF = re.compile(rb"\x1b\[\?(?:1049|1047|47)l")
 
@@ -61,6 +62,8 @@ class Terminal:
     exited: bool = False
     clients: list[Client] = field(default_factory=list)
     paused: bool = False
+    pending: bytearray = field(default_factory=bytearray)      # input the PTY could not take yet
+    writing: bool = False                                      # a writer callback waits for room
     loop: asyncio.AbstractEventLoop | None = None
     read_only: Callable[[], bool] = lambda: False
 
@@ -79,8 +82,9 @@ class Terminal:
         loop.add_reader(master, self._readable)
 
     def close(self) -> None:
-        if self.loop and self.fd >= 0 and not self.exited:
+        if self.loop and self.fd >= 0:
             self.loop.remove_reader(self.fd)
+            self.loop.remove_writer(self.fd)
         if self.proc and self.proc.poll() is None:
             try:
                 os.killpg(self.proc.pid, signal.SIGHUP)
@@ -127,8 +131,15 @@ class Terminal:
             return
         assert self.loop is not None
         self.loop.remove_reader(self.fd)
+        self.loop.remove_writer(self.fd)
+        self.pending.clear()
         self.exited = True
         code = self.proc.wait() if self.proc else 0
+        try:
+            os.close(self.fd)                  # nothing more will come through it
+        except OSError:
+            pass
+        self.fd = -1
         note = (f"\r\n\x1b[2m[{self.title or self.kind} ended (exit {code}). "
                 "Open a new shell from the node's tab.]\x1b[0m\r\n")
         self._keep(note.encode())
@@ -166,20 +177,40 @@ class Terminal:
         self._maybe_resume()
 
     # --- input and size ------------------------------------------------------------------------
-    def write(self, data: bytes) -> bool:
-        """Typed input. False (and nothing written) when the exam is read-only or the shell ended."""
-        if self.exited or self.fd < 0 or self.read_only():
-            return False
-        view = memoryview(data)
-        while view:
+    def write(self, data: bytes) -> str:
+        """Typed or pasted input: "ok", or why it was refused ("read-only", "ended", "full").
+
+        The PTY takes only so much input until the program reads it (a paste while a command
+        runs). What doesn't fit waits here, and the event loop writes it when there is room:
+        never a wait on the loop itself, which would freeze every shell and the clock."""
+        if self.exited or self.fd < 0:
+            return "ended"
+        if self.read_only():
+            return "read-only"
+        if len(self.pending) + len(data) > MAX_PENDING:
+            return "full"
+        self.pending += data
+        self._flush()
+        return "ok"
+
+    def _flush(self) -> None:
+        while self.pending and self.fd >= 0:
             try:
-                n = os.write(self.fd, view)
+                n = os.write(self.fd, self.pending)
             except BlockingIOError:
-                continue                       # the PTY's input buffer is full for a moment
+                break
             except OSError:
-                return False
-            view = view[n:]
-        return True
+                self.pending.clear()
+                break
+            del self.pending[:n]
+        assert self.loop is not None
+        if self.pending and not self.writing and self.fd >= 0:
+            self.loop.add_writer(self.fd, self._flush)
+            self.writing = True
+        elif not self.pending and self.writing:
+            if self.fd >= 0:
+                self.loop.remove_writer(self.fd)
+            self.writing = False
 
     def resize(self, cols: int, rows: int) -> None:
         cols, rows = max(2, min(int(cols), 500)), max(2, min(int(rows), 300))

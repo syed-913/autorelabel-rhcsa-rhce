@@ -242,6 +242,9 @@ def cmd_desk(args: argparse.Namespace) -> int:
         asyncio.run(desk.run(ready))
     except KeyboardInterrupt:
         print()
+    except OSError as exc:
+        return _err(f"the Exam Desk could not listen on port {args.port}: {exc.strerror or exc}. "
+                    "Leave out --port to use any free one.")
     return 0
 
 

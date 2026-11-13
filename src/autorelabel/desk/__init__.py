@@ -17,7 +17,11 @@ def start_in_background(timeout: float = 15.0) -> Any:
     from .server import Desk
 
     if _running and _running[0].thread.is_alive():
-        return _running[0]
+        old = _running[0]
+        if old.tries_left > 0 or any(not t.exited for t in old.terminals.values()):
+            return old
+        old.shutdown()                    # its code is used up and it holds no shell: a fresh one
+        old.thread.join(10)
     desk = Desk()
     ready = threading.Event()
 

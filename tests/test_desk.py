@@ -268,7 +268,9 @@ def test_a_terminal_wants_the_secret_too(sess):
     run(make_desk(sess), body)
 
 
-def test_shells_are_read_only_once_time_is_up(sess):
+def test_shells_are_read_only_once_time_is_up(sess, tmp_path):
+    marker = tmp_path / "should-not-exist"
+
     async def body(desk):
         secret = await sign_in(desk)
         tid = await open_shell(desk, secret)
@@ -278,8 +280,10 @@ def test_shells_are_read_only_once_time_is_up(sess):
         async with ws(desk, f"/ws/term/{tid}") as term:
             await term.send(json.dumps({"secret": secret}))
             await term.recv()
-            await term.send(b"touch should-not-exist\n")
+            await term.send(f"touch {marker}\n".encode())
             assert await until(term, lambda m: isinstance(m, dict) and m.get("readOnly"))
+            await asyncio.sleep(0.5)
+            assert not marker.exists()
         async with ws(desk, "/ws/control") as c:
             await c.send(json.dumps({"secret": secret}))
             await c.recv()
@@ -391,3 +395,88 @@ def test_no_task_text_before_the_exam_starts(sess):
             state = (await until(c, lambda m: "state" in m and m["state"].get("open")))["state"]
         assert state["tasks"] == [] and state["taskCount"] == 1 and "Task one" not in json.dumps(state)
     run(make_desk(sess), body)
+
+
+def test_terminal_sockets_get_the_same_checks(sess):
+    """Host, Origin and size limits apply to a terminal's socket as to the page's."""
+    async def body(desk):
+        secret = await sign_in(desk)
+        tid = await open_shell(desk, secret)
+        response, _ = await asyncio.to_thread(http_get, desk, f"/ws/term/{tid}", f"evil.example:{desk.port}")
+        assert response.status == 421
+        for origin in ("http://evil.example", None):
+            with pytest.raises(InvalidStatus):
+                async with ws(desk, f"/ws/term/{tid}", origin=origin):
+                    pass
+        async with ws(desk, f"/ws/term/{tid}") as term:
+            await term.send(json.dumps({"secret": secret}))
+            await term.recv()
+            await term.send(json.dumps({"resize": [100000, -5]}))
+            await term.send('{"ack": Infinity, "resize": [NaN, 3]}')         # ignored, not fatal
+            await term.send(json.dumps(["not", "a", "dict"]))
+            await asyncio.sleep(0.3)
+            assert (desk.terminals[tid].cols, desk.terminals[tid].rows) == (500, 2)
+            await term.send(b"x" * (300 * 1024))                              # over max_size
+            with pytest.raises(ConnectionClosed) as closed:
+                while True:
+                    await asyncio.wait_for(term.recv(), 5)
+            assert closed.value.rcvd.code == 1009
+        async with ws(desk, "/ws/control") as c:                                # not ASCII: refused, not a crash
+            await c.send(json.dumps({"secret": "s\u00e9cret"}))
+            with pytest.raises(ConnectionClosed) as closed:
+                while True:
+                    await asyncio.wait_for(c.recv(), 5)
+            assert closed.value.rcvd.code == 4401
+        async with ws(desk, "/ws/control") as c:
+            await c.send(json.dumps({"secret": secret}))
+            await c.recv()
+            for task in (True, "1", -1, 10**30, 999):
+                await c.send(json.dumps({"do": "mark", "task": task, "mark": "done"}))
+                assert "error" in await until(c, lambda m: "error" in m)
+        assert S.load(sess.id).marks == {}
+    run(make_desk(sess), body)
+
+
+def test_input_the_shell_is_not_reading_waits_without_blocking_the_desk():
+    """A paste while a command runs: the PTY takes only some of it. The rest must wait outside the
+    event loop's way, or every shell and the clock would freeze until the command ended."""
+    async def main():
+        loop = asyncio.get_running_loop()
+        term = Terminal("t", "local", "sh", ["/bin/sh", "-c", "sleep 2; cat >/dev/null; echo all-read"])
+        got = bytearray()
+        client = term.attach(got.extend)
+        term.start(loop)
+        line = b"x" * 99 + b"\n"
+        assert term.write(line * 3000 + b"\x04") == "ok"                     # 300 kB, then Ctrl+D
+        assert term.pending                                                   # most of it waits
+        worst = 0.0
+        for _ in range(20):                                                   # the loop keeps its time
+            started = loop.time()
+            await asyncio.sleep(0.05)
+            worst = max(worst, loop.time() - started)
+        assert worst < 0.5
+        for _ in range(400):
+            await asyncio.sleep(0.025)
+            term.ack(client, client.unacked)
+            if b"all-read" in got:
+                break
+        assert b"all-read" in got and not term.pending
+        assert term.write(b"y" * (2 << 20)) in ("full", "ended")              # over the limit: refused
+        term.close()
+    asyncio.run(main())
+
+
+def test_a_used_up_code_gets_a_fresh_desk_from_the_text_interface(tmp_path, monkeypatch):
+    from autorelabel import desk
+
+    monkeypatch.setattr(paths, "SESSIONS", tmp_path / "sessions")
+    first = desk.start_in_background()
+    try:
+        first.tries_left = 0
+        second = desk.start_in_background()
+        assert second is not first and second.tries_left == 3 and not first.thread.is_alive()
+    finally:
+        for d in desk._running:
+            d.shutdown()
+            d.thread.join(10)
+        desk._running.clear()

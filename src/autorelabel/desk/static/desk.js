@@ -252,10 +252,12 @@
       update() {
         const locked = LOCKED.has(state.state), n = (state.nodes || []).find((x) => x.name === info.node), down = n && n.power !== 'running' && n.power !== 'unknown';
         const t = (state.terminals || []).find((x) => x.id === info.id); if (t && t.exited) ended = true;
-        st.textContent = ended ? '■ ended' : locked || readOnly ? '■ read-only' : down ? '↻ waiting' : '● connected';
+        const paused = state.state === 'interrupted';
+        st.textContent = ended ? '■ ended' : locked || readOnly ? '■ read-only' : paused ? '‖ paused' : down ? '↻ waiting' : '● connected';
         root.classList.toggle('dim', (!!down && !locked) || ended);
-        strip.hidden = !(down || locked || readOnly || ended);
+        strip.hidden = !(down || locked || readOnly || ended || paused);
         strip.textContent = ended ? 'This shell has ended. Close it, or open a new one from the buttons above.'
+          : paused ? 'The exam is paused. Resume it in autorelabel; until then typing goes nowhere.'
           : locked || readOnly ? 'Read-only: time is up. You can read and scroll; typing goes nowhere.'
           : down ? `${info.node} is not running. This shell is kept; if the connection dropped, open a new shell when ${info.node} is back.` : '';
       },
@@ -265,7 +267,7 @@
       ws = new WebSocket(wsUrl(`/ws/term/${encodeURIComponent(info.id)}`)); ws.binaryType = 'arraybuffer'; size = '';
       ws.onopen = () => ws.send(JSON.stringify({secret}));
       ws.onmessage = (event) => {
-        if (typeof event.data === 'string') { const m = JSON.parse(event.data); if (m.ok) tile.fit(); if (m.readOnly) { readOnly = true; tile.update(); } if (m.ended) { ended = true; tile.update(); } return; }
+        if (typeof event.data === 'string') { const m = JSON.parse(event.data); if (m.ok) tile.fit(); if (m.readOnly) { readOnly = true; tile.update(); } if (m.ended) { ended = true; tile.update(); } if (m.full) toast(`${info.node} is not reading what you type right now, so the rest of that paste was dropped.`); return; }
         const bytes = new Uint8Array(event.data);
         term.write(bytes, () => { acked += bytes.length; if (acked >= 64 * 1024 && ws.readyState === 1) { ws.send(JSON.stringify({ack: acked})); acked = 0; } });
         if (acked && ws.readyState === 1) setTimeout(() => { if (acked && ws.readyState === 1) { ws.send(JSON.stringify({ack: acked})); acked = 0; } }, 50);

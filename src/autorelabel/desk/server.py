@@ -198,14 +198,14 @@ class Desk:
             await ws.close(4401, "who are you")
             return False
         secret = str(first.get("secret", "")) if isinstance(first, dict) else ""
-        if secret and any(hmac.compare_digest(secret, s) for s in self.secrets):
+        if secret and any(hmac.compare_digest(secret.encode(), s.encode()) for s in self.secrets):
             await ws.send(json.dumps({"ok": True}))
             return True
         code = str(first.get("code", "")) if isinstance(first, dict) and allow_code else ""
         if code:
             if self.tries_left <= 0:
                 await ws.send(json.dumps({"error": "used", "left": 0}))
-            elif hmac.compare_digest(_normal(code), _normal(self.code)):
+            elif hmac.compare_digest(_normal(code).encode(), _normal(self.code).encode()):
                 fresh = secrets.token_urlsafe(32)
                 self.secrets.add(fresh)
                 await ws.send(json.dumps({"ok": True, "secret": fresh}))
@@ -244,18 +244,22 @@ class Desk:
         try:
             async for message in ws:
                 if isinstance(message, bytes):
-                    if not term.write(message):
-                        await ws.send(json.dumps({"ended": True} if term.exited else {"readOnly": True}))
+                    result = term.write(message)
+                    if result != "ok":
+                        await ws.send(json.dumps({"ended": True} if result == "ended" else
+                                                 {"readOnly": True} if result == "read-only" else {"full": True}))
                     continue
                 try:
                     control = json.loads(message)
-                except ValueError:
+                    if not isinstance(control, dict):
+                        continue
+                    if "ack" in control:
+                        term.ack(client, int(control["ack"]))
+                    if "resize" in control:
+                        cols, rows = control["resize"]
+                        term.resize(int(cols), int(rows))
+                except (ValueError, TypeError, OverflowError):   # Infinity, NaN, wrong shapes: ignored
                     continue
-                if "ack" in control:
-                    term.ack(client, int(control["ack"]))
-                if "resize" in control:
-                    cols, rows = control["resize"]
-                    term.resize(int(cols), int(rows))
         except (ConnectionClosed, TypeError, ValueError):
             pass
         finally:
@@ -333,7 +337,11 @@ class Desk:
             if do in ("shell", "console", "reset") and node not in nodes:
                 return {"error": f"no node {node!r} in this exam"}
             if do == "mark":
-                number, mark = str(int(action["task"])), str(action.get("mark", ""))
+                task = action.get("task")
+                numbers = {str(t.get("number")) for t in self.snapshot.get("tasks") or []}
+                if not isinstance(task, int) or isinstance(task, bool) or str(task) not in numbers:
+                    return {"error": "no such task"}
+                number, mark = str(task), str(action.get("mark", ""))
                 if mark not in ("done", "flag", ""):
                     return {"error": "unknown mark"}
                 if mark:
