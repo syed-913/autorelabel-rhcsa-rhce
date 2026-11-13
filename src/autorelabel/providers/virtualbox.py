@@ -9,7 +9,9 @@ import sys
 import time
 from pathlib import Path
 
-from .. import console_keeper, paths, proc
+from .. import console_keeper, log, paths, proc
+
+_log = log.get("virtualbox")
 
 
 class VirtualBoxError(RuntimeError):
@@ -24,6 +26,7 @@ class ProfileBusy(VirtualBoxError):
 
 SERVICE_WAIT = 60   # an idle VBoxSVC exits about 5 s after its last client
 PARAVIRT = "minimal"  # paravirtualization interface of the lab VMs (see start)
+MODIFY_TRIES = 4     # for a VM's settings before it starts, with 1, 2 and 3 s between them
 
 
 def service_homes(proc_root: Path = Path("/proc")) -> list[Path | None]:
@@ -120,12 +123,23 @@ def start(name: str) -> proc.Result:
     # And no way from the VM to this computer's own 127.0.0.1 through the NAT gateway
     # (10.0.2.2): boxes built before 1.1.1 carry that setting from their build, and so do the
     # snapshots of labs made from them.
-    for _ in range(3):
-        if vbm("modifyvm", name, "--paravirt-provider", PARAVIRT, "--nat-localhostreachable1", "off",
-               timeout=30).ok:
-            break
-        time.sleep(1)          # the session of a VM that just stopped is still closing
-    return vbm("startvm", name, "--type", "headless", timeout=180)
+    # A VM these settings could not be given to is not started: it may still have the way to
+    # 127.0.0.1 open.
+    res = None
+    for attempt in range(MODIFY_TRIES):
+        if attempt:
+            time.sleep(attempt)    # the session of a VM that just stopped is still closing
+        res = vbm("modifyvm", name, "--paravirt-provider", PARAVIRT, "--nat-localhostreachable1", "off",
+                  timeout=30)
+        if res.ok:
+            return vbm("startvm", name, "--type", "headless", timeout=180)
+        _log.warning("modifyvm %s failed (try %d of %d): %s", name, attempt + 1, MODIFY_TRIES, res.tail(3))
+    # imported here, because lab imports this module
+    from ..lab import LabError
+
+    raise LabError(f"{name} was not started: VirtualBox did not accept its settings (the clock, and no way from "
+                   f"the VM to this computer's 127.0.0.1). VBoxManage said: {res.tail(3) if res else ''}",
+                   "If VirtualBox Manager has this VM open, close it. Then try again.")
 
 
 def shutdown(name: str, wait: float = 120) -> bool:

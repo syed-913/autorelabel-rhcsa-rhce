@@ -128,6 +128,37 @@ def test_virtualbox_vms_start_without_the_kvm_clock(monkeypatch):
         [("startvm", "autorelabel-rhcsa-node1", "--type", "headless")]
 
 
+def test_a_virtualbox_vm_whose_settings_were_refused_is_not_started(monkeypatch):
+    """The settings carry the closed way to the host's 127.0.0.1: a VM that did not get them
+    stays off, and the person is told why."""
+    from autorelabel import proc
+    from autorelabel.lab import LabError
+    from autorelabel.providers import virtualbox as vb
+
+    calls = []
+
+    def fake_vbm(*args, **_kw):
+        calls.append(args[0])
+        refused = args[0] == "modifyvm"
+        err = "VBoxManage: error: The machine is locked" if refused else ""
+        return proc.Result(list(args), 1 if refused else 0, "", err, 0.0)
+
+    monkeypatch.setattr(vb, "vbm", fake_vbm)
+    monkeypatch.setattr(vb, "ensure_console_keeper", lambda: None)
+    monkeypatch.setattr(vb.time, "sleep", lambda _s: None)
+    with pytest.raises(LabError) as caught:
+        vb.start("autorelabel-rhcsa-node1")
+    assert calls == ["modifyvm"] * vb.MODIFY_TRIES            # and no startvm
+    assert "autorelabel-rhcsa-node1 was not started" in str(caught.value)
+    assert "The machine is locked" in str(caught.value)
+    assert caught.value.hint
+    # the grader's power-cycle goes through the same door
+    monkeypatch.setattr(vb, "shutdown", lambda _name, wait=0: True)
+    with pytest.raises(LabError):
+        vb.reboot_acpi("autorelabel-rhcsa-node1")
+    assert "startvm" not in calls
+
+
 def test_no_virtualbox_lab_vm_keeps_the_way_to_the_hosts_loopback():
     """The box build needs it (the kickstart comes from 10.0.2.2); the box and the lab must not
     keep it: with it on, a lab VM reads whatever listens on this computer's 127.0.0.1."""
