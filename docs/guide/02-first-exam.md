@@ -24,7 +24,7 @@ You can also skip the home screen: `./autorelabel rhcsa` (or `rhce`) opens autor
 
 ## Preparing the lab
 
-Choose **New RHCSA exam**. autorelabel draws 20 tasks from the bank (6 easy, 8 medium and 6 hard, with every objective domain represented), fills in their details (user names, sizes, ports, passwords) at random, and prepares the lab. The screen shows each stage:
+Choose **New RHCSA exam**. autorelabel draws 20 tasks from the bank (300 points in all, 4 to 6 of them hard, with every objective domain represented), fills in their details (user names, sizes, ports, passwords) at random, and prepares the lab. The screen shows each stage:
 
 1. **The first time only:** the lab VMs are created and set up, then saved as a clean snapshot. This takes noticeably longer than later exams.
 2. **Restoring a clean lab** from that snapshot, so no earlier exam leaves anything behind.

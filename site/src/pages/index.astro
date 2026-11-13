@@ -16,7 +16,7 @@ const features=[
   ['Method-agnostic grading','The final state counts. Use UUID or LABEL, nmcli or keyfiles. The grader never looks at the commands you typed.'],
   ['Every task self-tested','Untouched labs, reference solutions, accepted alternatives, and classic mistakes are checked on real RHEL 10 VMs with libvirt and VirtualBox.'],
   ['Full objective coverage',`All ${domains.rhcsa.reduce((n,d)=>n+d.objectives.length,0)} RHCSA and ${domains.rhce.reduce((n,d)=>n+d.objectives.length,0)} RHCE objective lines have at least two tasks. ${counts.practice} tasks are available only in practice.`],
-  ['A fixed difficulty mix','Every exam has 6 easy tasks at 10 points, 8 medium at 15, and 6 hard at 20. The total is always 300.'],
+  ['A fixed point total','Every exam has 20 tasks worth 300 points: easy ones at 10, medium at 15, hard at 20, with 4 to 6 hard tasks. The tasks of your last two exams are held back.'],
   ['A clock that survives your host','A background proctor keeps the clock. With the default settings, time while your computer sleeps or is off does not count.'],
   ['RHCE, with the real tools','ansible-core, the RHEL system roles, an offline execution environment, ansible-navigator, and VS Code in your browser.'],
   ['A clean uninstall','A ledger records every resource. The uninstaller removes what autorelabel created, including a rescue copy if the repository is gone.'],

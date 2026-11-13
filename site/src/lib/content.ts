@@ -20,7 +20,7 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 export interface Task { id: string; key: string; exam: Exam; domain: string; domainTitle: string; title: string; difficulty: Difficulty; node: string; estimated_minutes: number; practice_only: boolean; objectives: string[]; }
 export interface Objective { id: string; text: string; tasks: Task[]; }
 export interface Domain { id: string; title: string; objectives: Objective[]; }
-export interface Blueprint { tasks: number; duration_minutes: number; total_points: number; pass_mark: number; points: Record<Difficulty, number>; difficulty_mix: Record<Difficulty, number>; domains: Record<string, [number,number]>; }
+export interface Blueprint { tasks: number; duration_minutes: number; total_points: number; pass_mark: number; points: Record<Difficulty, number>; difficulty_mix: Record<Difficulty, number>; alternative_mixes?: Record<Difficulty, number>[]; domains: Record<string, [number,number]>; }
 
 export const domains = {} as Record<Exam, Domain[]>;
 export const blueprints = {} as Record<Exam, Blueprint>;

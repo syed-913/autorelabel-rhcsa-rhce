@@ -78,7 +78,7 @@ It is in the instructions shown before the exam: press `i` on the exam screen, o
 
 ### Will I get the same tasks every time?
 
-No. Each exam draws 20 tasks within a fixed blueprint (6 easy, 8 medium and 6 hard), randomises their details, and favours objectives you haven't practised recently. To repeat an exam exactly, use **Retake** on its results screen.
+No. Each exam draws 20 tasks worth 300 points within a fixed blueprint, randomises their details, favours objectives you haven't practised recently, and holds back the tasks of your last two exams. To repeat an exam exactly, use **Retake** on its results screen.
 
 ### Can I pause an exam?
 
