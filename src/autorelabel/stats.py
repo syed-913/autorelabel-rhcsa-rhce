@@ -8,6 +8,7 @@ wants the same numbers can call the same functions.
 from __future__ import annotations
 
 import json
+import math
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -40,7 +41,9 @@ class History:
 
 
 def _number(value: Any, default: float = 0.0) -> float:
-    return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) else default
+    if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value):
+        return float(value)
+    return default
 
 
 def _shares(value: Any) -> dict[str, float]:
@@ -54,7 +57,8 @@ def session_results(session: str, sessions_dir: Path | None = None) -> dict[str,
     if not SESSION_ID.match(session):
         return None
     try:
-        data = json.loads(((sessions_dir or paths.SESSIONS) / session / "results.json").read_text(encoding="utf-8"))
+        data = json.loads(((sessions_dir or paths.SESSIONS) / session / "results.json").read_text(encoding="utf-8",
+                                                                                         errors="replace"))
     except (OSError, ValueError):
         return None
     return data if isinstance(data, dict) and isinstance(data.get("tasks"), list) else None
@@ -62,7 +66,7 @@ def session_results(session: str, sessions_dir: Path | None = None) -> dict[str,
 
 def load(history_file: Path | None = None, sessions_dir: Path | None = None) -> History:
     try:
-        lines = (history_file or paths.HISTORY_FILE).read_text(encoding="utf-8").splitlines()
+        lines = (history_file or paths.HISTORY_FILE).read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
         return History([], 0)
     attempts: list[Attempt] = []

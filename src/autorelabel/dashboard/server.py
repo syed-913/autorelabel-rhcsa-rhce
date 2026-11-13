@@ -7,7 +7,7 @@ to resolve to 127.0.0.1 (DNS rebinding). So every request is checked, in this or
 
 1. Host must be 127.0.0.1:<port> or localhost:<port> (rebinding sends the attacker's name).
 2. The program at the other end runs as this user (`localweb.same_user`, from /proc/net/tcp):
-   another user of this computer is refused before anything else is looked at.
+   another user of this computer is refused before the path, the token or the cookie is looked at.
 3. GET or HEAD only: nothing here changes anything.
 4. A token made at launch, known only to whoever saw the launch address. The first request
    carries it in the path and is answered with a cookie (HttpOnly, SameSite=Strict) and a
@@ -154,7 +154,8 @@ class Handler(BaseHTTPRequestHandler):
                 results = stats.session_results(path.removeprefix("/attempt/"))
                 if not results:
                     return self._refuse(HTTPStatus.NOT_FOUND, "no such attempt, or its results are gone")
-                names = bank_names(results["exam"] if results.get("exam") in pages.EXAMS else "rhcsa")
+                exam_of = results.get("exam")
+                names = bank_names(exam_of if isinstance(exam_of, str) and exam_of in pages.EXAMS else "rhcsa")
                 return self._send(HTTPStatus.OK, pages.attempt_page(results, names[2]))
             if path not in ("/", "/objectives", "/tasks"):
                 return self._refuse(HTTPStatus.NOT_FOUND, "no such page")

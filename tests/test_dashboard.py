@@ -280,3 +280,21 @@ def test_a_connection_from_another_uid_is_not_this_user(tmp_path):
     assert localweb.peer_uid(Conn(), table) == 1001                 # type: ignore[arg-type]
     assert localweb._proc_address(("127.0.0.1", 8080)) == "0100007F:1F90"
     assert not localweb.same_user(Conn(), tmp_path / "missing")      # type: ignore[arg-type]
+
+
+def test_hand_edited_history_does_not_break_the_pages(tmp_path, monkeypatch):
+    """Wrong types, an impossible date and bytes that aren't UTF-8: each costs its own line at most."""
+    history = tmp_path / "history.jsonl"
+    history.write_bytes(b'{"session": "a1", "exam": "rhcsa", "mode": "exam", "score": "high", "passed": true,'
+                        b' "graded_at": 1e300, "objectives": ["x"]}\n'
+                        b'{"session": "a2", "exam": "rhcsa", "mode": "exam", "score": 230, "passed": true,'
+                        b' "graded_at": 1790000000, "objectives": {"rhcsa.tools.shell": "half"}}\n'
+                        b'\xff\xfe not text\n')
+    monkeypatch.setattr(paths, "HISTORY_FILE", history)
+    monkeypatch.setattr(paths, "SESSIONS", tmp_path / "sessions")
+    h = stats.load()
+    assert len(h.attempts) == 2 and h.unreadable == 1
+    assert {a.score for a in h.attempts} == {0.0, 230.0}
+    for html in (pages.overview(h, "rhcsa", False, OBJECTIVES, TITLES),
+                 pages.objectives_page(h, "rhcsa", False, OBJECTIVES), pages.tasks_page(h, "rhcsa", False, TITLES)):
+        assert "<html" in html

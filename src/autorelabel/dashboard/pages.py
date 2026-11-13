@@ -35,12 +35,18 @@ def _day(epoch: float | None, year: bool = False) -> str:
     """'9 Nov', or '9 November 2026' with the year."""
     if not epoch:
         return ""
-    t = time.localtime(epoch)
+    try:
+        t = time.localtime(epoch)
+    except (OverflowError, ValueError, OSError):      # a hand-edited date the clock can't show
+        return ""
     return f"{t.tm_mday} {time.strftime('%B %Y' if year else '%b', t)}"
 
 
 def _clock(epoch: float | None) -> str:
-    return "" if not epoch else time.strftime("%H:%M", time.localtime(epoch))
+    try:
+        return "" if not epoch else time.strftime("%H:%M", time.localtime(epoch))
+    except (OverflowError, ValueError, OSError, TypeError):
+        return ""
 
 
 def _duration(seconds: float | None) -> str:

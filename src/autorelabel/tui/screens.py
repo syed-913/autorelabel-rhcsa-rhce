@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from rich.text import Text
@@ -517,29 +516,27 @@ class HistoryScreen(Screen[None]):
 
         t = self.query_one(DataTable)
         t.add_columns("Date", "Exam", "Mode", "Score", "Result")
-        rows = []
-        try:
-            lines = paths.HISTORY_FILE.read_text().splitlines()
-        except OSError:
-            lines = []
-        for line in lines:
-            try:
-                h = json.loads(line)
-            except ValueError:
-                continue                  # a damaged line: the dashboard counts these, this screen skips them
-            if isinstance(h, dict):
-                rows.append(h)
         import time as _t
 
+        from .. import stats
+
+        # the dashboard's reader: damaged lines and wrong types are skipped (and counted) there
+        rows = stats.load().attempts
+
+        def when(epoch: float) -> str:
+            try:
+                return _t.strftime("%Y-%m-%d %H:%M", _t.localtime(epoch))
+            except (OverflowError, ValueError, OSError):
+                return "?"
+
         for h in reversed(rows):
-            t.add_row(_t.strftime("%Y-%m-%d %H:%M", _t.localtime(h.get("graded_at", 0))), h.get("exam", "").upper(),
-                      h.get("mode", ""), f"{h.get('score', 0):.0f}/300",
-                      Text("PASS", style="green") if h.get("passed") else Text("FAIL", style="red"))
+            t.add_row(when(h.graded_at), h.exam.upper(), h.mode, f"{h.score:.0f}/300",
+                      Text("PASS", style="green") if h.passed else Text("FAIL", style="red"))
         bank = load_bank("rhcsa")
-        practiced = {o for h in rows if h.get("exam") == "rhcsa" for o in h.get("objectives", {})}
+        practiced = {o for h in rows if h.exam == "rhcsa" for o in h.objectives}
         weak: dict[str, list[float]] = {}
         for h in rows:
-            for o, ratio in h.get("objectives", {}).items():
+            for o, ratio in h.objectives.items():
                 weak.setdefault(o, []).append(ratio)
         worst = sorted(((sum(v) / len(v), o) for o, v in weak.items()), key=lambda x: x[0])[:5]
         s = Text()
