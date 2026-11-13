@@ -206,7 +206,10 @@
     const mine = (state.terminals || []).filter((t) => t.node === currentNode);     // an ended shell stays until closed
     for (const t of state.terminals || []) if (!tiles.has(t.id)) attachTile(t, false);
     for (const [id, tile] of tiles) if (!(state.terminals || []).some((t) => t.id === id)) { tile.dispose(); tiles.delete(id); }
-    const shown = mine.slice(-(split ? 2 : 1)).map((t) => tiles.get(t.id)).filter(Boolean);
+    // the selected node's newest terminal, and with Split the newest other one, of any node, beside it
+    const first = mine[mine.length - 1];
+    const other = split && first ? [...(state.terminals || [])].reverse().find((t) => t.id !== first.id) : null;
+    const shown = [first, other].filter(Boolean).map((t) => tiles.get(t.id)).filter(Boolean);
     stage.classList.toggle('two', shown.length === 2);
     $('split').setAttribute('aria-pressed', String(split));
     if (!shown.length) {

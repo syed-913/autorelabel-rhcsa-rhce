@@ -84,7 +84,7 @@ Open it with `w` on this screen, or run `./autorelabel desk` in a terminal. Your
 | The node tabs | One per node, with its state in words: running, off, rebooting, unreachable. |
 | New shell | SSH to the node, as root (on RHCE's control node, as student). You type the password, as in the exam. |
 | Open console | The node's serial console, for the tasks without a network and for interrupting the boot. |
-| Split | Two terminals side by side. On a wide screen this is the default. |
+| Split | Two terminals side by side: the node's newest and, beside it, the newest of any node, so node1's console can sit next to node2's shell. On a wide screen this is the default. |
 | Reset node | Back to how the node was when the exam started. Everything you changed on it is lost, and you are asked first. |
 | Open VS Code | RHCE only: VS Code in the browser, on the control node. |
 | End exam | The same as `x` here. You are asked first. |
