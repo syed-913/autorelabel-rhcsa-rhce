@@ -114,6 +114,7 @@ class Desk:
         self.stop = asyncio.Event()
         self.ready = asyncio.Event()
         self._n = 0
+        self._jobs: set[asyncio.Task] = set()       # grading started here, kept until done
 
     # --- addresses ---------------------------------------------------------------------------------
     @property
@@ -357,7 +358,9 @@ class Desk:
                     eng = self._engine()
                     await asyncio.to_thread(eng.submit, sess)
                     if not await asyncio.to_thread(eng.proctor_alive, sess):
-                        asyncio.create_task(asyncio.to_thread(eng.grade, S.load(sess.id)))
+                        job = asyncio.create_task(asyncio.to_thread(eng.grade, S.load(sess.id)))
+                        self._jobs.add(job)
+                        job.add_done_callback(self._jobs.discard)
             elif do == "code":
                 url = await asyncio.to_thread(self._engine().code_server_url, sess)
                 return {"codeServer": url}

@@ -127,7 +127,8 @@ class Terminal:
         self.loop.remove_reader(self.fd)
         self.exited = True
         code = self.proc.wait() if self.proc else 0
-        note = f"\r\n\x1b[2m[{self.title or self.kind} ended (exit {code}). Open a new shell from the node's tab.]\x1b[0m\r\n"
+        note = (f"\r\n\x1b[2m[{self.title or self.kind} ended (exit {code}). "
+                "Open a new shell from the node's tab.]\x1b[0m\r\n")
         self._keep(note.encode())
         for c in list(self.clients):
             c.send(note.encode())

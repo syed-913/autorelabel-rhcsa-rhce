@@ -221,10 +221,38 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_desk(args: argparse.Namespace) -> int:
+    import asyncio
+
+    from .dashboard import open_in_browser
+    from .desk.server import Desk
+
+    desk = Desk(args.port)
+
+    def ready(d: Desk) -> None:
+        print(f"Exam Desk: {d.url}\n"
+              f"Code:      {d.code}\n"
+              "Type the code in the browser. It is for this launch only, and three wrong tries end it.\n"
+              "Press Ctrl+C here to stop the Exam Desk. Its shells end with it; the exam and the clock don't.",
+              flush=True)
+        if not args.no_browser:
+            open_in_browser(d.url)        # the bare address: the code never goes on a command line
+
+    try:
+        asyncio.run(desk.run(ready))
+    except KeyboardInterrupt:
+        print()
+    return 0
+
+
 def register(sub: argparse._SubParsersAction) -> None:
     register_exam(sub)
     register_selftest(sub)
     register_content(sub)
+    k = sub.add_parser("desk", help="the exam in your browser: tasks, terminals and consoles, the clock")
+    k.add_argument("--no-browser", action="store_true", help="only print the address and the code")
+    k.add_argument("--port", type=int, default=0, help="port on 127.0.0.1 (default: any free one)")
+    k.set_defaults(func=cmd_desk)
     d = sub.add_parser("dashboard", help="your results over time, in the browser (read-only, this computer only)")
     d.add_argument("--no-browser", action="store_true", help="only print the address")
     d.add_argument("--port", type=int, default=0, help="port on 127.0.0.1 (default: any free one)")
