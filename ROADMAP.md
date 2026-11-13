@@ -5,7 +5,6 @@ What each coming version is planned to contain, and where it stands. When a vers
 | Version | Theme | Status |
 |---|---|---|
 | 1.1.x | Fixes from real exam attempts | as reports come in |
-| 1.2.0 | More varied exams | built, in review |
 | 1.3.0 | Results dashboard | first version built, its look being designed |
 | 1.4.0 | Terminals in your browser | designed, not built yet |
 | 2.0.0 | Windows | planned, needs testing first |
@@ -26,10 +25,6 @@ What each coming version is planned to contain, and where it stands. When a vers
 ## 1.1.x: fixes from real exam attempts
 
 Patch releases for whatever real attempts turn up, starting with the maintainer's own RHCSA. Report problems with the [issue forms](https://github.com/syed-913/autorelabel-rhcsa-rhce/issues/new/choose).
-
-## 1.2.0: more varied exams
-
-Generated exams vary more from one attempt to the next. Every exam still has 20 tasks worth 300 points, but it now has 4, 5 or 6 hard tasks, the objective domains get wider ranges, and the tasks of your last two exams are held back. Every task in the bank comes up in some exams; before, a few practically never did. The same seed gives a different exam than in 1.1.
 
 ## 1.3.0: results dashboard
 
