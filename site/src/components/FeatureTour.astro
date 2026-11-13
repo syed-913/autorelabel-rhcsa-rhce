@@ -1,0 +1,29 @@
+---
+import type {Feature} from '../lib/features';
+import {href} from '../lib/urls';
+interface Props {feature: Feature; compact?: boolean}
+const {feature, compact=false} = Astro.props;
+const sectionId = compact ? `new-${feature.id}` : feature.id;
+const describedBy = `${sectionId}-description`;
+---
+<section class:list={['feature-tour',{'container':!compact,'feature-tour--compact':compact}]} id={sectionId}>
+  {compact
+    ? <div class="tour-head"><p class="tour-kicker mono">NEW IN {feature.version}</p><h2>{feature.name.charAt(0).toUpperCase()+feature.name.slice(1)}.</h2></div>
+    : <div class="section-title"><h2 data-relabel>{feature.heading[0]}<br/>{feature.heading[1]}</h2><p>{feature.lede[0]}<br/>{feature.lede[1]}</p></div>}
+  <div class="tour-grid">
+    <div class="video-frame loop-frame" data-loop>
+      <div class="terminal-bar"><span>{feature.frame[0]}</span><span>{feature.frame[1]}</span></div>
+      <video width="1280" height="800" controls muted loop playsinline preload="none" poster={href(feature.media.poster)} aria-label={feature.media.label} aria-describedby={describedBy}>
+        <source src={href(feature.media.webm)} type="video/webm"/>
+        <source src={href(feature.media.mp4)} type="video/mp4"/>
+        <p><a href={href(feature.media.mp4)}>Watch the tour (MP4)</a></p>
+      </video>
+    </div>
+    <div class="tour-copy">
+      <ul class="tour-points">{feature.points.map(([title,text])=><li><strong>{title}</strong> {text}</li>)}</ul>
+      <p set:html={feature.how}/>
+      <a class="text-link" href={href(feature.guide[1])}>{feature.guide[0]}</a>
+    </div>
+  </div>
+  <p class="video-description muted" id={describedBy}>{feature.media.description}</p>
+</section>
