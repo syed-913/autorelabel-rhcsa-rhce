@@ -81,7 +81,7 @@ h2 {margin: 0 0 6px; font-size: 28px; letter-spacing: -.02em; line-height: 1.15}
 .tile:hover {background: var(--surface); transform: translateY(-2px); box-shadow: 0 8px 18px var(--lift); z-index: 1}
 .tile:hover::before {transform: scaleY(1)}
 .tile .label {font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted)}
-.tile .value {font-family: var(--mono); font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px}
+.tile .value {font-family: var(--mono); font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px}
 .tile .note {font-size: 14px; color: var(--muted)}
 
 section {padding-top: 44px}
