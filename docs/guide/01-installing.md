@@ -1,6 +1,14 @@
 # Installing
 
-Installing autorelabel happens in three parts. First you install a few tools with your distribution's package manager, which is the only step that needs `sudo`. Then you clone the repository. Finally you run `./autorelabel`, which sets itself up, checks your computer, asks three questions and builds the RHEL 10 image that every lab starts from.
+Installing autorelabel takes three commands and one key:
+
+```bash
+git clone https://github.com/syed-913/autorelabel-rhcsa-rhce.git
+cd autorelabel-rhcsa-rhce
+./autorelabel
+```
+
+`./autorelabel` sets itself up and checks your computer. If a tool is missing, press **f** (**Fix for me**) on the host check: autorelabel installs it with your distribution's package manager, showing each command and its undo command first. That is the only step that needs `sudo`, and `sudo` asks for your password itself. Then it asks three questions and builds the RHEL 10 image that every lab starts from. If Python's `venv` module is missing, the launcher offers to install it before anything else. You only need `git` to begin.
 
 ## What you need, and why
 
@@ -20,7 +28,7 @@ Installing autorelabel happens in three parts. First you install a few tools wit
 > **Which hypervisor should I choose?**
 > libvirt with KVM, if you can. It is the hypervisor every task was developed and tested on, it is part of Linux, and it starts VMs quickly. VirtualBox works too and is tested with every task, but it has two constraints: autorelabel keeps its VMs in a separate VirtualBox profile, so VirtualBox Manager must be closed while a lab runs, and VirtualBox VMs must never run at the same time as KVM VMs.
 
-The install commands for each distribution are in the README's [Requirements](../../README.md#requirements) section. After running them, **log out and back in** (or reboot). That is what makes the new `libvirt`, `kvm` or `vboxusers` group membership take effect. You can check it with:
+If you prefer to install the tools yourself, the commands for each distribution are in the README's [Requirements](../../README.md#requirements) section; **Fix for me** runs the same ones. Either way, afterwards **log out and back in** (or reboot). That is what makes the new `libvirt`, `kvm` or `vboxusers` group membership take effect. You can check it with:
 
 ```bash
 groups

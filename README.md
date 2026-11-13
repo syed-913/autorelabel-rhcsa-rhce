@@ -50,7 +50,13 @@ Derivatives are recognised and get their parent's install commands: Linux Mint, 
 
 RHEL 10 itself needs the x86-64-v3 instruction set, so an older CPU can't run the labs at all. Some newer Pentium and Celeron models lack it too. To check yours, look for `x86-64-v3 (supported, searched)` in the output of `/lib64/ld-linux-x86-64.so.2 --help`. The doctor checks all of this on the first run, before anything else happens.
 
-**Software:** install these before you clone the repository. On its first run autorelabel checks your computer again and shows the exact commands, with undo commands, for anything still missing. It runs them only when you ask (`./autorelabel doctor --fix`, or **Fix for me** in the host check), and `sudo` asks for your password itself.
+**Software: autorelabel installs it for you.** You don't need to type the commands below yourself:
+
+1. Clone the repository and run `./autorelabel` (see [Getting started](#getting-started)). If Python's `venv` module is missing, it offers to install it.
+2. The host check opens on the first run. Press **f** (**Fix for me**). autorelabel installs what is missing for your distribution: Vagrant, Packer, libvirt with the `vagrant-libvirt` plugin, or VirtualBox. It shows every command with its undo command first, and `sudo` asks for your password itself.
+3. Log out and back in once, so your new group membership applies, and run `./autorelabel` again.
+
+`./autorelabel doctor --fix` does the same from the command line. This is what gets installed, and why:
 
 | What | Why |
 |---|---|
@@ -59,7 +65,7 @@ RHEL 10 itself needs the x86-64-v3 instruction set, so an older CPU can't run th
 | **libvirt** (recommended): QEMU/KVM, libvirt and the `vagrant-libvirt` plugin, with your user in the `libvirt` and `kvm` groups | the hypervisor |
 | **or VirtualBox** 7.2.2+, with your user in the `vboxusers` group | the hypervisor, if you prefer VirtualBox |
 
-The commands for libvirt on each distribution (log out and back in afterwards, so the new groups apply):
+Prefer to run the commands yourself? These are the same commands, for libvirt on each distribution (log out and back in afterwards, so the new groups apply):
 
 <details>
 <summary><b>Ubuntu / Debian</b></summary>
@@ -155,7 +161,7 @@ cd autorelabel-rhcsa-rhce
 ./autorelabel
 ```
 
-The first run sets up a private Python environment, checks your computer, asks where your ISO is and where to keep the VM disks, and builds the RHEL 10 box once (about 10 to 15 minutes). After that, a new exam is ready in a few minutes: `./autorelabel rhcsa` or `./autorelabel rhce` takes you straight to one.
+You only need `git` to start. The first run sets up a private Python environment, checks your computer and installs what is missing when you press **f** (**Fix for me**), asks where your ISO is and where to keep the VM disks, and builds the RHEL 10 box once (about 10 to 15 minutes). After that, a new exam is ready in a few minutes: `./autorelabel rhcsa` or `./autorelabel rhce` takes you straight to one.
 
 It runs as your own user, uses `sudo` only when you ask it to install what's missing (after showing you the commands), and its lab can't reach the internet or your network. [Security and your computer](docs/guide/13-security.md) explains each part.
 
