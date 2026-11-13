@@ -5,8 +5,9 @@ What each coming version is planned to contain, and where it stands. When a vers
 | Version | Theme | Status |
 |---|---|---|
 | 1.1.x | Fixes from real exam attempts | as reports come in |
-| 1.2.0 | Terminals in your browser | planned |
-| 1.3.0 | Results dashboard | planned |
+| 1.2.0 | More varied exams | built, in review |
+| 1.3.0 | Results dashboard | first version built, its look being designed |
+| 1.4.0 | Terminals in your browser | designed, not built yet |
 | 2.0.0 | Windows | planned, needs testing first |
 | later | More Red Hat exams | ideas |
 
@@ -14,7 +15,8 @@ What each coming version is planned to contain, and where it stands. When a vers
 
 - [x] GitHub Actions pinned to commit SHAs, kept current by Dependabot.
 - [x] A GitHub release is created from the changelog when a version tag is pushed.
-- [x] Signed release tags, verified by the release workflow before it publishes (from the release after 1.1.0).
+- [x] Signed release tags, verified by the release workflow before it publishes (from 1.1.1).
+- [x] CodeQL code scanning, and CI tools installed from hash-locked files.
 - [x] [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/syed-913/autorelabel-rhcsa-rhce) on the repository.
 - [x] A CI check that every task has passing self-tests on both hypervisors for its current files, so an edited task can't ship untested. Its results are on [How the tasks are tested](docs/guide/14-quality.md).
 - [x] A monthly check of Red Hat's EX200 and EX294 objective pages that opens an issue when the objectives change.
@@ -25,13 +27,17 @@ What each coming version is planned to contain, and where it stands. When a vers
 
 Patch releases for whatever real attempts turn up, starting with the maintainer's own RHCSA. Report problems with the [issue forms](https://github.com/syed-913/autorelabel-rhcsa-rhce/issues/new/choose).
 
-## 1.2.0: terminals in your browser
+## 1.2.0: more varied exams
 
-`./autorelabel web` opens the lab in your browser on `127.0.0.1`: a terminal for each node, the serial console (for `rd.break` and GRUB), and VS Code for RHCE, side by side. The text interface stays where you start, submit and review exams. Closing or refreshing the tab doesn't lose your shells. Typing has to feel as fast as a native terminal; that is tested, not assumed.
+Generated exams vary more from one attempt to the next. Every exam still has 20 tasks worth 300 points, but it now has 4, 5 or 6 hard tasks, the objective domains get wider ranges, and the tasks of your last two exams are held back. Every task in the bank comes up in some exams; before, a few practically never did. The same seed gives a different exam than in 1.1.
 
 ## 1.3.0: results dashboard
 
 A read-only page that shows your scores over time, your weakest objectives, and every check of every attempt, from the files autorelabel already keeps. Works offline.
+
+## 1.4.0: terminals in your browser
+
+`./autorelabel web` opens the lab in your browser on `127.0.0.1`: a terminal for each node, the serial console (for `rd.break` and GRUB), and VS Code for RHCE, side by side. The text interface stays where you start, submit and review exams. Closing or refreshing the tab doesn't lose your shells. Typing has to feel as fast as a native terminal; that is tested, not assumed.
 
 ## 2.0.0: Windows
 
