@@ -4,6 +4,59 @@ Changes to the program, newest first. Planned versions are in [ROADMAP.md](ROADM
 
 Versions follow [semantic versioning](https://semver.org): a patch release (1.0.1) only fixes things, a minor release (1.1.0) adds something without breaking what you use, and a major release (2.0.0) may change how things work. The website and documentation aren't versioned. Check yours with `./autorelabel --version`.
 
+## 1.1.1 (2026-11-13)
+
+### Security
+
+- **VirtualBox: the lab VMs could reach services that listen only on your computer's `127.0.0.1`.** The box build needs a VirtualBox NAT option for the installer, the finished box kept it, and every lab VM inherited it. So a program inside a VM could connect to `10.0.2.2` and reach, for example, a local database or development server. The option is now turned off in the box, in the lab, and before every VM start, which also covers labs built with 1.1.0: you don't need to rebuild anything. If VirtualBox refuses these settings for a VM, the VM isn't started, and you see what VirtualBox said. libvirt was never affected.
+- RHCE: VS Code in the browser listens only inside the control node. Before, the other lab VMs could reach it, protected by its password. You still open it at the same `127.0.0.1` address.
+- RHCE: the Python packages for the control node are checked against recorded SHA-256 checksums, when they're downloaded and again when the lab installs them. Packages you downloaded with an earlier version stay valid.
+- If your session has no `XDG_RUNTIME_DIR`, autorelabel keeps its sockets in `/tmp/autorelabel-<uid>`. It now refuses that folder if another user created it.
+
+### Fixed
+
+Correct answers that were marked wrong:
+
+- RHCSA:
+  - an ACL task where the writer was given `rwx` on the directory;
+  - a sudo rule written without a run-as list (`%group ALL=ALL`);
+  - the lab's time server in a `pool` line;
+  - SSH key-only login set with `AuthenticationMethods publickey`;
+  - an NFS mount with `x-systemd.automount`;
+  - fstab entries with a trailing slash or the type `auto`;
+  - a crontab with day names;
+  - other valid SELinux types for web content.
+- RHCSA: tasks that were graded against the system at grading time, not as it was when you answered:
+  - the manual page search: a package installed later added pages;
+  - the bzip2 archive: files were added to the directory later;
+  - the saved log messages: the service was restarted later;
+  - the sudo log entry: the log was rotated.
+- RHCSA: two tasks failed whenever any unit on the node had failed, even one that belonged to another task.
+- RHCE:
+  - a package task with `name` given as a list;
+  - the SELinux system role under its `linux-system-roles` name;
+  - an `at` job queued hours before grading, in a session that was paused and resumed.
+
+Grading and the exam:
+
+- Grading waits for a node to finish booting before it runs the checks after the reboot. Before, a slow service could be checked while it was still starting.
+- A node that refuses to reboot is restarted through the hypervisor at once. A boot that is slow but still moving gets more time before the node is given up.
+- "The grader cannot reach nodeX" now also arrives as a desktop notification, and a node that is simply rebooting no longer counts as an incident.
+- A mark you set on a task while the proctor was saving could be lost. Sessions are now saved under a lock.
+- libvirt: when the first SSH login to a new VM was slow, the lab build failed where it was meant to retry.
+- The security guide said the lab VMs can't reach your computer. They can, at its address on the lab networks. The guide now says so, and says what VirtualBox's NAT adapter does and does not keep out.
+
+### Changed
+
+- Each graded attempt records which tasks it had. Nothing uses it yet; later versions will.
+
+### For contributors
+
+- Self-test records hold digests of the lab's provisioning, the box build and the check libraries. `selftest --stale` re-runs what was tested before one of them changed, and a release tag is refused while such a record is left.
+- A task can set `selftest_alone: true` when one of its tests would destroy what other tasks in the batch hold.
+- Checks get `AR_STARTED`, the session's start time.
+- CI installs its lint, test and Ansible tools from hash-locked files, and CodeQL scans the Python code, the website's scripts and the workflows.
+
 ## 1.1.0 (2026-11-04)
 
 ### Added
