@@ -50,8 +50,12 @@ class Check:
 
 
 def _with_guide(check: Check, *keys: str) -> Check:
+    # A step that starts with a download page (VirtualBox from Oracle on most families) is the
+    # user's to do: running only its commands would fail halfway, so the check stays manual.
+    manual = False
     for key in keys:
         for s in guides.with_prerequisites(key):
+            manual = manual or any(line.lstrip().startswith("#") and "http" in line for line in s.run)
             if s.key in check.steps:
                 continue
             check.steps.append(s.key)
@@ -60,7 +64,7 @@ def _with_guide(check: Check, *keys: str) -> Check:
             if s.note:
                 check.fix.append(f"# note: {s.note}")
             check.undo.extend(s.undo)
-    check.fixable = True
+    check.fixable = not manual
     return check
 
 

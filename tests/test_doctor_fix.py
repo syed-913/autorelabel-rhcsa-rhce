@@ -70,3 +70,15 @@ def test_nothing_runs_without_a_yes(fix_cli, monkeypatch, tmp_path, capsys):
     assert not (tmp_path / "ran").exists()
     out = capsys.readouterr().out
     assert out.count("echo repo") == 1 and "sudo apt remove vagrant" in out and "Nothing was run" in out
+
+
+@pytest.mark.parametrize("family, runs", [("debian", False), ("fedora", False), ("rhel", False),
+                                          ("arch", True), ("suse", True)])
+def test_virtualbox_from_a_download_page_is_left_to_you(monkeypatch, family, runs):
+    """Where VirtualBox comes from Oracle's download page, only adding the group would run, and
+    fail, since the group comes with VirtualBox. So the whole step is manual there."""
+    monkeypatch.setattr("autorelabel.guides.family", lambda *_a: family)
+    check = doctor._with_guide(Check("virtualbox", "VirtualBox", Status.FAIL), "virtualbox")
+    assert check.fixable is runs
+    run, manual = doctor.fix_plan([check])
+    assert (run, manual) == (([check], []) if runs else ([], [check]))

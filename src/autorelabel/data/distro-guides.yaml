@@ -6,8 +6,9 @@
 #   vagrant-libvirt:             https://vagrant-libvirt.github.io/vagrant-libvirt/installation.html
 #   VirtualBox:                  https://www.virtualbox.org/wiki/Linux_Downloads
 #
-# autorelabel never runs these itself. The doctor shows them (with undo
-# commands) and re-checks after you have run them.
+# The doctor shows them, with undo commands. `doctor --fix` (Fix for me in the text interface)
+# runs the steps that are only commands, after asking; a step that starts with a download page
+# (a "# ... https://..." line) is left to the user. It re-checks afterwards.
 #
 # Each step: title, run (list of shell commands), undo (list), note (optional).
 

@@ -53,7 +53,7 @@ RHEL 10 itself needs the x86-64-v3 instruction set, so an older CPU can't run th
 **Software: autorelabel installs it for you.** You don't need to type the commands below yourself:
 
 1. Clone the repository and run `./autorelabel` (see [Getting started](#getting-started)). If Python's `venv` module is missing, it offers to install it.
-2. The host check opens on the first run. Press **f** (**Fix for me**). autorelabel installs what is missing for your distribution: Vagrant, Packer, libvirt with the `vagrant-libvirt` plugin, or VirtualBox. It shows every command with its undo command first, and `sudo` asks for your password itself.
+2. The host check opens on the first run. Press **f** (**Fix for me**). autorelabel installs what is missing for your distribution: Vagrant, Packer, and libvirt with the `vagrant-libvirt` plugin. It shows every command with its undo command first, and `sudo` asks for your password itself. A few steps stay yours, and the host check says which: VirtualBox, if you choose it (it comes from Oracle's download page, except on Arch and openSUSE), Vagrant on Arch (from the AUR) and Packer on openSUSE.
 3. Log out and back in once, so your new group membership applies, and run `./autorelabel` again.
 
 `./autorelabel doctor --fix` does the same from the command line. This is what gets installed, and why:
