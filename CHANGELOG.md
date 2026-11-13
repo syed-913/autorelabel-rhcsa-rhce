@@ -9,7 +9,7 @@ Versions follow [semantic versioning](https://semver.org): a patch release (1.0.
 ### Security
 
 - **VirtualBox: the lab VMs could reach services that listen only on your computer's `127.0.0.1`.** The box build needs a VirtualBox NAT option for the installer, the finished box kept it, and every lab VM inherited it. So a program inside a VM could connect to `10.0.2.2` and reach, for example, a local database or development server. The option is now turned off in the box, in the lab, and before every VM start, which also covers labs built with 1.1.0: you don't need to rebuild anything. If VirtualBox refuses these settings for a VM, the VM isn't started, and you see what VirtualBox said. libvirt was never affected.
-- RHCE: VS Code in the browser listens only inside the control node. Before, the other lab VMs could reach it, protected by its password. You still open it at the same `127.0.0.1` address.
+- RHCE: VS Code in the browser listens only inside the control node. Before, the other lab VMs and your computer could reach it at its lab address, protected by its password. You still open it at the same `127.0.0.1` address.
 - RHCE: the Python packages for the control node are checked against recorded SHA-256 checksums, when they're downloaded and again when the lab installs them. Packages you downloaded with an earlier version stay valid.
 - If your session has no `XDG_RUNTIME_DIR`, autorelabel keeps its sockets in `/tmp/autorelabel-<uid>`. It now refuses that folder if another user created it.
 
@@ -42,8 +42,9 @@ Grading and the exam:
 - Grading waits for a node to finish booting before it runs the checks after the reboot. Before, a slow service could be checked while it was still starting.
 - A node that refuses to reboot is restarted through the hypervisor at once. A boot that is slow but still moving gets more time before the node is given up.
 - "The grader cannot reach nodeX" now also arrives as a desktop notification, and a node that is simply rebooting no longer counts as an incident.
+- When grading resumes a paused lab, it sets the VMs' clocks from your computer. Before, they could keep the time at which they were paused.
 - A mark you set on a task while the proctor was saving could be lost. Sessions are now saved under a lock.
-- libvirt: when the first SSH login to a new VM was slow, the lab build failed where it was meant to retry.
+- libvirt: when Vagrant gave up on a VM that was still booting, the lab build failed. The retry meant for that case now happens.
 - The security guide said the lab VMs can't reach your computer. They can, at its address on the lab networks. The guide now says so, and says what VirtualBox's NAT adapter does and does not keep out.
 
 ### Changed
