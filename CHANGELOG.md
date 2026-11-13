@@ -4,6 +4,23 @@ Changes to the program, newest first. Planned versions are in [ROADMAP.md](ROADM
 
 Versions follow [semantic versioning](https://semver.org): a patch release (1.0.1) only fixes things, a minor release (1.1.0) adds something without breaking what you use, and a major release (2.0.0) may change how things work. The website and documentation aren't versioned. Check yours with `./autorelabel --version`.
 
+## 1.2.0 (2026-11-13)
+
+### Changed
+
+- **Generated exams vary more.** Every exam still has 20 tasks worth 300 points and the same pass mark. What changed:
+  - It now has one of three difficulty mixes: 6, 5 or 4 hard tasks, with medium tasks making up the rest.
+  - The objective domains have wider ranges.
+  - The generator plans ahead, so a task is no longer crowded out by the others.
+
+  Before, 8 RHCSA tasks and 4 RHCE tasks came up in fewer than 3 exams in 100, some of them almost never. Now every task comes up in at least 4 RHCSA exams in 100, or 7 RHCE exams in 100.
+- **Your last two exams are held back.** A task from your previous graded exam is much less likely to come up in the next one, and a task from the exam before that somewhat less. Measured over many exams in a row, an RHCSA exam now repeats about 2 of the previous exam's 17 drawn tasks, where it used to repeat 5. Practice sets don't count. Attempts graded before 1.1.1 don't record their tasks, so this starts with your first exam graded on 1.1.1 or later.
+- The same seed gives a different exam than in 1.1, and it also depends on your last two exams. **Retake** still repeats an exam exactly.
+
+### For contributors
+
+- A blueprint may list `alternative_mixes`, and `bank lint` checks that every mix has the blueprint's task count and points.
+
 ## 1.1.1 (2026-11-13)
 
 ### Security
