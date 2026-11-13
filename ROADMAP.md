@@ -4,8 +4,7 @@ What each coming version is planned to contain, and where it stands. When a vers
 
 | Version | Theme | Status |
 |---|---|---|
-| 1.1.x | Fixes from real exam attempts | as reports come in |
-| 1.4.0 | The Exam Desk: terminals in your browser | designed, being built |
+| 1.x | Fixes from real exam attempts | as reports come in |
 | 2.0.0 | Windows | planned, needs testing first |
 | later | More Red Hat exams | ideas |
 
@@ -21,13 +20,9 @@ What each coming version is planned to contain, and where it stands. When a vers
 - [x] Website: its own domain, a narrated film, a page on [security and your computer](docs/guide/13-security.md), "Will it run on my computer?", the distributions it supports by name, an updated comparison, a contact page, and larger text for reading.
 - [ ] Website: a results page where people share how their exam went, counting failures as well as passes.
 
-## 1.1.x: fixes from real exam attempts
+## 1.x: fixes from real exam attempts
 
 Patch releases for whatever real attempts turn up, starting with the maintainer's own RHCSA. Report problems with the [issue forms](https://github.com/syed-913/autorelabel-rhcsa-rhce/issues/new/choose).
-
-## 1.4.0: the Exam Desk, terminals in your browser
-
-`./autorelabel desk` opens the lab in your browser on `127.0.0.1`: a terminal for each node, the serial console (for `rd.break` and GRUB), and VS Code for RHCE, side by side. The text interface stays where you start, submit and review exams. Closing or refreshing the tab doesn't lose your shells. Typing has to feel as fast as a native terminal; that is tested, not assumed.
 
 ## 2.0.0: Windows
 
