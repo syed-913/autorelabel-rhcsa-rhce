@@ -227,17 +227,20 @@
     const term = new Terminal({fontFamily: 'JetBrains, ui-monospace, monospace', fontSize: 14, lineHeight: 1.15, cursorBlink: true,
                                scrollback: 5000, theme, allowProposedApi: false, macOptionIsMeta: true});
     const fit = new FitAddon.FitAddon(); term.loadAddon(fit);
-    let ws = null, opened = false, size = '', acked = 0, readOnly = false;
+    let ws = null, opened = false, size = '', acked = 0, readOnly = false, ended = !!info.exited;
     const node = (state.nodes || []).find((n) => n.name === info.node);
     how.textContent = info.kind === 'console' ? `serial console${node ? ` · ${node.login}` : ''}` : `ssh ${node ? `${node.user}@${node.fqdn}` : ''}`;
     const tile = {root, term, id: info.id,
-      fit() { if (!opened && root.isConnected) { term.open(body); opened = true; } if (!opened) return; try { fit.fit(); } catch { return; } const s = `${term.cols}x${term.rows}`; if (s !== size && ws && ws.readyState === 1) { size = s; ws.send(JSON.stringify({resize: [term.cols, term.rows]})); } },
+      fit() { if (!opened && root.isConnected) { term.open(body); opened = true; connectTerm(); } if (!opened) return; try { fit.fit(); } catch { return; } const s = `${term.cols}x${term.rows}`; if (s !== size && ws && ws.readyState === 1) { size = s; ws.send(JSON.stringify({resize: [term.cols, term.rows]})); } },
       update() {
         const locked = LOCKED.has(state.state), n = (state.nodes || []).find((x) => x.name === info.node), down = n && n.power !== 'running' && n.power !== 'unknown';
-        st.textContent = locked || readOnly ? '■ read-only' : down ? '↻ waiting' : '● connected';
-        root.classList.toggle('dim', !!down && !locked);
-        strip.hidden = !(down || locked || readOnly);
-        strip.textContent = locked || readOnly ? 'Read-only: time is up. You can read and scroll; typing goes nowhere.' : down ? `${info.node} is not running. This shell is kept; if the connection dropped, open a new shell when ${info.node} is back.` : '';
+        const t = (state.terminals || []).find((x) => x.id === info.id); if (t && t.exited) ended = true;
+        st.textContent = ended ? '■ ended' : locked || readOnly ? '■ read-only' : down ? '↻ waiting' : '● connected';
+        root.classList.toggle('dim', (!!down && !locked) || ended);
+        strip.hidden = !(down || locked || readOnly || ended);
+        strip.textContent = ended ? 'This shell has ended. Close it, or open a new one from the buttons above.'
+          : locked || readOnly ? 'Read-only: time is up. You can read and scroll; typing goes nowhere.'
+          : down ? `${info.node} is not running. This shell is kept; if the connection dropped, open a new shell when ${info.node} is back.` : '';
       },
       dispose() { if (ws) ws.close(); term.dispose(); root.remove(); },
     };
@@ -245,7 +248,7 @@
       ws = new WebSocket(wsUrl(`/ws/term/${encodeURIComponent(info.id)}`)); ws.binaryType = 'arraybuffer'; size = '';
       ws.onopen = () => ws.send(JSON.stringify({secret}));
       ws.onmessage = (event) => {
-        if (typeof event.data === 'string') { const m = JSON.parse(event.data); if (m.ok) tile.fit(); if (m.readOnly) { readOnly = true; tile.update(); } return; }
+        if (typeof event.data === 'string') { const m = JSON.parse(event.data); if (m.ok) tile.fit(); if (m.readOnly) { readOnly = true; tile.update(); } if (m.ended) { ended = true; tile.update(); } return; }
         const bytes = new Uint8Array(event.data);
         term.write(bytes, () => { acked += bytes.length; if (acked >= 64 * 1024 && ws.readyState === 1) { ws.send(JSON.stringify({ack: acked})); acked = 0; } });
         if (acked && ws.readyState === 1) setTimeout(() => { if (acked && ws.readyState === 1) { ws.send(JSON.stringify({ack: acked})); acked = 0; } }, 50);
@@ -259,7 +262,7 @@
     root.addEventListener('focusout', () => root.classList.remove('focus'));
     close.onclick = () => send({do: 'close', terminal: info.id});
     new ResizeObserver(() => tile.fit()).observe(body);
-    tiles.set(info.id, tile); connectTerm();
+    tiles.set(info.id, tile);              // its socket opens when the tile is first on screen (fit)
     if (focus) { renderNodes(); renderStage(); setTimeout(() => term.focus(), 50); }
     return tile;
   }

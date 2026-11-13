@@ -30,6 +30,7 @@ import asyncio
 import contextlib
 import hmac
 import json
+import logging
 import secrets
 import time
 from collections.abc import Callable
@@ -48,6 +49,11 @@ from . import state as desk_state
 from .terminals import Terminal
 
 _log = log.get("desk")
+# The WebSocket library logs every failed opening (a port probe, a HEAD request) with a traceback;
+# in the terminal that started the desk that is noise, and none of it is ours to act on.
+_quiet = logging.getLogger("autorelabel.desk.websockets")
+_quiet.addHandler(logging.NullHandler())
+_quiet.propagate = False
 HOST = "127.0.0.1"
 HERE = Path(__file__).parent
 STATIC = HERE / "static"
@@ -129,7 +135,7 @@ class Desk:
         self.loop = asyncio.get_running_loop()
         async with serve(self._handler, HOST, self.requested_port, process_request=self._process_request,
                          compression=None, server_header="autorelabel", max_size=256 * 1024,
-                         ping_interval=20, ping_timeout=40) as server:
+                         ping_interval=20, ping_timeout=40, logger=_quiet) as server:
             self.port = next(iter(server.sockets)).getsockname()[1]
             self.ready.set()
             if on_ready:
@@ -238,7 +244,7 @@ class Desk:
             async for message in ws:
                 if isinstance(message, bytes):
                     if not term.write(message):
-                        await ws.send(json.dumps({"readOnly": True}))
+                        await ws.send(json.dumps({"ended": True} if term.exited else {"readOnly": True}))
                     continue
                 try:
                     control = json.loads(message)

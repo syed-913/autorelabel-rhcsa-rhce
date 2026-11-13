@@ -27,8 +27,10 @@ import sys
 import termios
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
+PTY_EXEC = Path(__file__).with_name("pty_exec.py")
 SCROLLBACK = 1 << 20
 HIGH_WATER = 512 * 1024
 LOW_WATER = 128 * 1024
@@ -71,7 +73,7 @@ class Terminal:
         os.set_blocking(master, False)
         child_env = {**(env or os.environ), "TERM": "xterm-256color", "COLORTERM": "truecolor"}
         self.proc = subprocess.Popen(
-            [sys.executable, "-m", "autorelabel.desk.pty_exec", *self.argv],
+            [sys.executable, str(PTY_EXEC), *self.argv],          # by path: works from any folder
             stdin=slave, stdout=slave, stderr=slave, close_fds=True, start_new_session=True, env=child_env)
         os.close(slave)
         loop.add_reader(master, self._readable)
