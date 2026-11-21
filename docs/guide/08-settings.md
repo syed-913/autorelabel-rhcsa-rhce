@@ -11,7 +11,7 @@ Open **Settings** from the home screen (or press `s` there), or use `./autorelab
 | Forgive host downtime | `forgive_downtime` | `true` | Time while your computer sleeps, has crashed or is off doesn't count against the exam clock. Turn it off for a strict wall clock. |
 | Warnings before the end | `warnings_minutes` | `30,10,5,1` | When the time warnings appear, in minutes before the end. |
 | Resource profile | `profile` | `lite` | `lite` or `standard`: how much memory the VMs get, and for RHCE how many managed nodes there are (3 or 5). See [The lab](04-the-lab.md). |
-| Lab storage directory | `storage_dir` | chosen at setup | Where the VM disks and build files go, inside a subfolder named `autorelabel`. |
+| Lab storage directory | `storage_dir` | chosen at setup | Where the VM disks and build files go, inside a subfolder named `autorelabel`. A folder of your own, given as a full path: not the autorelabel folder or anything inside it. |
 | RHEL 10 ISO | `iso_path` | chosen at setup | Your RHEL 10 DVD image. |
 | Networks (management) | `mgmt_subnet` | `192.168.250.0/24` | The management network autorelabel uses to prepare and grade the lab. |
 | Networks (lab) | `lab_subnet_libvirt` | `172.25.250.0/24` | The lab network, with libvirt. |
@@ -31,7 +31,7 @@ Open **Settings** from the home screen (or press `s` there), or use `./autorelab
 > Only if you update this setting too. The utility server reads its software repositories straight from the ISO every time the lab starts, so the ISO has to stay where the setting points. With libvirt, the VM user also needs permission to read it in its new place; the doctor checks this.
 
 > **Can I change the lab storage directory?**
-> Choose it once, at setup. The lab, the box and the downloaded content all live there, and the libvirt storage pool points at it. To move it, run `./autorelabel uninstall` (which also removes your settings and history), then run `./autorelabel` again and choose the new location.
+> Choose it once, at setup. The lab, the box and the downloaded content all live there, and the libvirt storage pool points at it, so Settings won't move it while they are there. To move it, run `./autorelabel uninstall` (which keeps your ISO, and also removes your settings and history), then run `./autorelabel` again and choose the new location. The box is built again there, in about 15 minutes. Until something is stored in it, you can change it freely.
 
 > **One of the networks clashes with mine. What do I do?**
 > The doctor tells you when a lab network overlaps a network your computer already uses (a VPN, a home network, a container network). Pick a free private subnet, then destroy the lab from **Lab and box** on the home screen, so the next exam builds it with the new network.
