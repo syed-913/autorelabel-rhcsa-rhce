@@ -4,6 +4,18 @@ Changes to the program, newest first. Planned versions are in [ROADMAP.md](ROADM
 
 Versions follow [semantic versioning](https://semver.org): a patch release (1.0.1) only fixes things, a minor release (1.1.0) adds something without breaking what you use, and a major release (2.0.0) may change how things work. The website and documentation aren't versioned. Check yours with `./autorelabel --version`.
 
+## 1.4.2 (2026-11-21)
+
+### Fixed
+
+- **`./autorelabel uninstall` could delete autorelabel's own launcher.** It removes the `autorelabel` folder inside your lab storage directory. With the storage directory set to the autorelabel folder itself, that path is the launcher, and it was deleted. The uninstaller now removes real folders only, never a file, a link or the autorelabel folder.
+- **The lab storage directory is checked everywhere you set it.** The setup and Settings refuse the autorelabel folder, anything inside it, and a path that isn't a full path. Before, Settings saved any value, and a relative one followed whatever folder autorelabel was started from.
+- **Settings no longer moves the lab storage out from under your box and lab.** Moving it used to leave libvirt's storage pool at the old place, and the next lab stopped with "pool already exists". Settings now says how to move it.
+
+### Changed
+
+- Tested on Ubuntu 26.04 LTS with its Python 3.14, and CI now runs the unit tests on Python 3.12 and 3.14. After a system upgrade that changes Python, `./autorelabel` sets up its Python environment again by itself.
+
 ## 1.4.1 (2026-11-14)
 
 ### Changed
