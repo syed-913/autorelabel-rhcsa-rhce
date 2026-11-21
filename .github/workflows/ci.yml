@@ -10,12 +10,17 @@ permissions:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.12 as on Ubuntu 24.04 and Debian; 3.14, the default of Ubuntu 26.04 LTS and Fedora
+        python: ["3.12", "3.14"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python }}
 
       - name: Install dependencies (hash-locked)
         run: |
