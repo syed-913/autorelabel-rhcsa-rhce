@@ -191,6 +191,13 @@ INDEX_ENTRIES="$(vagrant_index count 2>/dev/null || echo 0)"
 safe_dir() {  # only ever delete our own directories
   local d="$1"
   [[ -n "$d" && "$d" != "/" && "$d" != "$HOME" && "$d" != "$HOME/" ]] || return 1
+  # A real directory only: never a file or a link. The repository's launcher is itself called
+  # "autorelabel", so a lab storage directory set to the repository made <storage>/autorelabel
+  # the launcher, and it was deleted.
+  [[ -d "$d" && ! -L "$d" ]] || return 1
+  if [[ -n "$REPO" ]]; then
+    [[ "$d" != "$REPO" && "$d" != "$REPO/$PREFIX" ]] || return 1
+  fi
   case "$d" in
     */"$PREFIX"|*/"$PREFIX"/*|*/.workspace|*/.workspace/*|*/.venv|/tmp/"$PREFIX"-*) return 0 ;;
   esac

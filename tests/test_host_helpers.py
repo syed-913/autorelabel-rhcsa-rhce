@@ -321,3 +321,66 @@ def test_the_control_node_installs_only_hash_checked_wheels():
     script = (paths.VAGRANT_DIR / "provision" / "control.sh").read_text()
     install = script[script.index("/opt/ansible-navigator/bin/pip install"):].split("\nfi\n")[0]
     assert "--require-hashes" in install and "--no-deps" in install and "rhce-wheels.lock" in install
+
+
+def test_the_uninstaller_never_deletes_the_launcher(tmp_path):
+    """With the lab storage directory set to the repository, <storage>/autorelabel is the launcher.
+    The uninstaller removed it. It must remove real directories only, and never the repository."""
+    import os
+    import shutil
+    import subprocess
+
+    from autorelabel import paths
+
+    repo = tmp_path / "repo"
+    (repo / "scripts").mkdir(parents=True)
+    (repo / "src" / "autorelabel").mkdir(parents=True)
+    shutil.copy(paths.ROOT / "scripts" / "uninstall.sh", repo / "scripts" / "uninstall.sh")
+    launcher = repo / "autorelabel"
+    launcher.write_text("#!/bin/sh\n")
+    (repo / ".workspace").mkdir()
+    (repo / ".workspace" / "config.json").write_text(f'{{"storage_dir": "{repo}"}}')
+    (repo / ".workspace" / "ledger.tsv").write_text(f"0\tdir\t{launcher}\tlab storage\n")
+    # only the basic tools: no virsh, vagrant, VBoxManage or systemctl to reach real VMs
+    tools = tmp_path / "bin"
+    tools.mkdir()
+    for name in ("bash", "sed", "awk", "sort", "uniq", "find", "id", "basename", "dirname", "cat", "grep",
+                 "head", "tail", "rm", "wc", "printf", "tr", "cut", "readlink", "mkdir", "ls", "env"):
+        found = shutil.which(name)
+        if found:
+            os.symlink(found, tools / name)
+    out = subprocess.run(["bash", str(repo / "scripts" / "uninstall.sh"), "--yes"], capture_output=True, text=True,
+                         env={"PATH": str(tools), "HOME": str(tmp_path / "home")}, timeout=60)
+    assert launcher.exists(), out.stdout + out.stderr
+    assert not (repo / ".workspace").exists()                      # its own runtime files do go
+
+
+def test_the_lab_storage_directory_is_a_folder_of_its_own(tmp_path, monkeypatch):
+    from autorelabel import config, paths
+
+    repo = tmp_path / "repo"
+    (repo / "lab").mkdir(parents=True)
+    monkeypatch.setattr(paths, "ROOT", repo)
+    data = tmp_path / "data"
+    data.mkdir()
+    assert config.storage_problem(str(data)) == ""
+    assert "own folder" in config.storage_problem(str(repo))                 # the repository itself
+    assert "own folder" in config.storage_problem(str(repo / "lab"))         # or anything inside it
+    assert "full path" in config.storage_problem("lab")                      # relative: would follow the cwd
+    assert "does not exist" in config.storage_problem(str(tmp_path / "nope"))
+    assert config.storage_problem("  ") == "choose a directory"
+    clash = tmp_path / "clash"
+    clash.mkdir()
+    (clash / "autorelabel").write_text("a file, not our folder")
+    assert "not autorelabel's folder" in config.storage_problem(str(clash))
+
+
+def test_lab_storage_in_use_is_noticed(tmp_path):
+    from autorelabel import config
+
+    assert not config.storage_in_use("")
+    assert not config.storage_in_use(str(tmp_path))
+    (tmp_path / "autorelabel" / "boxes").mkdir(parents=True)
+    assert not config.storage_in_use(str(tmp_path))                          # an empty folder strands nothing
+    (tmp_path / "autorelabel" / "boxes" / "rhel10.box").write_text("x")
+    assert config.storage_in_use(str(tmp_path))

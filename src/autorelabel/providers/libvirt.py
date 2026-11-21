@@ -121,8 +121,9 @@ def ensure_pool(name: str, path: Path, storage_dir: str | None) -> None:
         existing = pool_path(name)
         if existing and Path(existing) != path:
             raise LibvirtError(
-                f"libvirt pool {name!r} already exists at {existing}, not {path}. "
-                "Run ./autorelabel uninstall (or change the storage directory back).")
+                f"libvirt pool {name!r} still points at the old lab storage, {existing}, not {path}. "
+                "Set the lab storage directory back in Settings. To move it: run ./autorelabel uninstall "
+                "(it keeps your ISO), then choose the new directory in the setup.")
     else:
         ledger.record("libvirt-pool", name, str(path), storage_dir=storage_dir)
         path.mkdir(parents=True, exist_ok=True)

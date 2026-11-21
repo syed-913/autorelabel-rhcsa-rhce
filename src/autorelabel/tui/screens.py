@@ -324,10 +324,11 @@ class SetupScreen(Screen[bool]):
 
     def validate_storage(self, value: str) -> bool:
         info = self.query_one("#storage-info", Static)
-        p = Path(value).expanduser()
-        if not value or not p.is_dir():
-            info.update(Text("✘ directory does not exist", style="red"))
+        problem = config.storage_problem(value)
+        if problem:
+            info.update(Text(f"✘ {problem}", style="red"))
             return False
+        p = Path(value).expanduser()
         free = disk_free_bytes(p) / 1e9
         style = "green" if free >= 30 else "yellow"
         info.update(Text(f"✔ {free:.0f} GB free · data goes into {p.resolve() / 'autorelabel'}", style=style))
@@ -424,7 +425,20 @@ class SettingsScreen(Screen[None]):
         pr = self.query_one("#profile", RadioSet).pressed_button
         if pr:
             st.profile = pr.id.removeprefix("p-")
-        st.storage_dir = self.query_one("#storage", Input).value
+        storage = self.query_one("#storage", Input).value.strip()
+        if storage != st.storage_dir:
+            problem = config.storage_problem(storage)
+            if problem:
+                self.notify(f"Lab storage directory: {problem}.", severity="error", timeout=10)
+                return
+            new = str(Path(storage).expanduser().resolve())
+            if new != st.storage_dir and config.storage_in_use(st.storage_dir):
+                self.notify(f"Your box and lab are kept in {paths.storage_root(st.storage_dir)}, so the lab storage "
+                            "can't move while they are there. To move it: quit, run ./autorelabel uninstall (it keeps "
+                            "your ISO), then start ./autorelabel again and choose the new directory. The box is built "
+                            "again there, in about 15 minutes.", severity="error", timeout=20)
+                return
+            st.storage_dir = new
         st.iso_path = self.query_one("#iso", Input).value
         st.mgmt_subnet = self.query_one("#mgmt", Input).value
         st.lab_subnet_libvirt = self.query_one("#labnet", Input).value
