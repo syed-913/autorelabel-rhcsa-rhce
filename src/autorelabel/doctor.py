@@ -14,11 +14,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
-from . import guides, hostinfo, labspec, ledger, paths, proc, vagrant
+from . import guides, hostinfo, labspec, ledger, paths, proc
 from .config import Settings
 from .fsutil import atomic_write_json, disk_free_bytes, read_json
 
-MIN_VAGRANT = (2, 3)
 MIN_PACKER = (1, 10)
 MIN_VBOX = (7, 0)
 VBOX_KVM_COEXIST = (7, 2, 2)
@@ -113,17 +112,6 @@ def check_ssh() -> Check:
     return _with_guide(Check("ssh", "OpenSSH client", Status.FAIL, "ssh not found"), "openssh")
 
 
-def check_vagrant() -> Check:
-    v = hostinfo.tool_version(["vagrant", "--version"])
-    if v is None:
-        return _with_guide(Check("vagrant", "Vagrant", Status.FAIL, "not installed"), "vagrant")
-    text, ver = v
-    if ver < MIN_VAGRANT:
-        return _with_guide(Check("vagrant", "Vagrant", Status.FAIL,
-                                 f"{text}: {'.'.join(map(str, MIN_VAGRANT))}+ required"), "vagrant")
-    return Check("vagrant", "Vagrant", Status.OK, text)
-
-
 def check_packer() -> Check:
     v = hostinfo.tool_version(["packer", "--version"])
     if v is None:
@@ -162,25 +150,6 @@ def check_libvirt_group() -> Check:
         return Check("libvirt_group", "Member of the libvirt group", Status.WARN,
                      "Added, but this login session predates it. Log out and back in.")
     return _with_guide(Check("libvirt_group", "Member of the libvirt group", Status.FAIL, ""), "libvirt_group")
-
-
-def check_vagrant_plugins(provider: str) -> list[Check]:
-    if not proc.which("vagrant"):
-        return []
-    plugins = vagrant.plugins()
-    out = []
-    if provider in ("libvirt", ""):
-        if "vagrant-libvirt" in plugins:
-            out.append(Check("vagrant_libvirt", "vagrant-libvirt plugin", Status.OK, plugins["vagrant-libvirt"]))
-        else:
-            st = Status.FAIL if provider == "libvirt" else Status.WARN
-            out.append(_with_guide(Check("vagrant_libvirt", "vagrant-libvirt plugin", st, "not installed"),
-                                   "vagrant_libvirt"))
-    if "vagrant-registration" in plugins:
-        out.append(Check("vagrant_registration", "vagrant-registration plugin", Status.INFO,
-                         "Installed. autorelabel disables it for its labs, so you won't be asked for "
-                         "Red Hat credentials."))
-    return out
 
 
 def check_virtualbox() -> Check:
@@ -291,13 +260,17 @@ def check_subnets(settings: Settings) -> Check:
                  f"mgmt {settings.mgmt_subnet}, lab {settings.lab_subnet}")
 
 
-def check_box(provider: str) -> Check:
-    if not provider or not proc.which("vagrant"):
+def check_box(settings: Settings) -> Check:
+    if not settings.provider or not settings.storage_dir:
         return Check("box", "RHEL 10 box", Status.INFO, "")
-    box = vagrant.has_box(provider)
-    if box:
-        return Check("box", "RHEL 10 box", Status.OK, f"{box.name} ({box.provider}, v{box.version})")
-    return Check("box", "RHEL 10 box", Status.INFO, "not built yet (built once from your ISO, ~15 min)")
+    from . import box
+
+    ok, msg = box.box_status(settings, settings.provider)
+    if ok:
+        return Check("box", "RHEL 10 box", Status.OK, msg)
+    if msg == "not built yet":
+        msg = "not built yet (built once from your ISO, ~15 min)"
+    return Check("box", "RHEL 10 box", Status.INFO, msg)
 
 
 def check_leftovers() -> Check:
@@ -341,13 +314,12 @@ def check_vbox_profile(settings: Settings) -> Check:
 def run(settings: Settings, exam: str = "rhcsa") -> list[Check]:
     provider = settings.provider
     jobs: list[Callable[[], Check | list[Check]]] = [
-        check_platform, check_cpu, check_ssh, check_vagrant, check_packer,
-        lambda: check_vagrant_plugins(provider),
+        check_platform, check_cpu, check_ssh, check_packer,
         lambda: check_memory(exam, settings.profile),
         lambda: check_storage(settings, exam),
         lambda: check_iso(settings),
         lambda: check_subnets(settings),
-        lambda: check_box(provider),
+        lambda: check_box(settings),
         lambda: check_hypervisor_clash(provider),
         check_leftovers,
     ]
@@ -367,16 +339,14 @@ def run(settings: Settings, exam: str = "rhcsa") -> list[Check]:
     if provider == "":
         # Provider not chosen yet: a failing provider is only a warning while the other works.
         lv_ok = all(c.status is not Status.FAIL for c in results
-                    if c.id in ("kvm", "libvirt", "libvirt_group", "vagrant_libvirt"))
+                    if c.id in ("kvm", "libvirt", "libvirt_group"))
         vb_ok = all(c.status is not Status.FAIL for c in results if c.id == "virtualbox")
         if lv_ok or vb_ok:
             for c in results:
-                if c.status is Status.FAIL and c.id in ("kvm", "libvirt", "libvirt_group",
-                                                        "vagrant_libvirt", "virtualbox"):
+                if c.status is Status.FAIL and c.id in ("kvm", "libvirt", "libvirt_group", "virtualbox"):
                     c.status = Status.WARN
-    order = ["platform", "cpu", "kvm", "ssh", "vagrant", "packer", "libvirt", "libvirt_group",
-             "vagrant_libvirt", "virtualbox", "vagrant_registration", f"memory_{exam}", "storage",
-             "iso", "subnets", "box", "hv_clash", "vbox_profile", "ledger"]
+    order = ["platform", "cpu", "kvm", "ssh", "packer", "libvirt", "libvirt_group", "virtualbox",
+             f"memory_{exam}", "storage", "iso", "subnets", "box", "hv_clash", "vbox_profile", "ledger"]
     results.sort(key=lambda c: order.index(c.id) if c.id in order else len(order))
     remember_user_actions(results, settings.storage_dir)
     return results
@@ -403,7 +373,7 @@ def usable_providers(checks: list[Check]) -> list[str]:
         return bool(present) and all(c.status in (Status.OK, Status.INFO, Status.WARN) and
                                      not (c.status is Status.WARN and c.fix) for c in present)
     out = []
-    if ok(("kvm", "libvirt", "libvirt_group", "vagrant_libvirt")):
+    if ok(("kvm", "libvirt", "libvirt_group")):
         out.append("libvirt")
     if ok(("virtualbox",)):
         out.append("virtualbox")

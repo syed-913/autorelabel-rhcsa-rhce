@@ -1,9 +1,10 @@
-"""Lab lifecycle: host prerequisites (pool, networks), ordered bring-up,
-provisioning over SSH, verification reboots, snapshots, power and teardown."""
+"""Lab lifecycle: host prerequisites (pool, networks), the VMs made from the box, ordered
+bring-up, provisioning over SSH, verification reboots, snapshots, power and teardown."""
 
 from __future__ import annotations
 
 import ipaddress
+import shutil
 import threading
 import time
 from collections.abc import Callable
@@ -12,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from . import box, labfacts, labspec, ledger, log, paths, providers, remote, vagrant
+from . import box, labfacts, labspec, ledger, log, paths, proc, providers, remote, vagrant_legacy
 from .config import Settings
 from .fsutil import atomic_write_json, read_json
 from .providers import conflict
@@ -65,8 +66,8 @@ class Lab:
         self.exam = exam
         self.provider = settings.provider
         self.prefix = f"autorelabel-{exam}-"
-        self.env_file = paths.WORKSPACE / f"env-{exam}.json"
-        self.dotfile = paths.VAGRANT_DOTFILE / exam
+        self.key_file = paths.WORKSPACE / "keys" / exam / "id_ed25519"
+        self.dotfile = paths.VAGRANT_DOTFILE / exam      # labs Vagrant made (1.4 and earlier)
         mgmt = ipaddress.IPv4Network(settings.mgmt_subnet)
         labnet = ipaddress.IPv4Network(settings.lab_subnet)
         facts = labfacts.build(exam, settings.profile, self.provider, settings.lab_subnet, settings.mgmt_subnet)
@@ -96,21 +97,25 @@ class Lab:
     def names(self, role: str | None = None) -> list[str]:
         return [v.name for v in self.vms if role is None or v.spec.role == role]
 
-    def env_extra(self) -> dict[str, str]:
-        return {"AUTORELABEL_ENV": str(self.env_file), "VAGRANT_DOTFILE_PATH": str(self.dotfile),
-                "VAGRANT_DEFAULT_PROVIDER": self.provider}
+    def _key(self, name: str) -> Path:
+        """The key a VM trusts: the lab's own once it is in (keys[name] == "lab"), the box's before
+        that; a lab Vagrant made has the key Vagrant put in."""
+        which = (self.state().get("keys") or {}).get(name)
+        if which == "lab":
+            return self.key_file
+        if which == "box":
+            return box.key_path(self.settings, self.provider)
+        return vagrant_legacy.machine_key(self.exam, name, self.provider)
 
     def target(self, name: str) -> remote.Target:
-        key = self.dotfile / "machines" / name / self.provider / "private_key"
-        if not key.exists():
-            key = Path.home() / ".vagrant.d" / "insecure_private_keys" / "vagrant.key.ed25519"
+        key = self._key(name)
         if self.provider == "virtualbox":
             # VirtualBox reaches the guest through a NAT port forward on 127.0.0.1.
             ssh = (self.state().get("ssh") or {}).get(name)
             if not ssh:
-                cfg = vagrant.ssh_config(name, self.settings.storage_dir, self.env_extra())
-                if cfg.get("Port"):
-                    ssh = {"host": cfg.get("HostName", "127.0.0.1"), "port": int(cfg["Port"])}
+                port = vb.ssh_port(self.vm(name).domain)
+                if port:
+                    ssh = {"host": "127.0.0.1", "port": port}
                     st = self.state()
                     st.setdefault("ssh", {})[name] = ssh
                     atomic_write_json(STATE_FILE, st)
@@ -154,35 +159,7 @@ class Lab:
             pass
         return out
 
-    def write_env(self) -> None:
-        atomic_write_json(self.env_file, {
-            "box": vagrant.BOX_NAME,
-            "exam": self.exam,
-            "provider": self.provider,
-            "prefix": self.prefix,
-            "pool": POOL,
-            "mgmt_network": MGMT_NETWORK,
-            "mgmt_subnet": self.settings.mgmt_subnet,
-            "lab_network": LAB_NETWORK,
-            "iso_path": str(Path(self.settings.iso_path).expanduser().resolve()),
-            "console_dir": str(vb.console_dir()),
-            "vbox_paravirt": vb.PARAVIRT,
-            "vbox_disk_dir": str(box.storage_layout(self.settings)["vbox_disks"]),
-            "vbox_hostonly": "",
-            "vms": [{
-                "name": v.name, "cpus": v.spec.cpus, "memory": v.spec.memory_mb,
-                "mgmt_ip": v.mgmt_ip, "mgmt_mac": v.mgmt_mac, "lab_ip": v.lab_ip, "lab_mac": v.lab_mac,
-                "disks": [{"name": d.name, "size_gb": d.size_gb} for d in v.spec.disks],
-                "attach_iso": v.spec.role == "utility",
-            } for v in self.vms],
-        })
-
-    # --- vagrant -------------------------------------------------------------------------
-    def vagrant(self, args: list[str], *, on_line: LineFn | None = None, log_file: Path | None = None,
-                cancel: threading.Event | None = None, timeout: float | None = 3600) -> Any:
-        return vagrant.run_stream(args, self.settings.storage_dir, self.env_extra(), on_line=on_line,
-                                  log_file=log_file, cancel=cancel, timeout=timeout)
-
+    # --- the VMs ----------------------------------------------------------------------------
     def guard_hypervisors(self) -> None:
         """Refuse to start VMs while the other hypervisor runs some (see providers.conflict)."""
         clash = conflict.check(self.provider)
@@ -194,68 +171,96 @@ class Lab:
             except vb.ProfileBusy as exc:
                 raise LabError(str(exc), exc.hint, user_fixable=True) from exc
 
-    def _vagrant_up(self, names: list[str], step: StepFn, line: LineFn | None, log_file: Path,
-                    cancel: threading.Event | None) -> None:
+    def ensure_key(self) -> None:
+        """The lab's own SSH key, made once per lab: each VM trusts it from its first boot on."""
+        if self.key_file.exists():
+            return
+        self.key_file.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        res = proc.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-C", f"autorelabel-{self.exam}-lab",
+                        "-f", str(self.key_file)], timeout=30)
+        if not res.ok:
+            raise LabError(f"ssh-keygen failed: {res.tail(3)}")
+
+    def _set_key(self, names: list[str], which: str) -> None:
+        st = self.state()
+        st.setdefault("keys", {}).update({n: which for n in names})
+        atomic_write_json(STATE_FILE, st)
+
+    def create(self, names: list[str], step: StepFn, log_file: Path) -> None:
+        """Make the VMs from the box (a leftover one of the same name is replaced), start them and
+        give each the lab's key."""
         self.guard_hypervisors()
+        manifest = box.ensure_installed(self.settings, self.provider, step)
+        self.ensure_key()
         kind = "libvirt-domain" if self.provider == "libvirt" else "vbox-vm"
         for name in names:
             ledger.record(kind, self.vm(name).domain, self.exam, storage_dir=self.settings.storage_dir)
-        before_hostonly = vb.hostonly_interfaces() if self.provider == "virtualbox" else set()
+        image = box.image(self.settings, self.provider)
+        iso = str(Path(self.settings.iso_path).expanduser().resolve())
         try:
-            for attempt in (1, 2):
-                res = self.vagrant(["up", "--no-provision", f"--provider={self.provider}", *names],
-                                   on_line=line, log_file=log_file, cancel=cancel)
-                if res.cancelled:
-                    raise LabError("cancelled", log_file=log_file, user_fixable=True)
-                if res.ok:
-                    if self.provider == "virtualbox":
-                        self._vbox_after_up(names, step)
-                    return
-                if "locked" in res.out.lower() and attempt == 1:
-                    step("Vagrant reported a lock; retrying")
-                    time.sleep(10)
-                    continue
-                # vagrant-libvirt occasionally gives up right after starting a domain ("not ready for
-                # guest communication ... a bug should be reported") and removes it again: retry once.
-                # (Vagrant wraps the message, so "not" and "ready" are on different lines.)
-                if "ready for guest communication" in " ".join(res.out.split()) and attempt == 1:
-                    step("Vagrant gave up on a VM that was still booting; retrying")
-                    time.sleep(10)
-                    continue
-                raise LabError(f"vagrant up failed for {', '.join(names)}",
-                               "Open the log for details. Common causes: low memory, the box missing, "
-                               "or a leftover VM from an interrupted run (Lab → Destroy, then retry).", log_file)
-        finally:
-            # Vagrant creates the lab's host-only network early in `up`: ledger it even when `up`
-            # then fails or is cancelled, or uninstall would never know it is ours.
-            if self.provider == "virtualbox":
-                for ifname in sorted(vb.hostonly_interfaces() - before_hostonly):
-                    ledger.record("vbox-hostonly", ifname, "created by Vagrant", storage_dir=self.settings.storage_dir)
+            if self.provider == "libvirt":
+                base = lv.ensure_base(POOL, manifest["version"], image)
+                for name in names:
+                    v = self.vm(name)
+                    lv.create_vm(POOL, base, lv.VMSpec(
+                        name=v.domain, cpus=v.spec.cpus, memory_mb=v.spec.memory_mb,
+                        disks=[(d.name, d.size_gb) for d in v.spec.disks],
+                        mgmt_network=MGMT_NETWORK, mgmt_mac=v.mgmt_mac, lab_network=LAB_NETWORK, lab_mac=v.lab_mac,
+                        iso=iso if v.spec.role == "utility" else ""), paths.TMP)
+                lv.prune_base_volumes(POOL, keep=base)
+            else:
+                layout = box.storage_layout(self.settings)
+                lab_if = vb.ensure_hostonly(self.settings.lab_subnet, self.settings.storage_dir)
+                base = vb.ensure_base(manifest["version"], image, layout["vbox_vms"])
+                for name in names:
+                    v = self.vm(name)
+                    port = remote.free_local_port(2222 + self.vms.index(v) + (20 if self.exam == "rhce" else 0))
+                    vb.create_vm(base, vb.VMSpec(
+                        name=v.domain, cpus=v.spec.cpus, memory_mb=v.spec.memory_mb,
+                        disks=[(d.name, d.size_gb) for d in v.spec.disks], mgmt_mac=v.mgmt_mac,
+                        lab_if=lab_if, lab_mac=v.lab_mac, ssh_port=port,
+                        iso=iso if v.spec.role == "utility" else ""),
+                        layout["vbox_vms"], layout["vbox_disks"])
+                    st = self.state()
+                    st.setdefault("ssh", {})[name] = {"host": "127.0.0.1", "port": port}
+                    atomic_write_json(STATE_FILE, st)
+                vb.prune_bases(keep=base)
+        except (lv.LibvirtError, vb.VirtualBoxError) as exc:
+            raise LabError(f"could not create {', '.join(names)}: {exc}",
+                           "Open the log for details. If a VM was left over from an interrupted run, "
+                           "Lab → Destroy, then retry.", log_file) from exc
+        self._set_key(names, "box")
+        for name in names:
+            res = self.hv.start(self.vm(name).domain)
+            if not res.ok:
+                raise LabError(f"{name} did not start: {res.tail(3)}", log_file=log_file)
+        for name in names:
+            self._insert_key(name, log_file)
 
-    def _vbox_after_up(self, names: list[str], step: StepFn) -> None:
-        """Refresh SSH ports. VMs are created in the private profile's machine folder (lab
-        storage); one found elsewhere is moved there. The lab network loses the DHCP server
-        VirtualBox gave it (it stops serving once the VMs power off for the baseline snapshot)."""
-        folder = box.storage_layout(self.settings)["vbox_vms"]
-        st = self.state()
-        st.pop("ssh", None)
-        atomic_write_json(STATE_FILE, st)
-        for name in names:
-            dom = self.vm(name).domain
-            cfg_path = vb._info(dom).get("CfgFile", "")
-            if cfg_path and not cfg_path.startswith(str(folder)):
-                step(f"Moving {name} into the lab storage folder")
-                remote.close_master(self.target(name))
-                vb.shutdown(dom, wait=120) or vb.destroy(dom)
-                res = vb.move(dom, folder)
-                if not res.ok:
-                    _log.warning("movevm %s failed: %s", dom, res.tail(3))
-                vb.start(dom)
-        for name in names:
-            remote.wait_reachable(self.target(name), timeout=300)
-        lab_if = vb._info(self.vm(names[0]).domain).get("hostonlyadapter2", "")
-        if lab_if and vb.remove_dhcp_server(lab_if):
-            _log.info("removed VirtualBox's DHCP server from the lab network (%s)", lab_if)
+    def _create(self, names: list[str], step: StepFn, log_file: Path, cancel: threading.Event | None) -> None:
+        if cancel is not None and cancel.is_set():
+            raise LabError("cancelled", log_file=log_file, user_fixable=True)
+        try:
+            self.create(names, step, log_file)
+        except box.BoxError as exc:
+            raise LabError(str(exc), exc.hint, log_file, exc.user_fixable) from exc
+
+    def _insert_key(self, name: str, log_file: Path) -> None:
+        """Replace the box's key with the lab's in the VM's vagrant account (Vagrant did the same)."""
+        t = self.target(name)
+        if not remote.wait_reachable(t, timeout=900):
+            raise LabError(f"{name} is not reachable over SSH after boot", log_file=log_file)
+        pub = self.key_file.with_name(self.key_file.name + ".pub").read_text().strip()
+        script = ('k=/home/vagrant/.ssh/authorized_keys; printf "%s\\n" "$AR_KEY" > "$k.new" && '
+                  'chown vagrant:vagrant "$k.new" && chmod 0600 "$k.new" && mv -f "$k.new" "$k" && '
+                  'restorecon "$k"')
+        res = remote.run_script(t, script, env={"AR_KEY": pub}, timeout=60)
+        remote.close_master(t)
+        if not res.ok:
+            raise LabError(f"could not give {name} the lab's key: {res.tail(3)}", log_file=log_file)
+        self._set_key([name], "lab")
+        if not remote.wait_reachable(self.target(name), timeout=60):
+            raise LabError(f"{name} does not accept the lab's key", log_file=log_file)
 
     # --- provisioning ----------------------------------------------------------------------
     def _script(self, name: str) -> str:
@@ -386,16 +391,17 @@ class Lab:
         if not ok:
             raise LabError(f"RHEL 10 box not ready: {msg}", "Build the box first (Lab → Build box).", log_file,
                            user_fixable=True)
+        if self.provider == "virtualbox":
+            vb.ensure_console_keeper()    # the VMs need their serial consoles drained from the start
         if self.exam == "rhce":
             self._rhce_content()          # missing content: say so before any VM starts
         step("Preparing host networks and storage")
         self.prepare_host()
-        self.write_env()
         self.save_state(exam=self.exam, profile=self.settings.profile, provider=self.provider,
                         phase="provisioning", started=time.time())
 
         step("Starting the utility server")
-        self._vagrant_up(["utility"], step, on_line, log_file, cancel)
+        self._create(["utility"], step, log_file, cancel)
         step("Configuring the utility server (repositories, DNS, NTP, NFS, Flatpak)")
         self.provision("utility", "utility.sh", line=on_line, log_file=log_file)
         if self.exam == "rhce":
@@ -408,7 +414,7 @@ class Lab:
 
         others = [v.name for v in self.vms if v.spec.role != "utility"]
         step(f"Starting {', '.join(others)}")
-        self._vagrant_up(others, step, on_line, log_file, cancel)
+        self._create(others, step, log_file, cancel)
         step("Configuring the exam nodes")
         errors: list[str] = []
 
@@ -521,15 +527,26 @@ class Lab:
         log_file = log.operation_log(f"lab-destroy-{self.exam}")
         for v in self.vms:
             remote.close_master(self.target(v.name))
-            for s in self.hv.snapshots(v.domain):
-                self.hv.snapshot_delete(v.domain, s)
-        if self.env_file.exists():
-            self.vagrant(["destroy", "-f"], on_line=on_line, log_file=log_file, timeout=900)
-        for v in self.vms:  # anything Vagrant didn't manage to remove
             if self.hv.domain_exists(v.domain):
+                if on_line:
+                    on_line(f"Removing {v.name}")
                 self.hv.destroy(v.domain)
                 if self.provider == "libvirt":
-                    lv.virsh("undefine", v.domain, "--remove-all-storage", "--snapshots-metadata", timeout=120)
+                    res = lv.virsh("undefine", v.domain, "--remove-all-storage", "--snapshots-metadata",
+                                   "--nvram", timeout=120)
+                    if not res.ok:     # --nvram is refused by domains without one on older libvirt
+                        res = lv.virsh("undefine", v.domain, "--remove-all-storage", "--snapshots-metadata",
+                                       timeout=120)
                 else:
-                    vb.vbm("unregistervm", v.domain, "--delete", timeout=300)
+                    for s in self.hv.snapshots(v.domain):
+                        self.hv.snapshot_delete(v.domain, s)
+                    res = vb.vbm("unregistervm", v.domain, "--delete", timeout=300)
+                if not res.ok:
+                    _log.warning("removing %s: %s", v.domain, res.tail(3))
+                with open(log_file, "a") as fh:
+                    fh.write(f"removed {v.domain}: {'ok' if res.ok else res.tail(3)}\n")
+        # What a lab Vagrant made also left: its machine records and settings.
+        shutil.rmtree(self.dotfile, ignore_errors=True)
+        (paths.WORKSPACE / f"env-{self.exam}.json").unlink(missing_ok=True)
+        shutil.rmtree(self.key_file.parent, ignore_errors=True)
         STATE_FILE.unlink(missing_ok=True)

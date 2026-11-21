@@ -1,4 +1,5 @@
-# Builds the autorelabel/rhel10 Vagrant box offline from the RHEL 10 DVD ISO.
+# Builds the RHEL 10 box offline from the RHEL 10 DVD ISO: a qcow2 disk (libvirt) or an OVF
+# (VirtualBox), which autorelabel keeps in the lab storage directory.
 # No registration, no subscription. Driven by `./autorelabel box build`.
 
 # Exact plugin versions, so every box is built the same way. A new plugin release moves the pin only
@@ -13,10 +14,6 @@ packer {
     virtualbox = {
       version = "= 1.1.5"
       source  = "github.com/hashicorp/virtualbox"
-    }
-    vagrant = {
-      version = "= 1.1.7"
-      source  = "github.com/hashicorp/vagrant"
     }
   }
 }
@@ -37,6 +34,11 @@ variable "output_dir" {
 variable "box_version" {
   type    = string
   default = "0"
+}
+
+# The public half of the key autorelabel made for this box (box.py): the only key the box trusts.
+variable "ssh_public_key" {
+  type = string
 }
 
 variable "volume_label" {
@@ -66,12 +68,8 @@ variable "memory" {
 }
 
 locals {
-  vagrant_keys = join("\n", [
-    file("${path.root}/keys/vagrant.pub.ed25519"),
-    file("${path.root}/keys/vagrant.pub.rsa"),
-  ])
   kickstart = templatefile("${path.root}/http/ks.cfg.pkrtpl", {
-    vagrant_keys = local.vagrant_keys
+    ssh_public_key = var.ssh_public_key
   })
   boot_command = [
     "<up><wait>",
@@ -161,11 +159,5 @@ build {
       "${path.root}/scripts/base.sh",
       "${path.root}/scripts/cleanup.sh",
     ]
-  }
-
-  post-processor "vagrant" {
-    output               = "${var.output_dir}/autorelabel-rhel10-{{ .Provider }}.box"
-    compression_level    = 6
-    vagrantfile_template = "${path.root}/box-Vagrantfile"
   }
 }

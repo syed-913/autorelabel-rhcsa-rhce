@@ -57,10 +57,11 @@ chrony
 %post --erroronfail --log=/root/ks-post.log
 set -euxo pipefail
 
-# Vagrant access (the grader channel); password login is locked after provisioning
+# autorelabel's access (the grader channel): the box's own key; each lab swaps in its own key on
+# first boot. Password login is locked after provisioning
 install -d -m 0700 -o vagrant -g vagrant /home/vagrant/.ssh
 cat > /home/vagrant/.ssh/authorized_keys <<'KEYS'
-${vagrant_keys}
+${ssh_public_key}
 KEYS
 chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
 chmod 0600 /home/vagrant/.ssh/authorized_keys

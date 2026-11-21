@@ -1,10 +1,8 @@
 # Host dependency install guidance, per distribution family.
 #
 # Commands come from the official documentation:
-#   HashiCorp (Vagrant, Packer): https://developer.hashicorp.com/vagrant/install
-#                                https://developer.hashicorp.com/packer/install
-#   vagrant-libvirt:             https://vagrant-libvirt.github.io/vagrant-libvirt/installation.html
-#   VirtualBox:                  https://www.virtualbox.org/wiki/Linux_Downloads
+#   HashiCorp (Packer): https://developer.hashicorp.com/packer/install
+#   VirtualBox:         https://www.virtualbox.org/wiki/Linux_Downloads
 #
 # The doctor shows them, with undo commands. `doctor --fix` (Fix for me in the text interface)
 # runs the steps that are only commands, after asking; a step that starts with a download page
@@ -13,9 +11,7 @@
 # Each step: title, run (list of shell commands), undo (list), note (optional).
 
 links:
-  vagrant: https://developer.hashicorp.com/vagrant/install
   packer: https://developer.hashicorp.com/packer/install
-  vagrant_libvirt: https://vagrant-libvirt.github.io/vagrant-libvirt/installation.html
   virtualbox: https://www.virtualbox.org/wiki/Linux_Downloads
 
 families:
@@ -32,18 +28,13 @@ families:
         run: ["sudo apt install -y openssh-client"]
         undo: []
       hashicorp_repo:
-        title: HashiCorp apt repository (for Vagrant and Packer)
+        title: HashiCorp apt repository (for Packer)
         run:
           - "sudo apt install -y wget gpg"
           - "wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
           - "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main\" | sudo tee /etc/apt/sources.list.d/hashicorp.list"
         undo:
           - "sudo rm -f /etc/apt/sources.list.d/hashicorp.list /usr/share/keyrings/hashicorp-archive-keyring.gpg"
-      vagrant:
-        title: Vagrant
-        needs: [hashicorp_repo]
-        run: ["sudo apt update && sudo apt install -y vagrant"]
-        undo: ["sudo apt remove vagrant"]
       packer:
         title: Packer
         needs: [hashicorp_repo]
@@ -55,12 +46,6 @@ families:
           - "sudo apt install -y qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients"
           - "sudo systemctl enable --now libvirtd"
         undo: ["sudo apt remove qemu-system-x86 libvirt-daemon-system"]
-      vagrant_libvirt:
-        title: vagrant-libvirt plugin
-        run:
-          - "sudo apt install -y libvirt-dev build-essential pkg-config ruby-dev libxml2-dev libxslt1-dev zlib1g-dev"
-          - "vagrant plugin install vagrant-libvirt"
-        undo: ["vagrant plugin uninstall vagrant-libvirt"]
       libvirt_group:
         title: Allow your user to manage VMs (libvirt group)
         run: ["sudo usermod -aG libvirt $USER", "# then log out and back in (or reboot)"]
@@ -89,16 +74,10 @@ families:
         run: ["sudo dnf install -y openssh-clients"]
         undo: []
       hashicorp_repo:
-        title: HashiCorp repository (Packer only; keep Fedora's own Vagrant)
+        title: HashiCorp repository (for Packer)
         run:
           - "wget -O- https://rpm.releases.hashicorp.com/fedora/hashicorp.repo | sudo tee /etc/yum.repos.d/hashicorp.repo"
-          - "sudo sed -i '/^\\[hashicorp\\]/a excludepkgs=vagrant' /etc/yum.repos.d/hashicorp.repo"
         undo: ["sudo rm -f /etc/yum.repos.d/hashicorp.repo"]
-        note: "Fedora's vagrant-libvirt is built for Fedora's Vagrant, so HashiCorp's Vagrant is excluded."
-      vagrant:
-        title: Vagrant (Fedora package)
-        run: ["sudo dnf install -y vagrant"]
-        undo: ["sudo dnf remove vagrant"]
       packer:
         title: Packer
         needs: [hashicorp_repo]
@@ -110,10 +89,6 @@ families:
           - "sudo dnf install -y @virtualization"
           - "sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket"
         undo: ["sudo dnf group remove virtualization"]
-      vagrant_libvirt:
-        title: vagrant-libvirt plugin (Fedora package)
-        run: ["sudo dnf install -y vagrant-libvirt"]
-        undo: ["sudo dnf remove vagrant-libvirt"]
       libvirt_group:
         title: Allow your user to manage VMs (libvirt group)
         run: ["sudo usermod -aG libvirt $USER", "# then log out and back in (or reboot)"]
@@ -142,16 +117,11 @@ families:
         run: ["sudo dnf install -y openssh-clients"]
         undo: []
       hashicorp_repo:
-        title: HashiCorp repository (for Vagrant and Packer)
+        title: HashiCorp repository (for Packer)
         run:
           - "sudo dnf install -y dnf-plugins-core"
           - "sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo"
         undo: ["sudo rm -f /etc/yum.repos.d/hashicorp.repo"]
-      vagrant:
-        title: Vagrant
-        needs: [hashicorp_repo]
-        run: ["sudo dnf install -y vagrant"]
-        undo: ["sudo dnf remove vagrant"]
       packer:
         title: Packer
         needs: [hashicorp_repo]
@@ -163,13 +133,6 @@ families:
           - "sudo dnf install -y qemu-kvm libvirt virt-install"
           - "sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket"
         undo: ["sudo dnf remove qemu-kvm libvirt"]
-      vagrant_libvirt:
-        title: vagrant-libvirt plugin
-        run:
-          - "sudo dnf config-manager --set-enabled crb   # RHEL: sudo subscription-manager repos --enable codeready-builder-for-rhel-$(rpm -E %rhel)-x86_64-rpms"
-          - "sudo dnf install -y gcc make pkgconf-pkg-config libvirt-devel ruby-devel libxml2-devel"
-          - "vagrant plugin install vagrant-libvirt"
-        undo: ["vagrant plugin uninstall vagrant-libvirt"]
       libvirt_group:
         title: Allow your user to manage VMs (libvirt group)
         run: ["sudo usermod -aG libvirt $USER", "# then log out and back in (or reboot)"]
@@ -197,10 +160,6 @@ families:
         title: OpenSSH client
         run: ["sudo pacman -S --needed openssh"]
         undo: []
-      vagrant:
-        title: Vagrant
-        run: ["# Vagrant is no longer in Arch's official repositories: install it from the AUR (e.g. yay -S vagrant) or see https://developer.hashicorp.com/vagrant/install"]
-        undo: []
       packer:
         title: Packer
         run: ["sudo pacman -S --needed packer"]
@@ -211,12 +170,6 @@ families:
           - "sudo pacman -S --needed libvirt qemu-full dnsmasq iptables-nft"
           - "sudo systemctl enable --now libvirtd"
         undo: ["sudo pacman -R libvirt qemu-full"]
-      vagrant_libvirt:
-        title: vagrant-libvirt plugin
-        run:
-          - "sudo pacman -S --needed gcc make pkg-config ruby"
-          - "vagrant plugin install vagrant-libvirt"
-        undo: ["vagrant plugin uninstall vagrant-libvirt"]
       libvirt_group:
         title: Allow your user to manage VMs (libvirt group)
         run: ["sudo usermod -aG libvirt $USER", "# then log out and back in (or reboot)"]
@@ -242,10 +195,6 @@ families:
         title: OpenSSH client
         run: ["sudo zypper install -y openssh-clients"]
         undo: []
-      vagrant:
-        title: Vagrant
-        run: ["sudo zypper install -y vagrant"]
-        undo: ["sudo zypper remove vagrant"]
       packer:
         title: Packer
         run: ["# Download the Linux binary: https://developer.hashicorp.com/packer/install and place it in /usr/local/bin"]
@@ -256,10 +205,6 @@ families:
           - "sudo zypper install -y libvirt qemu-kvm polkit"
           - "sudo systemctl enable --now libvirtd"
         undo: ["sudo zypper remove libvirt qemu-kvm"]
-      vagrant_libvirt:
-        title: vagrant-libvirt plugin
-        run: ["sudo zypper install -y vagrant-libvirt   # or: vagrant plugin install vagrant-libvirt"]
-        undo: ["sudo zypper remove vagrant-libvirt"]
       libvirt_group:
         title: Allow your user to manage VMs (libvirt group)
         run: ["sudo usermod -aG libvirt $USER", "# then log out and back in (or reboot)"]
@@ -279,10 +224,8 @@ families:
     steps:
       python_venv: {title: "Python 3.10+ with the venv module", run: ["# install python3 and its venv module with your package manager"], undo: []}
       openssh: {title: OpenSSH client, run: ["# install the OpenSSH client"], undo: []}
-      vagrant: {title: Vagrant, run: ["# see https://developer.hashicorp.com/vagrant/install"], undo: []}
       packer: {title: Packer, run: ["# see https://developer.hashicorp.com/packer/install"], undo: []}
       libvirt: {title: libvirt + QEMU/KVM, run: ["# install libvirt and QEMU/KVM, then start the libvirt daemon"], undo: []}
-      vagrant_libvirt: {title: vagrant-libvirt plugin, run: ["# see https://vagrant-libvirt.github.io/vagrant-libvirt/installation.html"], undo: []}
       libvirt_group: {title: libvirt group, run: ["sudo usermod -aG libvirt $USER"], undo: ["sudo gpasswd -d $USER libvirt"]}
       kvm_group: {title: kvm group, run: ["sudo usermod -aG kvm $USER"], undo: ["sudo gpasswd -d $USER kvm"]}
       virtualbox: {title: "VirtualBox 7.2.2+", run: ["# see https://www.virtualbox.org/wiki/Linux_Downloads"], undo: []}

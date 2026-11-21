@@ -1,4 +1,6 @@
-"""Build the autorelabel/rhel10 Vagrant box with Packer, offline from the ISO."""
+"""The RHEL 10 box: built with Packer, offline from the ISO, and kept as autorelabel's own files
+in the lab storage directory (boxes/<provider>/: the disk image or the OVF, the SSH key the box
+trusts, and manifest-<provider>.json). Boxes earlier versions added to Vagrant are converted once."""
 
 from __future__ import annotations
 
@@ -11,13 +13,15 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from . import hostinfo, ledger, log, paths, proc, vagrant
+from . import hostinfo, ledger, log, paths, proc, vagrant_legacy
 from .config import Settings
 from .fsutil import atomic_write_json, disk_free_bytes, read_json
 
 _log = log.get("box")
 BUILD_MIN_FREE_GB = 25
 PACKER_SOURCE = {"libvirt": "qemu.rhel10", "virtualbox": "virtualbox-iso.rhel10"}
+BOX_FORMAT = 2          # 1: a Vagrant box (up to 1.4); 2: autorelabel's own files
+KEY = "ssh_key"         # the private key the box's vagrant account trusts (KEY + ".pub" next to it)
 # SHA-256 of Red Hat's x86_64 DVD ISOs as published on https://developers.redhat.com/products/rhel/download
 # (the Customer Portal lists the same). Add new minor releases here when Red Hat publishes them.
 RED_HAT_DVD_SHA256 = {
@@ -102,20 +106,108 @@ def manifest(settings: Settings, provider: str) -> dict | None:
     return read_json(manifest_path(settings, provider), default=None)
 
 
+def box_dir(settings: Settings, provider: str) -> Path:
+    return storage_layout(settings)["boxes"] / provider
+
+
+def key_path(settings: Settings, provider: str) -> Path:
+    return box_dir(settings, provider) / KEY
+
+
+def image(settings: Settings, provider: str) -> Path:
+    """libvirt: the qcow2 disk. VirtualBox: the OVF (its disk sits next to it)."""
+    m = manifest(settings, provider) or {}
+    return box_dir(settings, provider) / m.get("image", "rhel10.qcow2" if provider == "libvirt" else "rhel10.ovf")
+
+
+def installed(settings: Settings, provider: str) -> bool:
+    m = manifest(settings, provider) or {}
+    return (m.get("format") == BOX_FORMAT and image(settings, provider).is_file()
+            and key_path(settings, provider).is_file())
+
+
 def box_status(settings: Settings, provider: str) -> tuple[bool, str]:
-    """(usable, message). Usable means the box is added to Vagrant and matches the ISO."""
-    box = vagrant.has_box(provider)
-    if not box:
-        return False, "not built yet"
+    """(usable, message). Usable: the box is installed (or an earlier version's Vagrant box can be
+    converted) and matches the configured ISO."""
     m = manifest(settings, provider)
-    if not m:
-        return True, f"{box.name} v{box.version} (no build manifest)"
+    if not installed(settings, provider):
+        old = vagrant_legacy.find_box(provider)
+        if not old:
+            return False, "not built yet"
+        return True, f"box from an earlier version (Vagrant, v{old.version}); converted on first use"
     iso = Path(settings.iso_path)
     vol = hostinfo.iso_volume_id(iso) if iso.exists() else None
-    if vol and m.get("iso_volume_id") and vol != m["iso_volume_id"]:
+    if m and vol and m.get("iso_volume_id") and vol != m["iso_volume_id"]:
         return False, f"box was built from {m['iso_volume_id']} but the configured ISO is {vol}; rebuild"
+    m = m or {}
     verified = " · ISO verified" if m.get("iso_verified") else ""
     return True, f"RHEL {m.get('rhel_version', '?')} · built {m.get('built', '?')}{verified}"
+
+
+def ensure_installed(settings: Settings, provider: str, step: Callable[[str], None] | None = None) -> dict:
+    """The box's manifest, converting an earlier version's Vagrant box first if that is all there is."""
+    if not installed(settings, provider):
+        old = vagrant_legacy.find_box(provider)
+        if not old:
+            raise BoxError("the RHEL 10 box is not built yet", "Build the box first (Lab → Build box).",
+                           user_fixable=True)
+        if step:
+            step("Converting the box from an earlier version (once)")
+        try:
+            convert(settings, provider, old)
+        except OSError as exc:
+            raise BoxError(f"could not convert the box from an earlier version: {exc}",
+                           "Build the box again (Lab → Build box).") from exc
+    return manifest(settings, provider) or {}
+
+
+def convert(settings: Settings, provider: str, old: vagrant_legacy.OldBox) -> None:
+    """Copy an earlier version's Vagrant box into boxes/<provider>/ with the key it trusts (Vagrant's
+    well-known one: each lab replaces it with its own on first boot), then let Vagrant forget it."""
+    dest = box_dir(settings, provider)
+    tmp = dest.with_name(dest.name + ".converting")
+    shutil.rmtree(tmp, ignore_errors=True)
+    tmp.mkdir(parents=True)
+    names = old.files()
+    for src, name in names.items():
+        shutil.copyfile(src, tmp / name)
+    shutil.copyfile(old.key, tmp / KEY)
+    (tmp / KEY).chmod(0o600)
+    shutil.rmtree(dest, ignore_errors=True)
+    tmp.rename(dest)
+    m = manifest(settings, provider) or {"rhel_version": "?", "built": old.version}
+    m.update({"format": BOX_FORMAT, "provider": provider, "version": m.get("version") or old.version,
+              "image": "rhel10.qcow2" if provider == "libvirt" else "rhel10.ovf",
+              "converted_from": f"vagrant {old.version}"})
+    atomic_write_json(manifest_path(settings, provider), m)
+    _log.info("converted the %s Vagrant box v%s into %s", provider, old.version, dest)
+    vagrant_legacy.forget_box(provider)
+
+
+def _install_build(settings: Settings, provider: str, out_dir: Path, new_key: Path) -> str:
+    """Move Packer's output and the build's key into boxes/<provider>/. Returns the image's name."""
+    dest = box_dir(settings, provider)
+    tmp = dest.with_name(dest.name + ".new")
+    shutil.rmtree(tmp, ignore_errors=True)
+    tmp.mkdir(parents=True)
+    if provider == "libvirt":
+        src = out_dir / "qemu" / "box.img"
+        if not src.is_file():
+            raise BoxError("packer finished but produced no disk image")
+        src.rename(tmp / "rhel10.qcow2")
+        name = "rhel10.qcow2"
+    else:
+        ovfs = sorted((out_dir / "virtualbox").glob("*.ovf"))
+        if not ovfs:
+            raise BoxError("packer finished but produced no OVF")
+        for f in (out_dir / "virtualbox").iterdir():
+            f.rename(tmp / f.name)
+        name = ovfs[0].name
+    new_key.rename(tmp / KEY)
+    new_key.with_name(new_key.name + ".pub").rename(tmp / (KEY + ".pub"))
+    shutil.rmtree(dest, ignore_errors=True)
+    tmp.rename(dest)
+    return name
 
 
 def build(
@@ -189,6 +281,12 @@ def build(
         shutil.rmtree(out_dir, ignore_errors=True)
     out_dir.mkdir(parents=True, exist_ok=True)
     version = time.strftime("%Y%m%d.%H%M")
+    # The key the box's vagrant account trusts: made here, so no box carries a key known to others.
+    key = out_dir / KEY
+    res = proc.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-C", "autorelabel-box", "-f", str(key)],
+                   timeout=30)
+    if not res.ok:
+        raise BoxError(f"ssh-keygen failed: {res.tail(3)}", log_file=log_file)
 
     step("Installing RHEL from the ISO (about 10-15 minutes)")
     cmd = [
@@ -199,6 +297,7 @@ def build(
         "-var", f"output_dir={out_dir}",
         "-var", f"box_version={version}",
         "-var", f"volume_label={vol}",
+        "-var", f"ssh_public_key={key.with_name(KEY + '.pub').read_text().strip()}",
         # RHEL-family hosts: only /usr/libexec/qemu-kvm, which has q35 machines but no i440fx ("pc")
         *(["-var", f"qemu_binary={hostinfo.RHEL_QEMU}", "-var", "machine_type=q35"]
           if provider == "libvirt" and hostinfo.qemu_system() == hostinfo.RHEL_QEMU else []),
@@ -222,23 +321,17 @@ def build(
             hint = "The installer did not finish in time. Check the serial log in the build directory."
         raise BoxError("packer build failed", hint, log_file)
 
-    box_file = out_dir / f"autorelabel-rhel10-{'libvirt' if provider == 'libvirt' else 'virtualbox'}.box"
-    if not box_file.exists():
-        candidates = sorted(out_dir.glob("*.box"))
-        if not candidates:
-            raise BoxError("packer finished but produced no .box file", log_file=log_file)
-        box_file = candidates[0]
-
-    step("Adding the box to Vagrant")
-    ledger.record("vagrant-box", vagrant.BOX_NAME, provider, storage_dir=settings.storage_dir)
-    res = vagrant.box_add(box_file, provider, on_line=on_line, log_file=log_file)
-    if not res.ok:
-        raise BoxError("vagrant box add failed", log_file=log_file)
-
+    step("Installing the box")
+    try:
+        name = _install_build(settings, provider, out_dir, key)
+    except BoxError as exc:
+        exc.log_file = log_file
+        raise
     atomic_write_json(manifest_path(settings, provider), {
-        "box": vagrant.BOX_NAME,
+        "format": BOX_FORMAT,
         "provider": provider,
         "version": version,
+        "image": name,
         "rhel_version": rhel,
         "iso_volume_id": vol,
         "iso_sha256": digest,

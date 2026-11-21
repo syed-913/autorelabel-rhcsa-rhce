@@ -20,6 +20,7 @@ its own results file; the coverage report uses libvirt's, the primary provider.
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import time
 from collections.abc import Callable
@@ -63,11 +64,23 @@ def shared_inputs(exam: str) -> dict[str, list[Path | str]]:
     return {
         "checks": [lib / "check-lib.sh", lib / "setup-lib.sh", paths.BANKS / exam / "pools.yaml",
                    grader.check_script("<lib>", "<check>"), remote._wrap("<script>", {"NAME": "value"})],
-        "lab": [paths.VAGRANT_DIR / "Vagrantfile", prov / "common.sh", prov / "utility.sh",
+        "lab": [*_vm_hardware(), prov / "common.sh", prov / "utility.sh",
                 *(prov / name for name in scripts), *content,
                 *(repr(labspec.topology(exam, profile)) for profile in config.PROFILES), *facts],
         "box": sorted(p for p in paths.PACKER_DIR.rglob("*") if p.is_file()),
     }
+
+
+def _vm_hardware() -> list[str]:
+    """What the guests see of their virtual hardware: libvirt's domain and network card
+    definitions, and how a VirtualBox VM is set up (its code; the base VM comes from the box)."""
+    from .providers import libvirt as lv
+    from .providers import virtualbox as vb
+
+    spec = lv.VMSpec(name="<vm>", cpus=1, memory_mb=1024, disks=[("<disk>", 4)], mgmt_network="<mgmt>",
+                     mgmt_mac="<mac>", lab_network="<lab>", lab_mac="<mac>", iso="<iso>")
+    return [lv.domain_xml(spec, "<vda>", ["<vdb>"]), lv.interface_xml("<net>", "<mac>"),
+            inspect.getsource(vb.create_vm)]
 
 
 def shared_digests(exam: str) -> dict[str, str]:
