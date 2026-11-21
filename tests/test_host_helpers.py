@@ -1,10 +1,10 @@
-"""Host helpers: ledger, atomic files, version parsing, ISO labels, vagrant parsing."""
+"""Host helpers: ledger, atomic files, version parsing, ISO labels."""
 
 from __future__ import annotations
 
 import pytest
 
-from autorelabel import fsutil, hostinfo, ledger, paths, vagrant
+from autorelabel import fsutil, hostinfo, ledger, paths
 
 
 def test_ledger_roundtrip(tmp_path, monkeypatch):
@@ -61,16 +61,6 @@ def test_iso_volume_id(tmp_path):
     assert vol == "RHEL-10-0-BaseOS-x86_64"
     assert hostinfo.rhel_version_from_iso(vol) == "10.0"
     assert hostinfo.rhel_version_from_iso("Fedora-41") is None
-
-
-def test_vagrant_machine_readable():
-    out = (
-        "1791314412,,ui,info,vagrant-libvirt (0.12.2%!(VAGRANT_COMMA) global)\n"
-        "1791314412,,plugin-name,vagrant-libvirt\n"
-        "1791314412,vagrant-libvirt,plugin-version,0.12.2%!(VAGRANT_COMMA) global\n"
-    )
-    rows = vagrant.parse_machine_readable(out)
-    assert ("vagrant-libvirt", "plugin-version", ["0.12.2, global"]) in rows
 
 
 def _fake_proc(root, pid: str, comm: str, environ: str = "", cmdline: str = "") -> None:
@@ -167,8 +157,11 @@ def test_no_virtualbox_lab_vm_keeps_the_way_to_the_hosts_loopback():
     packer = (paths.PACKER_DIR / "rhel10.pkr.hcl").read_text()
     post = packer[packer.index("vboxmanage_post = ["):]
     assert '"--nat-localhostreachable1", "off"' in post[:post.index("\n  ]")]
-    vagrantfile = (paths.VAGRANT_DIR / "Vagrantfile").read_text()
-    assert 'vb.customize ["modifyvm", :id, "--nat-localhostreachable1", "off"]' in vagrantfile
+    import inspect
+
+    from autorelabel.providers import virtualbox as vb
+
+    assert '"--nat-localhostreachable1", "off"' in inspect.getsource(vb.create_vm)
 
 
 def test_the_lab_network_gets_no_virtualbox_dhcp(monkeypatch):
@@ -218,27 +211,6 @@ def test_fixes_the_user_ran_are_ledgered_for_uninstall(tmp_path, monkeypatch):
     assert (entry.kind, entry.details) == ("user-action", "sudo gpasswd -d $USER libvirt")
     doctor.remember_user_actions([fixed])                  # recorded once
     assert len(ledger.entries()) == 1
-
-
-def test_vagrant_up_is_retried_when_vagrant_gives_up_on_a_booting_vm(tmp_path, monkeypatch):
-    """vagrant-libvirt's message is wrapped: "... a machine that is not\\nready for guest communication"."""
-    from pathlib import Path
-
-    from autorelabel import lab as lab_mod
-    from autorelabel import proc
-    from autorelabel.config import Settings
-
-    lab = lab_mod.Lab(Settings(provider="libvirt", storage_dir=str(tmp_path)), "rhcsa")
-    monkeypatch.setattr(lab, "guard_hypervisors", lambda: None)
-    monkeypatch.setattr(lab_mod.ledger, "record", lambda *a, **k: None)
-    monkeypatch.setattr(lab_mod.time, "sleep", lambda s: None)
-    gave_up = ("==> utility: Removing domain...\nGuest-specific operations were attempted on a machine that is not\n"
-               "ready for guest communication. This should not happen and a bug\nshould be reported.\n")
-    answers = [proc.Result(["vagrant"], 1, gave_up, "", 15.0), proc.Result(["vagrant"], 0, "", "", 60.0)]
-    calls, steps = [], []
-    monkeypatch.setattr(lab, "vagrant", lambda args, **k: calls.append(args) or answers[len(calls) - 1])
-    lab._vagrant_up(["utility"], steps.append, None, Path(tmp_path / "up.log"), None)
-    assert len(calls) == 2 and any("retrying" in s for s in steps)
 
 
 def test_the_socket_directory_must_be_this_users_own(tmp_path, monkeypatch):
@@ -353,6 +325,47 @@ def test_the_uninstaller_never_deletes_the_launcher(tmp_path):
                          env={"PATH": str(tools), "HOME": str(tmp_path / "home")}, timeout=60)
     assert launcher.exists(), out.stdout + out.stderr
     assert not (repo / ".workspace").exists()                      # its own runtime files do go
+
+
+def _run_uninstaller(tmp_path, storage, *args):
+    """The uninstaller on a fake repository whose lab storage root is `storage`, with only basic
+    tools on PATH (no virsh, vagrant, VBoxManage or systemctl to reach real VMs)."""
+    import os
+    import shutil
+    import subprocess
+
+    from autorelabel import paths
+
+    repo = tmp_path / "repo"
+    (repo / "scripts").mkdir(parents=True)
+    (repo / "src" / "autorelabel").mkdir(parents=True)
+    shutil.copy(paths.ROOT / "scripts" / "uninstall.sh", repo / "scripts" / "uninstall.sh")
+    (repo / "autorelabel").write_text("#!/bin/sh\n")             # how it knows the repository
+    (repo / ".workspace").mkdir()
+    (repo / ".workspace" / "config.json").write_text(f'{{"storage_dir": "{storage.parent}"}}')
+    (repo / ".workspace" / "ledger.tsv").write_text(f"0\tdir\t{storage}\tlab storage\n")
+    tools = tmp_path / "bin"
+    tools.mkdir()
+    for name in ("bash", "sed", "awk", "sort", "uniq", "find", "id", "basename", "dirname", "cat", "grep",
+                 "head", "tail", "rm", "wc", "printf", "tr", "cut", "readlink", "mkdir", "ls", "env"):
+        found = shutil.which(name)
+        if found:
+            os.symlink(found, tools / name)
+    return subprocess.run(["bash", str(repo / "scripts" / "uninstall.sh"), "--yes", *args], capture_output=True,
+                          text=True, env={"PATH": str(tools), "HOME": str(tmp_path / "home")}, timeout=60)
+
+
+def test_keep_box_keeps_the_box_in_the_lab_storage(tmp_path):
+    storage = tmp_path / "data" / "autorelabel"
+    for sub in ("boxes/libvirt", "content", "packer"):
+        (storage / sub).mkdir(parents=True)
+    (storage / "boxes" / "libvirt" / "rhel10.qcow2").write_text("disk")
+    (storage / "boxes" / "manifest-libvirt.json").write_text("{}")
+    out = _run_uninstaller(tmp_path, storage, "--keep-box")
+    assert sorted(p.name for p in storage.iterdir()) == ["boxes"], out.stdout + out.stderr
+    assert (storage / "boxes" / "libvirt" / "rhel10.qcow2").exists()
+    out = _run_uninstaller(tmp_path / "again", storage)
+    assert not storage.exists(), out.stdout + out.stderr
 
 
 def test_the_lab_storage_directory_is_a_folder_of_its_own(tmp_path, monkeypatch):

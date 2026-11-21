@@ -169,8 +169,8 @@ if ((HAVE_VBOX)); then
       | uniq_lines | while read -r v; do vbm "$prof" showvminfo "$v" >/dev/null 2>&1 && echo "$v"; done)
   done < <(vbox_profiles)
   mapfile -t VBOX_MEDIA < <(ledger_ids vbox-medium | uniq_lines)
-  # Safety net: Vagrant creates the lab network's host-only interface, with the lab subnet's first
-  # address, early in `vagrant up`; if that run was interrupted, the ledger may not know it.
+  # Safety net: the lab network's host-only interface has the lab subnet's first address. It is
+  # ledgered right after it is made (by Vagrant up to 1.4); a run interrupted in between left it unknown.
   lab_net="${VBOX_LAB_SUBNET:-192.168.60.0/24}"; lab_net="${lab_net%/*}"
   lab_gw="${lab_net%.*}.$(( ${lab_net##*.} + 1 ))"
   first_prof="$(vbox_profiles | head -1)"
@@ -287,7 +287,7 @@ done
 for p in "${POOLS[@]}"; do
   quiet "${VIRSH[@]}" pool-start "$p"
   while read -r v; do [[ -n "$v" ]] && quiet "${VIRSH[@]}" vol-delete --pool "$p" "$v"; done \
-    < <("${VIRSH[@]}" vol-list --pool "$p" --name 2>/dev/null)
+    < <("${VIRSH[@]}" vol-list --pool "$p" 2>/dev/null | awk 'NR > 2 && NF { print $1 }')   # no --name for vol-list
   quiet "${VIRSH[@]}" pool-destroy "$p"
   quiet "${VIRSH[@]}" pool-delete "$p"
   step "remove storage pool $p" "${VIRSH[@]}" pool-undefine "$p"
@@ -296,7 +296,11 @@ for n in "${NETWORKS[@]}"; do
   quiet "${VIRSH[@]}" net-destroy "$n"
   step "remove network $n" "${VIRSH[@]}" net-undefine "$n"
 done
-for pv in "${VBOX_VMS[@]}"; do
+# Linked clones first: a box's base VM (autorelabel-base-*) can't go while a lab VM is cloned from it.
+ORDERED_VMS=()
+for pv in "${VBOX_VMS[@]}"; do [[ "${pv#*:}" == "${PREFIX}-base-"* ]] || ORDERED_VMS+=("$pv"); done
+for pv in "${VBOX_VMS[@]}"; do [[ "${pv#*:}" == "${PREFIX}-base-"* ]] && ORDERED_VMS+=("$pv"); done
+for pv in "${ORDERED_VMS[@]}"; do
   prof="${pv%%:*}" v="${pv#*:}"
   quiet vbm "$prof" controlvm "$v" poweroff
   sleep 1
@@ -338,7 +342,14 @@ done
 for sock in "${XDG_RUNTIME_DIR:-/nonexistent}/$PREFIX"/*; do
   [[ -S "$sock" ]] && quiet ssh -o ControlPath="$sock" -O exit "$PREFIX-lab"
 done
-for d in "${DIRS[@]}"; do step "delete $d" rm -rf -- "$d"; done
+# shellcheck disable=SC2329  # run through step
+keep_boxes() {  # keep_boxes <dir>: delete what is in it, except the box (boxes/)
+  find "$1" -mindepth 1 -maxdepth 1 ! -name boxes -exec rm -rf -- {} +
+}
+for d in "${DIRS[@]}"; do
+  if ((KEEP_BOX)) && [[ -d "$d/boxes" ]]; then step "delete $d, except the box in $d/boxes" keep_boxes "$d"
+  else step "delete $d" rm -rf -- "$d"; fi
+done
 for d in "${REPO_ITEMS[@]}"; do step "delete $d" rm -rf -- "$d"; done
 if ((DELETE_ISO)) && [[ -n "$ISO_PATH" && -f "$ISO_PATH" ]]; then step "delete $ISO_PATH" rm -f -- "$ISO_PATH"; fi
 
@@ -360,7 +371,12 @@ fi
 if ((HAVE_VAGRANT)) && ((KEEP_BOX == 0)) && vagrant box list 2>/dev/null | grep -q "^${BOX} "; then LEFT+=("Vagrant box $BOX"); fi
 left_index="$(vagrant_index count 2>/dev/null || echo 0)"
 ((left_index > 0)) && LEFT+=("$left_index entries in Vagrant's machine index (vagrant global-status)")
-for d in "${DIRS[@]}" "${REPO_ITEMS[@]}"; do [[ -e "$d" ]] && LEFT+=("$d"); done
+for d in "${DIRS[@]}"; do
+  if ((KEEP_BOX)) && [[ -d "$d/boxes" ]]; then
+    [[ -n "$(find "$d" -mindepth 1 -maxdepth 1 ! -name boxes -print -quit 2>/dev/null)" ]] && LEFT+=("$d (besides the box)")
+  elif [[ -e "$d" ]]; then LEFT+=("$d"); fi
+done
+for d in "${REPO_ITEMS[@]}"; do [[ -e "$d" ]] && LEFT+=("$d"); done
 
 if ((${#LEFT[@]})); then
   echo "${R}${B}Some items could not be removed:${O}"
@@ -372,7 +388,7 @@ else
   [[ -n "$REPO" ]] && echo "${D}You can now delete the repository folder: rm -rf '$REPO'${O}"
   STATUS=0
 fi
-if ((KEEP_BOX)); then echo "${D}Kept the Vagrant box ($BOX) as requested.${O}"; fi
+if ((KEEP_BOX)); then echo "${D}Kept the box as requested (boxes/ in the lab storage folder, and a Vagrant box from before 1.5).${O}"; fi
 if [[ -z "$REPO" ]] && ((HAVE_VAGRANT)); then
   echo "${D}Without the repository, Vagrant's machine index may still list the lab VMs. To clear every${O}"
   echo "${D}deleted machine from it (other projects' too): vagrant global-status --prune${O}"
