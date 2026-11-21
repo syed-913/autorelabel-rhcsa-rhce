@@ -1,12 +1,14 @@
-"""VirtualBox operations outside Vagrant, mirroring providers.libvirt's interface:
+"""VirtualBox operations, mirroring providers.libvirt's interface: the lab VMs made from the box,
 power, pause, snapshots, console, and moving VMs into the lab storage folder."""
 
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 from .. import console_keeper, log, paths, proc
@@ -269,3 +271,133 @@ def hostonly_interfaces() -> set[str]:
     res2 = vbm("list", "hostonlynets", timeout=30)
     names |= {line.split(":", 1)[1].strip() for line in res2.out.splitlines() if line.startswith("Name:")}
     return names
+
+
+# --- making lab VMs from the box ---------------------------------------------------------------
+# The box is imported once as a base VM (BASE_PREFIX + its version) with one snapshot; each lab VM
+# is a linked clone of that snapshot, set up as Vagrant's VirtualBox provider set up its VMs.
+BASE_PREFIX = "autorelabel-base-"
+BASE_SNAPSHOT = "box"
+SATA = "SATA"          # the AHCI controller Packer's virtualbox-iso build gave the box
+EXTRA_BASE = "autorelabel/base"
+
+
+@dataclass(frozen=True)
+class VMSpec:
+    name: str
+    cpus: int
+    memory_mb: int
+    disks: list[tuple[str, int]]     # (name, size in GB), SATA ports 1, 2...
+    mgmt_mac: str
+    lab_if: str                      # host-only interface of the lab network
+    lab_mac: str
+    ssh_port: int                    # on 127.0.0.1, forwarded to the guest's port 22
+    iso: str = ""                    # attached on SATA port 5
+
+
+def _mac(mac: str) -> str:
+    return mac.replace(":", "").upper()
+
+
+def ensure_base(version: str, ovf: Path, folder: Path) -> str:
+    """The base VM of this box version, imported from the OVF once."""
+    name = f"{BASE_PREFIX}{version}"
+    if domain_exists(name) and BASE_SNAPSHOT in snapshots(name):
+        return name
+    if domain_exists(name):          # an interrupted import
+        vbm("unregistervm", name, "--delete", timeout=300)
+    folder.mkdir(parents=True, exist_ok=True)
+    vbm("import", str(ovf), "--vsys", "0", "--vmname", name, "--basefolder", str(folder), timeout=1800, check=True)
+    vbm("snapshot", name, "take", BASE_SNAPSHOT, timeout=300, check=True)
+    return name
+
+
+def create_vm(base: str, spec: VMSpec, folder: Path, disk_dir: Path) -> None:
+    """A linked clone of the base VM, with the lab VM's hardware. A leftover VM of the same name
+    (an interrupted run) is removed first."""
+    if domain_exists(spec.name):
+        destroy(spec.name)
+        time.sleep(1)
+        vbm("unregistervm", spec.name, "--delete", timeout=300)
+    vbm("clonevm", base, "--snapshot", BASE_SNAPSHOT, "--options", "link", "--name", spec.name,
+        "--basefolder", str(folder), "--register", timeout=600, check=True)
+    vbm("setextradata", spec.name, EXTRA_BASE, base, check=True)
+    for rule in [v.split(",", 1)[0] for k, v in _info(spec.name).items() if k.startswith("Forwarding(")]:
+        vbm("modifyvm", spec.name, "--natpf1", "delete", rule, check=True)
+    vbm("modifyvm", spec.name, "--cpus", str(spec.cpus), "--memory", str(spec.memory_mb),
+        "--nic1", "nat", "--macaddress1", _mac(spec.mgmt_mac), "--cableconnected1", "on",
+        "--natpf1", f"ssh,tcp,127.0.0.1,{spec.ssh_port},,22",
+        "--nic2", "hostonly", "--hostonlyadapter2", spec.lab_if, "--macaddress2", _mac(spec.lab_mac),
+        "--cableconnected2", "on",
+        "--audio-driver", "none", "--graphicscontroller", "vmsvga",
+        "--paravirt-provider", PARAVIRT, "--nat-localhostreachable1", "off",
+        "--uart1", "0x3F8", "4", "--uartmode1", "server", str(console_socket(spec.name)),
+        timeout=60, check=True)
+    vbm("storagectl", spec.name, "--name", SATA, "--portcount", "6", check=True)
+    disk_dir.mkdir(parents=True, exist_ok=True)
+    for i, (disk, size_gb) in enumerate(spec.disks):
+        path = disk_dir / f"{spec.name}-{disk}.vdi"
+        if path.exists():               # left over from an interrupted run
+            vbm("closemedium", "disk", str(path), "--delete", timeout=120)
+            path.unlink(missing_ok=True)
+        vbm("createmedium", "disk", "--filename", str(path), "--size", str(size_gb * 1024),
+            "--format", "VDI", "--variant", "Standard", timeout=120, check=True)
+        vbm("storageattach", spec.name, "--storagectl", SATA, "--port", str(i + 1), "--device", "0",
+            "--type", "hdd", "--medium", str(path), check=True)
+    if spec.iso:
+        vbm("storageattach", spec.name, "--storagectl", SATA, "--port", "5", "--device", "0",
+            "--type", "dvddrive", "--medium", spec.iso, check=True)
+
+
+def prune_bases(keep: str) -> list[str]:
+    """Remove base VMs of older box versions that no lab VM is a clone of. Returns their names."""
+    res = vbm("list", "vms", timeout=30)
+    names = [line.split('"')[1] for line in res.out.splitlines() if line.count('"') >= 2]
+    used = set()
+    for n in names:
+        if not n.startswith(BASE_PREFIX):
+            got = vbm("getextradata", n, EXTRA_BASE, timeout=30).out
+            used.add(got.split("Value:", 1)[1].strip() if "Value:" in got else "")
+    removed = []
+    for n in names:
+        if n.startswith(BASE_PREFIX) and n != keep and n not in used and \
+                vbm("unregistervm", n, "--delete", timeout=300).ok:
+            removed.append(n)
+    return removed
+
+
+def ssh_port(name: str) -> int | None:
+    """The host port forwarded to the guest's SSH (Vagrant named its rule "ssh" too)."""
+    for k, v in _info(name).items():
+        if k.startswith("Forwarding("):
+            parts = v.split(",")
+            if len(parts) == 6 and parts[0] == "ssh" and parts[3].isdigit():
+                return int(parts[3])
+    return None
+
+
+def ensure_hostonly(subnet: str, storage_dir: str | None) -> str:
+    """The host-only interface of the lab network (the subnet's first address on the host side),
+    created if missing, without a DHCP server (as on libvirt)."""
+    import ipaddress
+
+    from .. import ledger
+
+    net = ipaddress.IPv4Network(subnet)
+    gw = str(net.network_address + 1)
+    res = vbm("list", "hostonlyifs", timeout=30)
+    name = ""
+    for block in res.out.split("\n\n"):
+        fields = dict(line.split(":", 1) for line in block.splitlines() if ":" in line)
+        if fields.get("IPAddress", "").strip() == gw:
+            name = fields.get("Name", "").strip()
+    if not name:
+        made = vbm("hostonlyif", "create", timeout=60, check=True)
+        m = re.search(r"Interface '([^']+)' was successfully created", made.out)
+        if not m:
+            raise VirtualBoxError(f"VBoxManage hostonlyif create: {made.tail(3)}")
+        name = m.group(1)
+        ledger.record("vbox-hostonly", name, "lab network", storage_dir=storage_dir)
+        vbm("hostonlyif", "ipconfig", name, "--ip", gw, "--netmask", str(net.netmask), timeout=60, check=True)
+    remove_dhcp_server(name)
+    return name
