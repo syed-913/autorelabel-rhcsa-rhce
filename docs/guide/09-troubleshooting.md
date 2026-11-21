@@ -16,12 +16,10 @@ The same check is on the home screen (**Doctor**, or press `d`). It never change
 | **CPU supports RHEL 10** | The x86-64-v3 instruction set that RHEL 10 requires, and hardware virtualization (VT-x or AMD-V). | A missing instruction can't be fixed; RHEL 10 won't boot on that CPU. Missing virtualization usually means it is turned off in the BIOS/UEFI. |
 | **/dev/kvm available** | That KVM exists and your user can open it. | Enable virtualization in the BIOS/UEFI, or add yourself to the `kvm` group and log in again. |
 | **OpenSSH client** | That `ssh` is installed. | Install it with the command shown. |
-| **Vagrant**, **Packer** | That they are installed, in version 2.3+ and 1.10+. | Install or update them with the commands shown. |
+| **Packer** | That it is installed, in version 1.10 or newer. | Install or update it with the commands shown. |
 | **libvirt** | That `virsh` can reach `qemu:///system`, and that `qemu-img` and QEMU are installed. | Install libvirt and start its service; on RHEL-family hosts, QEMU is `/usr/libexec/qemu-kvm`, which is accepted too. |
 | **Member of the libvirt group** | That your user may manage system VMs. | Add yourself to the group, then **log out and back in**. "Added, but this login session predates it" means only the logging out is missing. |
-| **vagrant-libvirt plugin** | That Vagrant can create libvirt VMs. | Install the plugin with the commands shown. |
 | **VirtualBox** | The version (7.2.2 or newer), your `vboxusers` membership, and whether KVM is holding the CPU's virtualization (see below). | Follow the message. |
-| **vagrant-registration plugin** | Information only: if you have it, autorelabel turns it off for its labs, so you are never asked for Red Hat credentials. | Nothing to do. |
 | **Free memory** | Free RAM against what the lab needs, plus about 0.75 GB for your desktop. | Close other VMs or applications, or use the *lite* profile. A warning, not a blocker. |
 | **Lab storage directory** | That it exists, is writable, is on a local disk (not tmpfs, NFS or SMB), has enough free space, and that the VM user can reach it. | Choose another folder, free some space, or run the `setfacl` commands shown (explained in [Installing](01-installing.md#4-building-the-box)). |
 | **RHEL 10 DVD ISO** | That the file is a RHEL 10 DVD (not the boot ISO) and that the VM user can read it. | Download the right image, or run the `setfacl` commands shown. |
@@ -60,7 +58,7 @@ If the doctor says **"KVM holds VT-x"**, VirtualBox VMs won't start at all. The 
 Everything autorelabel does is logged in `.workspace/logs/` inside the repository:
 
 - `autorelabel.log`: the application log (rotated, with secrets masked).
-- One log per long operation, such as `…-box-build-libvirt.log` or `…-lab-up-rhcsa.log`, with the full output of Vagrant, Packer and the setup scripts.
+- One log per long operation, such as `…-box-build-libvirt.log` or `…-lab-up-rhcsa.log`, with the full output of Packer, the hypervisor's tools and the setup scripts.
 - `proctor-<session>.log`: the proctor's output, when it runs without systemd. With systemd, read it with `journalctl --user -u autorelabel-proctor-<session>`. The proctor also writes to `autorelabel.log`.
 
 For more detail, run a command with `--debug` before it, for example `./autorelabel --debug doctor`. With `AUTORELABEL_DEBUG=1`, a box build also writes Packer's detailed log.

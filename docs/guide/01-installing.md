@@ -17,13 +17,15 @@ cd autorelabel-rhcsa-rhce
 | **Python 3.10 or newer**, with its `venv` module | autorelabel is written in Python. Its libraries are installed into a private folder (`.venv/` inside the repository), so your system Python is never changed. |
 | **OpenSSH client** | Connecting to the lab VMs, both for you (`./autorelabel ssh node1`) and for the grader. |
 | **Packer** 1.10 or newer | Building the RHEL 10 box from your ISO, once. |
-| **Vagrant** 2.3 or newer | Creating and starting the lab VMs from that box. |
-| **libvirt with QEMU/KVM** and the **vagrant-libvirt** plugin | The hypervisor (recommended). The plugin lets Vagrant create libvirt VMs. |
+| **libvirt with QEMU/KVM** | The hypervisor (recommended). |
 | **VirtualBox** 7.2.2 or newer | The alternative hypervisor, if you prefer it to libvirt. |
 | **git** | Cloning the repository and, later, updating it. |
 
-> **Why does it need both Packer and Vagrant?**
-> They do two different jobs. Packer installs RHEL 10 from your ISO into a ready-made disk image, called a box, and does it only once. Vagrant then creates the lab VMs from that box whenever a lab is needed, which takes a minute or two each time. Without the box, every exam would start with a full RHEL installation.
+> **What is the box, and why Packer?**
+> Packer installs RHEL 10 from your ISO into a ready-made disk image, called a box, and does it only once. autorelabel then makes the lab VMs from that box whenever a lab is needed: each VM's disk starts as a thin layer on top of the box, so a new VM takes seconds. Without the box, every exam would start with a full RHEL installation.
+
+> **Doesn't it need Vagrant?**
+> Not any more. Versions up to 1.4 used Vagrant to make the lab VMs; since 1.5 autorelabel makes them itself, with the same virtual hardware. If you have a box from an earlier version, it is converted once, the first time a lab needs it, so you don't build it again. You can keep Vagrant installed for your own projects: autorelabel no longer uses it.
 
 > **Which hypervisor should I choose?**
 > libvirt with KVM, if you can. It is the hypervisor every task was developed and tested on, it is part of Linux, and it starts VMs quickly. VirtualBox works too and is tested with every task, but it has two constraints: autorelabel keeps its VMs in a separate VirtualBox profile, so VirtualBox Manager must be closed while a lab runs, and VirtualBox VMs must never run at the same time as KVM VMs.
@@ -110,7 +112,7 @@ The last step builds the RHEL 10 box from your ISO. It takes about 10 to 15 minu
 1. **Verifying the ISO checksum.** Reading 8 GB takes a minute or two. The checksum is compared with the one Red Hat publishes for that RHEL version. An ISO that doesn't match stops the build here, because a damaged download would otherwise fail 10 minutes later inside the installer. For a version autorelabel doesn't know the checksum of yet, it shows the ISO's checksum so you can compare it with Red Hat's download page.
 2. **Installing Packer plugins.** A small download, needed once.
 3. **Installing RHEL from the ISO.** An unattended installation in a temporary VM: no subscription, no repository files left behind, a serial console for the exams that need one.
-4. **Adding the box to Vagrant**, under the name `autorelabel/rhel10`.
+4. **Installing the box** in your lab storage folder (`boxes/`), together with the SSH key that only this box trusts. It is made during the build, on your computer.
 
 When it finishes, the home screen shows **Box ready** and you can start an exam. Continue with [Your first exam](02-first-exam.md).
 

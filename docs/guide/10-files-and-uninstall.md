@@ -16,7 +16,9 @@ autorelabel keeps everything it creates in a few known places, records each one 
 | `.workspace/reports/` | Problem reports. |
 | `.workspace/ledger.tsv` | The ledger: every resource autorelabel has created on this computer. |
 | `.workspace/doctor-pending.json` | Undo commands for fixes the doctor has shown you but hasn't yet seen in place. |
-| `.workspace/vagrant/`, `.workspace/tmp/`, `.workspace/known_hosts` | Vagrant's state for the lab, temporary files, and the lab VMs' SSH host keys. |
+| `.workspace/keys/`, `.workspace/lab.json` | The current lab's own SSH key, and its state (phase, ports, which key each VM trusts). |
+| `.workspace/tmp/`, `.workspace/known_hosts` | Temporary files, and the lab VMs' SSH host keys. |
+| `.workspace/vagrant/` | Only for a lab Vagrant made with a version before 1.5: its state and keys. It goes when that lab is destroyed. |
 
 ### In the lab storage directory
 
@@ -24,10 +26,10 @@ Everything here is inside one subfolder, `<lab storage>/autorelabel/` (for examp
 
 | Path | Contents |
 |---|---|
-| `libvirt-pool/` | The libvirt storage pool: the lab VMs' disks and snapshots. |
-| `virtualbox/` | With VirtualBox: autorelabel's own VirtualBox profile, its VMs and their disks. |
+| `libvirt-pool/` | The libvirt storage pool: a copy of the box's disk, and the lab VMs' disks (thin layers on top of it) with their snapshots. |
+| `virtualbox/` | With VirtualBox: autorelabel's own VirtualBox profile, the box imported as a base VM, and the lab VMs (linked clones of it) with their disks. |
 | `packer/` | Packer's plugins and cache, and the temporary build of the box. |
-| `boxes/` | The built box files and their manifest (which ISO, when, which hypervisor). |
+| `boxes/` | The box: per hypervisor, the disk image (libvirt) or the OVF (VirtualBox) and the SSH key the box trusts, plus a manifest (which ISO, when, which hypervisor). |
 | `content/` | The RHCE content: Python wheels, collections, code-server. |
 | `ledger.tsv`, `uninstall.sh` | A copy of the ledger and of the uninstaller (see below). |
 
@@ -35,14 +37,13 @@ Everything here is inside one subfolder, `<lab storage>/autorelabel/` (for examp
 
 | What | Where |
 |---|---|
-| The box `autorelabel/rhel10` | Vagrant's box store, `~/.vagrant.d/boxes/`. |
 | Lab VMs | libvirt: domains named `autorelabel-<exam>-<vm>`, such as `autorelabel-rhcsa-node1`. VirtualBox: in autorelabel's own profile, never in your VM list. |
 | Lab networks | libvirt: `autorelabel-mgmt` and `autorelabel-lab` (bridges `arbr-mgmt` and `arbr-lab`). VirtualBox: a host-only interface such as `vboxnet0`. |
 | Storage pool | libvirt: a pool named `autorelabel`, pointing at `libvirt-pool/` above. |
 | The proctor | A temporary systemd user service, `autorelabel-proctor-<session>`, which ends with the exam. |
 
 > **What does autorelabel never touch?**
-> Your system configuration, `/var/lib/libvirt/images`, your own VirtualBox VMs and settings, your other Vagrant projects, and anything that needs `sudo` unless you ask. When something needs `sudo`, such as installing a package or joining a group, autorelabel shows you the command. You run it yourself, or let autorelabel run it with **Fix for me** or `doctor --fix`.
+> Your system configuration, `/var/lib/libvirt/images`, your own VirtualBox VMs and settings, Vagrant and your Vagrant projects, and anything that needs `sudo` unless you ask. When something needs `sudo`, such as installing a package or joining a group, autorelabel shows you the command. You run it yourself, or let autorelabel run it with **Fix for me** or `doctor --fix`.
 
 > **What is the ledger?**
 > A plain text file that records each resource (a VM, a network, the box, a folder) at the moment autorelabel creates it. The uninstaller reads it to know what to remove, so it never has to guess, and so it never removes something that only happens to have a similar name.
@@ -56,7 +57,7 @@ Look first, then remove:
 ./autorelabel uninstall             # remove it (asks for confirmation)
 ```
 
-This removes the lab VMs and their snapshots, the libvirt pool and networks (or autorelabel's VirtualBox VMs, profile and host-only network), the Vagrant box and autorelabel's entries in Vagrant's machine index, the lab storage subfolder, and `.workspace/` and `.venv/` in the repository.
+This removes the lab VMs and their snapshots, the libvirt pool and networks (or autorelabel's VirtualBox VMs, profile and host-only network), the lab storage subfolder (with the box), and `.workspace/` and `.venv/` in the repository. If an earlier version left a box in Vagrant, or entries in Vagrant's machine index, it removes those too.
 
 | Option | What it does |
 |---|---|
@@ -65,7 +66,7 @@ This removes the lab VMs and their snapshots, the libvirt pool and networks (or 
 | `--keep-box` | Keeps the RHEL 10 box, so a reinstall doesn't have to build it again. |
 | `--delete-iso` | Also deletes your RHEL 10 ISO. Without it, the ISO is kept. |
 
-> **Does it remove Vagrant, Packer, libvirt or VirtualBox?**
+> **Does it remove Packer, libvirt or VirtualBox?**
 > No. You installed those with `sudo` (yourself, or through **Fix for me**), and you might use them for other things. When you fix something the doctor shows you (a package, a group membership, a `setfacl` permission), autorelabel notes the matching undo command once the doctor sees the fix in place. At the end, the uninstaller lists those undo commands under "Steps you ran yourself during setup", so you can decide which ones to run.
 
 > **Will I lose my exam history?**

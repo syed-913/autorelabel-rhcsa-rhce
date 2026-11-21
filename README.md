@@ -54,7 +54,7 @@ RHEL 10 itself needs the x86-64-v3 instruction set, so an older CPU can't run th
 **Software: autorelabel installs it for you.** You don't need to type the commands below yourself:
 
 1. Clone the repository and run `./autorelabel` (see [Getting started](#getting-started)). If Python's `venv` module is missing, it offers to install it.
-2. The host check opens on the first run. Press **f** (**Fix for me**). autorelabel installs what is missing for your distribution: Vagrant, Packer, and libvirt with the `vagrant-libvirt` plugin. It shows every command with its undo command first, and `sudo` asks for your password itself. A few steps stay yours, and the host check says which: VirtualBox, if you choose it (it comes from Oracle's download page, except on Arch and openSUSE), Vagrant on Arch (from the AUR) and Packer on openSUSE.
+2. The host check opens on the first run. Press **f** (**Fix for me**). autorelabel installs what is missing for your distribution: Packer, and libvirt with QEMU/KVM. It shows every command with its undo command first, and `sudo` asks for your password itself. A few steps stay yours, and the host check says which: VirtualBox, if you choose it (it comes from Oracle's download page, except on Arch and openSUSE), and Packer on openSUSE.
 3. Log out and back in once, so your new group membership applies, and run `./autorelabel` again.
 
 `./autorelabel doctor --fix` does the same from the command line. This is what gets installed, and why:
@@ -62,8 +62,8 @@ RHEL 10 itself needs the x86-64-v3 instruction set, so an older CPU can't run th
 | What | Why |
 |---|---|
 | `git`, Python 3.10+ with `venv`, the OpenSSH client | to clone and run autorelabel (its Python libraries go into a private `.venv/` folder) |
-| Vagrant 2.3+ and Packer 1.10+ | Packer builds the RHEL 10 box from your ISO once; Vagrant runs the lab VMs |
-| **libvirt** (recommended): QEMU/KVM, libvirt and the `vagrant-libvirt` plugin, with your user in the `libvirt` and `kvm` groups | the hypervisor |
+| Packer 1.10+ | builds the RHEL 10 box from your ISO, once; autorelabel makes the lab VMs from it |
+| **libvirt** (recommended): QEMU/KVM and libvirt, with your user in the `libvirt` and `kvm` groups | the hypervisor |
 | **or VirtualBox** 7.2.2+, with your user in the `vboxusers` group | the hypervisor, if you prefer VirtualBox |
 
 Prefer to run the commands yourself? These are the same commands, for libvirt on each distribution (log out and back in afterwards, so the new groups apply):
@@ -74,13 +74,10 @@ Prefer to run the commands yourself? These are the same commands, for libvirt on
 ```bash
 sudo apt update
 sudo apt install -y git python3-venv openssh-client wget gpg qemu-system-x86 qemu-utils libvirt-daemon-system libvirt-clients
-# Vagrant and Packer, from HashiCorp's repository
+# Packer, from HashiCorp's repository
 wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-sudo apt update && sudo apt install -y vagrant packer
-# the vagrant-libvirt plugin
-sudo apt install -y libvirt-dev build-essential pkg-config ruby-dev libxml2-dev libxslt1-dev zlib1g-dev
-vagrant plugin install vagrant-libvirt
+sudo apt update && sudo apt install -y packer
 sudo systemctl enable --now libvirtd
 sudo usermod -aG libvirt,kvm $USER
 ```
@@ -91,11 +88,10 @@ sudo usermod -aG libvirt,kvm $USER
 <summary><b>Fedora</b></summary>
 
 ```bash
-sudo dnf install -y git python3 openssh-clients wget @virtualization vagrant vagrant-libvirt
+sudo dnf install -y git python3 openssh-clients wget @virtualization
 sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket
-# Packer, from HashiCorp's repository (Fedora's own Vagrant stays: its vagrant-libvirt is built for it)
+# Packer, from HashiCorp's repository
 wget -O- https://rpm.releases.hashicorp.com/fedora/hashicorp.repo | sudo tee /etc/yum.repos.d/hashicorp.repo
-sudo sed -i '/^\[hashicorp\]/a excludepkgs=vagrant' /etc/yum.repos.d/hashicorp.repo
 sudo dnf install -y packer
 sudo usermod -aG libvirt,kvm $USER
 ```
@@ -108,14 +104,9 @@ sudo usermod -aG libvirt,kvm $USER
 ```bash
 sudo dnf install -y git python3 openssh-clients dnf-plugins-core qemu-kvm libvirt virt-install
 sudo systemctl enable --now virtqemud.socket virtnetworkd.socket virtstoraged.socket
-# Vagrant and Packer, from HashiCorp's repository
+# Packer, from HashiCorp's repository
 sudo dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
-sudo dnf install -y vagrant packer
-# the vagrant-libvirt plugin (on RHEL itself, enable CodeReady Builder in place of crb:
-#   sudo subscription-manager repos --enable codeready-builder-for-rhel-$(rpm -E %rhel)-x86_64-rpms)
-sudo dnf config-manager --set-enabled crb
-sudo dnf install -y gcc make pkgconf-pkg-config libvirt-devel ruby-devel libxml2-devel
-vagrant plugin install vagrant-libvirt
+sudo dnf install -y packer
 sudo usermod -aG libvirt,kvm $USER
 ```
 
@@ -124,11 +115,8 @@ sudo usermod -aG libvirt,kvm $USER
 <details>
 <summary><b>Arch Linux</b></summary>
 
-Vagrant is no longer in Arch's official repositories: install it from the AUR (for example `yay -S vagrant`) or with [HashiCorp's Linux binary](https://developer.hashicorp.com/vagrant/install) first.
-
 ```bash
-sudo pacman -S --needed git python openssh packer libvirt qemu-full dnsmasq iptables-nft gcc make pkg-config ruby
-vagrant plugin install vagrant-libvirt
+sudo pacman -S --needed git python openssh packer libvirt qemu-full dnsmasq iptables-nft
 sudo systemctl enable --now libvirtd
 sudo usermod -aG libvirt,kvm $USER
 ```
@@ -141,14 +129,14 @@ sudo usermod -aG libvirt,kvm $USER
 Packer isn't packaged: put [HashiCorp's Linux binary](https://developer.hashicorp.com/packer/install) in `/usr/local/bin` first.
 
 ```bash
-sudo zypper install -y git python3 openssh-clients vagrant vagrant-libvirt libvirt qemu-kvm polkit
+sudo zypper install -y git python3 openssh-clients libvirt qemu-kvm qemu-tools polkit
 sudo systemctl enable --now libvirtd
 sudo usermod -aG libvirt,kvm $USER
 ```
 
 </details>
 
-**VirtualBox in place of libvirt:** install `git`, Python, OpenSSH, Vagrant and Packer as above (skip the libvirt and `vagrant-libvirt` lines), then VirtualBox 7.2.2 or newer from [virtualbox.org](https://www.virtualbox.org/wiki/Linux_Downloads) (Arch: `sudo pacman -S --needed virtualbox virtualbox-host-modules-arch`; openSUSE: `sudo zypper install -y virtualbox`) and `sudo usermod -aG vboxusers $USER`. Never run VirtualBox VMs and KVM VMs at the same time: on some kernels that freezes the KVM guests. autorelabel checks this before it starts a lab.
+**VirtualBox in place of libvirt:** install `git`, Python, OpenSSH and Packer as above (skip the libvirt lines), then VirtualBox 7.2.2 or newer from [virtualbox.org](https://www.virtualbox.org/wiki/Linux_Downloads) (Arch: `sudo pacman -S --needed virtualbox virtualbox-host-modules-arch`; openSUSE: `sudo zypper install -y virtualbox`) and `sudo usermod -aG vboxusers $USER`. Never run VirtualBox VMs and KVM VMs at the same time: on some kernels that freezes the KVM guests. autorelabel checks this before it starts a lab.
 
 The Ubuntu route is the one tested end to end. The others follow each project's official instructions, and the first run checks the result either way. The [installation guide](docs/guide/01-installing.md) explains every step in detail.
 
@@ -193,7 +181,7 @@ Several open projects help people practise for these exams. This table compares 
 
 | Project | Exam | RHEL | Lab setup | Practice tasks | Checks your work | Graded after a reboot | Timed exam |
 |---|---|---|---|---|---|---|---|
-| **autorelabel** | RHCSA, RHCE | 10, from your ISO | Automatic (Packer and Vagrant; libvirt or VirtualBox) | 157, drawn into 20-task exams | Yes, and every task is self-tested | Yes, every node | Yes, enforced (180 or 240 min) |
+| **autorelabel** | RHCSA, RHCE | 10, from your ISO | Automatic (Packer; libvirt or VirtualBox) | 157, drawn into 20-task exams | Yes, and every task is self-tested | Yes, every node | Yes, enforced (180 or 240 min) |
 | [jconwell3115/RHCSA_RHEL_10](https://github.com/jconwell3115/RHCSA_RHEL_10) | RHCSA | 10 | By hand, with `virt-install` and helper scripts (KVM) | 3 exams of 35 tasks | Yes, verify scripts | Not described | Time limits suggested |
 | [tucker-st/rhcsa-ex200](https://github.com/tucker-st/rhcsa-ex200) | RHCSA | 10, or Rocky/Alma | One VM, built from a guide | 8 labs | Yes, read-only grading scripts | Not described | Planned |
 | [x69van/rhce9-ex294-practice-lab](https://github.com/x69van/rhce9-ex294-practice-lab) | RHCE | 9 | Pre-built disk image (KVM), cloned by hand | 18 tasks with solutions | A connectivity check | Not described | Not described |

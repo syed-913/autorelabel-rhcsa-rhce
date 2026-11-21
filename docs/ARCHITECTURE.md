@@ -1,6 +1,6 @@
 # Architecture
 
-autorelabel is one Python application (`src/autorelabel/`) started by a bash bootstrap (`./autorelabel`). It drives Packer and Vagrant to build and run a RHEL 10 lab, generates exams from a task bank, keeps time, and grades the lab after rebooting it.
+autorelabel is one Python application (`src/autorelabel/`) started by a bash bootstrap (`./autorelabel`). It builds a RHEL 10 box with Packer, makes and runs the lab VMs on libvirt or VirtualBox, generates exams from a task bank, keeps time, and grades the lab after rebooting it.
 
 ```text
 ./autorelabel ─► bootstrap (bash): checks the host, creates .venv from requirements.lock
@@ -12,7 +12,7 @@ autorelabel is one Python application (`src/autorelabel/`) started by a bash boo
                                                                          ├─ session.py   state machine, journal, time
                                                                          ├─ bank/        objectives, tasks, selection, lint
                                                                          ├─ lab.py       bring-up, snapshots, power
-                                                                         │    ├─ vagrant.py, box.py (Packer)
+                                                                         │    ├─ box.py (Packer; boxes from Vagrant converted once)
                                                                          │    └─ providers/ libvirt · virtualbox · conflict
                                                                          ├─ grader.py    checks, verified reboot, score
                                                                          ├─ proctor.py   background timer, warnings, lock
@@ -25,13 +25,14 @@ The TUI and the CLI hold no exam logic; both call the engine, which is what lets
 
 `labspec.py` defines the VMs per exam and profile (lite / standard); `labfacts.py` turns that into the facts tasks are rendered with (addresses, disks, URLs, RHCE inventory groups).
 
-- **Box:** `box.py` builds `autorelabel/rhel10` with Packer from the user's own DVD ISO (BIOS boot, serial console, no subscription, no repository files left behind).
+- **Box:** `box.py` builds the RHEL 10 box with Packer from the user's own DVD ISO (BIOS boot, serial console, no subscription, no repository files left behind) and keeps it in the lab storage directory: `boxes/<provider>/` holds the qcow2 disk (libvirt) or the OVF (VirtualBox) and an SSH key made for that build, which is the only key the box's `vagrant` account trusts. A box an earlier version added to Vagrant is converted once, straight from Vagrant's box folder (`vagrant_legacy.py`).
+- **Lab VMs:** autorelabel makes them itself (up to 1.4, Vagrant did). On libvirt, the box's disk is copied into the pool once per box build; each VM's system disk is a qcow2 overlay on it, and its domain comes from a template with the devices in the order vagrant-libvirt 0.12 used, the two network cards attached after the domain is defined. That puts every device in the same PCI slot as before, and the guests name the lab card from its slot (`ens9`, `ens10`), so tasks and their records stay valid (`tests/fixtures/`, `scripts/dev/check-domain-xml.py`). On VirtualBox, the box is imported once as a base VM and each lab VM is a linked clone of its snapshot. Each lab makes its own SSH key and swaps it into every VM on first boot. A lab Vagrant made keeps working: the VM names are the same, and its key is read from `.workspace/vagrant/`.
 - **Networks:** two isolated networks. *Management* (the grader's path: `mgmt0` in the `trusted` zone, the `vagrant` account) and *lab* (what the candidate configures, no internet). libvirt uses dedicated networks and a dedicated storage pool in the lab storage directory; VirtualBox uses NAT plus a host-only network, in a **private VirtualBox profile** (`VBOX_USER_HOME` inside the lab storage). VirtualBox runs one `VBoxSVC` per user, and `VBOX_USER_HOME` only counts when it starts: while one serves another profile, every `VBoxManage` call goes to that profile. `providers/virtualbox.py` therefore waits for such a service to exit before each call (and refuses if VirtualBox Manager or the user's VMs keep it alive), and `conflict.py` reads the process list instead of asking `VBoxManage`.
 - **Serial consoles:** libvirt gives each VM a pty that discards what nobody reads. A VirtualBox serial port in server mode (a Unix socket) holds it back instead, and the guest kernel waits on every character of its console messages, so a VM nobody watches boots at a crawl and never answers SSH. `console_keeper.py` (one per user, started before any VirtualBox VM boots, gone 15 minutes after the last one stops) stays connected to each lab VM's console, drops output nobody reads, and relays `autorelabel console` sessions and the grader's probes to the VM.
 - **Guest clock on VirtualBox:** VirtualBox offers Linux guests KVM's paravirtual clock, which now and then makes the guest clock jump by centuries right after the boot loader, and the boot stalls. Lab VMs and the Packer build VM use the `minimal` paravirtualization interface instead; `providers/virtualbox.py` sets it before every start, because reverting a snapshot brings back the settings the snapshot was taken with.
 - **Disk names on VirtualBox:** the extra disks are SATA (`sdb`, `sdc`) and the sd driver numbers disks asynchronously, so names could change from one boot to the next (in a test, 3 boots in 40 had them out of order, once with the root disk as `sdc`). Tasks name disks in prompts and checks, so the box boots with RHEL's `sd_mod.probe=sync`: names follow the port order. libvirt disks are virtio (`vdX`) and keep their names anyway.
 - **No TRIM on VirtualBox:** VirtualBox 7.2's SATA controller can hang for good on a discard request (a box build froze in `fstrim` and could not even power off). The box's disk has discard turned off on VirtualBox, so neither the build nor RHEL's weekly `fstrim.timer` on a lab VM sends one. libvirt keeps discard, which keeps its sparse disk images small.
-- **Provisioning:** the app provisions over SSH (`vagrant/provision/*.sh`, streamed with progress markers), not through Vagrant provisioners, so it can retry and verify. The utility VM serves the DVD repositories, Flatpaks, DNS, NTP, NFS, and for RHCE a Git server and Ansible content.
+- **Provisioning:** the app provisions over SSH (`vagrant/provision/*.sh`, streamed with progress markers), so it can retry and verify. (The folder keeps its name from the Vagrant days.) The utility VM serves the DVD repositories, Flatpaks, DNS, NTP, NFS, and for RHCE a Git server and Ansible content.
 - **RHCE content:** `content.py` downloads, once and on the host (the only step that needs internet), the Python wheels for `ansible-navigator`, the `ansible.posix` and `community.general` collections, code-server and the VS Code extensions. Every version is pinned (the wheels in `vagrant/content/rhce-wheels.txt`), so an upstream release can't change the lab under the self-tested tasks; changing a pin invalidates the cached content. Each wheel is also pinned by its sha256 (`rhce-wheels.lock`): pip checks it at download and again when the control node installs them, and the lab build refuses a wheel folder that holds anything else. The execution environment is built inside the lab from the DVD's packages and these wheels, so no registry is ever needed.
 - **VS Code (code-server):** it listens on `control`'s loopback only. The app opens an SSH tunnel (`ssh -L`, its own control socket) to `127.0.0.1:18080` on the host, because browsers allow the clipboard and the editor's web views only on `localhost` or HTTPS. The tunnel closes when the exam locks or is abandoned.
 - **Management addresses:** both exams share the management network, so each exam's VMs get their own fixed addresses (RHCE's start 40 above RHCSA's) and DHCP reservations; a lab left behind by the other exam can't take a VM's address.
@@ -81,11 +82,11 @@ new → provisioning → ready → in_progress → locked → grading → graded
 
 | Where | What |
 |---|---|
-| `.workspace/` | settings, sessions, logs, Vagrant state, history (inside the repository, ignored by git) |
-| `<lab storage>/autorelabel/` | libvirt pool, VirtualBox profile and VMs, Packer cache and boxes, RHCE content, uninstall ledger and a rescue copy of the uninstaller |
+| `.workspace/` | settings, sessions, logs, the lab's state and SSH key, history (inside the repository, ignored by git) |
+| `<lab storage>/autorelabel/` | the box, libvirt pool, VirtualBox profile and VMs, Packer cache, RHCE content, uninstall ledger and a rescue copy of the uninstaller |
 | `$XDG_RUNTIME_DIR/autorelabel/` | SSH control sockets, VirtualBox serial console sockets, the console keeper's socket and lock |
 
-Outside these, the tools autorelabel drives keep their usual state: the Vagrant box in `~/.vagrant.d/boxes/` and entries in Vagrant's machine index, and libvirt's own definitions of the lab's networks, pool and VMs. `./autorelabel uninstall` removes all of it, guided by the ledger (`ledger.tsv`, written before anything is created) and the `autorelabel-` name prefix. Two things stay, because only root can remove them, and autorelabel never runs `sudo`:
+Outside these, libvirt keeps its own definitions of the lab's networks, pool and VMs (and an earlier version may have left a box in `~/.vagrant.d/boxes/` and entries in Vagrant's machine index). `./autorelabel uninstall` removes all of it, guided by the ledger (`ledger.tsv`, written before anything is created) and the `autorelabel-` name prefix. Two things stay, because only root can remove them, and autorelabel never runs `sudo`:
 
 - libvirt's QEMU log of each lab VM in `/var/log/libvirt/qemu/` (the uninstaller prints the `sudo rm` command);
 - kernel modules the kernel loads on demand for libvirt VMs (`vhost_net`, `tap`, ...), as for any VM; they are gone after the next reboot.
@@ -100,7 +101,7 @@ Outside these, the tools autorelabel drives keep their usual state: the Vagrant 
 autorelabel                  # the one command (bash bootstrap)
 src/autorelabel/             # engine, grader, proctor, TUI, doctor, providers
 banks/rhcsa/  banks/rhce/    # objectives (verbatim), blueprint, tasks
-vagrant/  packer/            # lab definition and box build
+vagrant/  packer/            # provisioning scripts and RHCE content pins; box build
 scripts/uninstall.sh         # pure-bash uninstaller
 scripts/dev/                 # footprint audit, RHCE playbook check, README banner, animation and screenshots
 docs/                        # coverage reports, architecture, task authoring

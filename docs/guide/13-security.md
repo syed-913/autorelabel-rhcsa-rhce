@@ -9,7 +9,7 @@ autorelabel runs as your own user, with your user's rights. It never asks for yo
 `sudo` runs only when you ask the doctor to install what's missing, with `./autorelabel doctor --fix` or **Fix for me** in the host check. It shows you every command first and waits for your yes. Then it runs exactly those commands in your terminal, in that order, and stops at the first one that fails. `sudo` asks for your password itself, so autorelabel never sees it.
 
 > **Which commands can `doctor --fix` run?**
-> Only the ones written for your distribution in [`distro-guides.yaml`](../../src/autorelabel/data/distro-guides.yaml): packages from your distribution, HashiCorp's repository where your distribution doesn't ship Vagrant or Packer, starting libvirt's service, joining the `libvirt`, `kvm` or `vboxusers` group, and `setfacl` lines that let the VM user pass through the folders on the way to your lab storage and your ISO. Steps that need a download page or the AUR are only shown, never run. Every command is recorded with the command that undoes it, and the uninstaller lists those for you.
+> Only the ones written for your distribution in [`distro-guides.yaml`](../../src/autorelabel/data/distro-guides.yaml): packages from your distribution, HashiCorp's repository where your distribution doesn't ship Packer, starting libvirt's service, joining the `libvirt`, `kvm` or `vboxusers` group, and `setfacl` lines that let the VM user pass through the folders on the way to your lab storage and your ISO. Steps that need a download page or the AUR are only shown, never run. Every command is recorded with the command that undoes it, and the uninstaller lists those for you.
 
 With libvirt, the VMs run as the system's VM user (`libvirt-qemu` or `qemu`), like any libvirt VM. With VirtualBox, they run as you, in a VirtualBox profile of their own, so they never appear in your VirtualBox window.
 
@@ -23,7 +23,7 @@ Everything autorelabel creates goes in three places:
 
 [Files and uninstalling](10-files-and-uninstall.md) lists each of them. Each resource is written to a ledger the moment it's created, and `./autorelabel uninstall` removes what the ledger lists, never something that only has a similar name.
 
-It doesn't edit your system configuration, your firewall, your shell or desktop settings, your own VMs or your other Vagrant projects. Vagrant's shared folder is turned off, because with libvirt it would edit your computer's `/etc/exports`.
+It doesn't edit your system configuration, your firewall, your shell or desktop settings, your own VMs, or Vagrant and your Vagrant projects. The lab VMs have no shared folders with your computer.
 
 ## The lab's network
 
@@ -60,11 +60,11 @@ The lab itself is always offline. autorelabel downloads only these, once each, a
 - **The box build:** Packer's plugins from GitHub. Your ISO is checked against Red Hat's published SHA-256 for the RHEL 10.0 and 10.2 DVDs, so a damaged or altered DVD image is refused. For a version with no published checksum, autorelabel says so and shows the ISO's checksum, for you to compare with Red Hat's download page.
 - **Before the first RHCE exam:** the Ansible collections, Python wheels (each verified by checksum, at download and again when the lab installs them) and VS Code in the browser with its extensions (`./autorelabel content download`).
 
-Nothing is uploaded. There is no telemetry and no account, and autorelabel turns off Vagrant's and Packer's own update checks. A problem report is a file on your computer. It reaches the project only if you attach it to an issue yourself, and it hides your home folder, user name and host name, and masks passwords.
+Nothing is uploaded. There is no telemetry and no account, and autorelabel turns off Packer's own update checks. A problem report is a file on your computer. It reaches the project only if you attach it to an issue yourself, and it hides your home folder, user name and host name, and masks passwords.
 
 ## Passwords and keys
 
-The lab's passwords are short made-up words, kept in plain text in `.workspace/` because you need them during the exam. They exist only in the lab, so never use one anywhere else. Vagrant gives each VM a new SSH key of its own, kept in the workspace too.
+The lab's passwords are short made-up words, kept in plain text in `.workspace/` because you need them during the exam. They exist only in the lab, so never use one anywhere else. SSH keys are made on your computer: one for each box when it is built (kept with the box), and one for each lab, which autorelabel puts into every VM on its first boot (kept in the workspace). No box or lab trusts a key anyone else has.
 
 autorelabel never handles your Red Hat account. You download the ISO yourself, and the lab never registers with Red Hat.
 

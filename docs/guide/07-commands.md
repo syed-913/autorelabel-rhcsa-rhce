@@ -87,7 +87,7 @@ Draws a new exam, prepares the lab (printing each stage) and starts the clock. B
 
 - `--no-start` prepares the lab without starting the clock. Start it later with `./autorelabel exam begin`.
 - `--seed N` fixes the random draw. Two people using the same seed get the same tasks, provided their history leads to the same weighting (the draw favours objectives you haven't practised recently).
-- `-v` shows the full output of the tools working underneath (Vagrant, the provisioning scripts).
+- `-v` shows the full output of the tools working underneath (the hypervisor's tools, the provisioning scripts).
 
 If a session is still open, `exam start` refuses and tells you how to close it.
 
@@ -179,7 +179,7 @@ Runs every host check and prints ✔, `!` or ✘ for each, with the exact comman
 
 - `--exam rhce` checks free memory against the RHCE lab, which needs more.
 - `--json` prints the checks as JSON, for scripts.
-- `--fix` lists the commands it would run, in order, with their undo commands, and asks once. If you answer yes, it runs them in your terminal, printing each one first, and stops at the first one that fails. `sudo` asks for your password itself; autorelabel never sees it. Then it checks again. It only runs commands written and tested for your distribution family (Debian and Ubuntu, Fedora, RHEL and its rebuilds, Arch, openSUSE, and their derivatives). Anything else stays yours to do: Vagrant from the AUR on Arch, Packer on openSUSE, a choice in Settings, or every step on a distribution autorelabel doesn't know. The undo commands are listed again by `./autorelabel uninstall`.
+- `--fix` lists the commands it would run, in order, with their undo commands, and asks once. If you answer yes, it runs them in your terminal, printing each one first, and stops at the first one that fails. `sudo` asks for your password itself; autorelabel never sees it. Then it checks again. It only runs commands written and tested for your distribution family (Debian and Ubuntu, Fedora, RHEL and its rebuilds, Arch, openSUSE, and their derivatives). Anything else stays yours to do: Packer on openSUSE, a choice in Settings, or every step on a distribution autorelabel doesn't know. The undo commands are listed again by `./autorelabel uninstall`.
 
 Every check is explained in [Troubleshooting](09-troubleshooting.md#the-doctors-checks).
 

@@ -60,7 +60,7 @@ It runs as your own user and never runs `sudo` unless you ask it to install what
 
 ### Will it change my dotfiles or system settings?
 
-No. It writes only to the repository folder, the lab storage folder you choose, and the hypervisor's own lists (the VMs, the networks and the box), and it records each thing it creates in a ledger. `./autorelabel uninstall` removes exactly what the ledger lists. Your system configuration, firewall, shell settings, own VMs and other Vagrant projects are left alone. [Files and uninstalling](10-files-and-uninstall.md) lists every file.
+No. It writes only to the repository folder, the lab storage folder you choose, and the hypervisor's own lists (the VMs, the networks and the box), and it records each thing it creates in a ledger. `./autorelabel uninstall` removes exactly what the ledger lists. Your system configuration, firewall, shell settings, own VMs, and Vagrant with your Vagrant projects are left alone. [Files and uninstalling](10-files-and-uninstall.md) lists every file.
 
 ### Why does it run on my computer and not in the cloud?
 
