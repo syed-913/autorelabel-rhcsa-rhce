@@ -226,3 +226,36 @@ def test_a_vm_is_reached_with_the_key_it_trusts(tmp_path, monkeypatch):
     lab._set_key(["node1"], "lab")
     assert lab._key("node1") == lab.key_file and lab.target("node1").key == lab.key_file
     assert lab.target("node1").host == lab.vm("node1").mgmt_ip
+
+
+def test_a_lab_is_made_from_the_box_then_keyed(tmp_path, monkeypatch):
+    from autorelabel import lab as lab_mod
+    from autorelabel import remote
+
+    monkeypatch.setattr(lab_mod, "STATE_FILE", tmp_path / "lab.json")
+    monkeypatch.setattr(paths, "WORKSPACE", tmp_path / "ws")
+    monkeypatch.setattr(paths, "TMP", tmp_path / "ws" / "tmp")
+    settings = Settings(provider="libvirt", storage_dir=str(tmp_path / "storage"), iso_path=str(tmp_path / "x.iso"))
+    lab = lab_mod.Lab(settings, "rhcsa")
+    lab.key_file = tmp_path / "ws" / "keys" / "rhcsa" / "id_ed25519"
+    events = []
+    monkeypatch.setattr(lab, "guard_hypervisors", lambda: None)
+    monkeypatch.setattr(lab_mod.ledger, "record", lambda *a, **k: None)
+    monkeypatch.setattr(lab_mod.box, "ensure_installed", lambda s, p, step=None: {"version": "7"})
+    monkeypatch.setattr(lab_mod.lv, "ensure_base", lambda pool, v, img: events.append(("base", v)) or f"b{v}")
+    monkeypatch.setattr(lab_mod.lv, "create_vm", lambda pool, base, spec, tmp: events.append(("vm", spec.name, base)))
+    monkeypatch.setattr(lab_mod.lv, "prune_base_volumes", lambda pool, keep: events.append(("prune", keep)))
+    monkeypatch.setattr(lab.hv, "start", lambda d: events.append(("start", d)) or _ok())
+    keys_seen = []
+    monkeypatch.setattr(remote, "wait_reachable", lambda t, timeout=0: keys_seen.append(t.key) or True)
+    monkeypatch.setattr(remote, "run_script",
+                        lambda t, script, env=None, timeout=0: events.append(("key", t.name)) or _ok())
+    monkeypatch.setattr(remote, "close_master", lambda t: None)
+    lab.create(["node1", "node2"], lambda s: None, tmp_path / "up.log")
+    assert events[:4] == [("base", "7"), ("vm", "autorelabel-rhcsa-node1", "b7"),
+                          ("vm", "autorelabel-rhcsa-node2", "b7"), ("prune", "b7")]
+    assert events[4:] == [("start", "autorelabel-rhcsa-node1"), ("start", "autorelabel-rhcsa-node2"),
+                          ("key", "rhcsa-node1"), ("key", "rhcsa-node2")]
+    assert lab.key_file.exists() and lab.state()["keys"] == {"node1": "lab", "node2": "lab"}
+    box_key = box.key_path(settings, "libvirt")
+    assert keys_seen == [box_key, lab.key_file, box_key, lab.key_file]   # box's key first, then the lab's

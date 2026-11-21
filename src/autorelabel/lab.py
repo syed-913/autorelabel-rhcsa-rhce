@@ -211,6 +211,8 @@ class Lab:
             else:
                 layout = box.storage_layout(self.settings)
                 lab_if = vb.ensure_hostonly(self.settings.lab_subnet, self.settings.storage_dir)
+                ledger.record("vbox-vm", f"{vb.BASE_PREFIX}{manifest['version']}", "the box, imported",
+                              storage_dir=self.settings.storage_dir)
                 base = vb.ensure_base(manifest["version"], image, layout["vbox_vms"])
                 for name in names:
                     v = self.vm(name)
