@@ -25,7 +25,7 @@ KINDS = (
     "libvirt-pool",
     "libvirt-network",
     "libvirt-domain",
-    "vagrant-box",
+    "vagrant-box",       # versions up to 1.4: the box added to Vagrant
     "vbox-vm",
     "vbox-hostonly",
     "vbox-medium",

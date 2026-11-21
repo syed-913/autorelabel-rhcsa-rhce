@@ -273,7 +273,7 @@ def register(sub: argparse._SubParsersAction) -> None:
         p.add_argument("exam", choices=("rhcsa", "rhce"), nargs="?", default="rhcsa")
         p.set_defaults(func=fn)
 
-    b = sub.add_parser("box", help="build or inspect the RHEL 10 Vagrant box")
+    b = sub.add_parser("box", help="build or inspect the RHEL 10 box")
     bsub = b.add_subparsers(dest="box_cmd", required=True)
     bb = bsub.add_parser("build", help="build the box from your ISO (about 15 min)")
     bb.add_argument("--provider", choices=("libvirt", "virtualbox"))

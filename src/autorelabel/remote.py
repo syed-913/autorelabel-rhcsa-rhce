@@ -1,8 +1,8 @@
 """Run scripts on lab VMs over the management network (the grader channel).
 
-Uses the per-VM key Vagrant generated, the `vagrant` user and sudo. Connection
-multiplexing keeps dozens of checks fast. Nothing is left on the guest: scripts
-are streamed over stdin and run with `sudo -n bash -s`.
+Uses the lab's own key (or, in a lab Vagrant made before 1.5, the key Vagrant put in), the guest's
+`vagrant` account and sudo. Connection multiplexing keeps dozens of checks fast. Nothing is
+left on the guest: scripts are streamed over stdin and run with `sudo -n bash -s`.
 """
 
 from __future__ import annotations

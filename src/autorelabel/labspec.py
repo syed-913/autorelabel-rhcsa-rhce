@@ -15,7 +15,7 @@ class Disk:
 
 @dataclass(frozen=True)
 class VM:
-    name: str          # vagrant machine name and short hostname
+    name: str          # VM name (after the lab prefix) and short hostname
     role: str          # utility | exam | control | managed
     cpus: int
     memory_mb: int

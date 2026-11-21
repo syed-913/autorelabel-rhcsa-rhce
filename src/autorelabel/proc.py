@@ -1,7 +1,7 @@
 """Subprocess helpers with timeouts, process-group cleanup and logging.
 
 Every child runs in its own session so cancelling (Ctrl+C, timeout, TUI quit)
-reliably stops the whole tree: vagrant -> ruby -> ssh, packer -> qemu, etc.
+reliably stops the whole tree: packer -> qemu, ssh, etc.
 """
 
 from __future__ import annotations
@@ -196,7 +196,7 @@ def stream(
     that redraw their line arrive as Progress updates).
 
     Cancellation and timeouts stop the whole process group gracefully: SIGINT
-    first (vagrant and packer clean up on SIGINT), then SIGTERM, then SIGKILL.
+    first (packer cleans up on SIGINT), then SIGTERM, then SIGKILL.
     """
     cmd = [str(c) for c in cmd]
     start = time.monotonic()

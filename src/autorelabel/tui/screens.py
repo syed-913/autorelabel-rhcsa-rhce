@@ -107,7 +107,7 @@ class HomeScreen(Screen[None]):
         elif oid == "uninstall":
             app.push_screen(Message("Uninstall", (
                 "To remove everything autorelabel created on this host (VMs, networks, storage pool, "
-                "the Vagrant box, lab storage, .workspace and .venv), quit and run:\n\n"
+                "the box, lab storage, .workspace and .venv), quit and run:\n\n"
                 "    ./autorelabel uninstall --dry-run   (shows what will be removed)\n"
                 "    ./autorelabel uninstall\n\n"
                 "Your ISO is kept. The uninstaller prints undo commands for anything you "

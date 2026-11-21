@@ -90,7 +90,7 @@ def storage_in_use(storage_dir: str) -> bool:
 
 
 def _apply_env(settings: Settings) -> None:
-    # Every VBoxManage / vagrant / packer we start uses the private VirtualBox profile.
+    # Every VBoxManage / packer we start uses the private VirtualBox profile.
     if settings.storage_dir:
         os.environ["VBOX_USER_HOME"] = str(paths.vbox_home(settings.storage_dir))
 
