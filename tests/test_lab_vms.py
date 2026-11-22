@@ -128,7 +128,7 @@ def test_a_virtualbox_lab_vm_is_a_linked_clone_set_up_like_vagrants(monkeypatch,
     assert opt("--macaddress1") == "525400FA010B" and opt("--macaddress2") == "525400FB010B"
     assert opt("--natpf1") == "ssh,tcp,127.0.0.1,2223,,22" and opt("--hostonlyadapter2") == "vboxnet0"
     assert opt("--nat-localhostreachable1") == "off" and opt("--paravirt-provider") == vb.PARAVIRT
-    assert opt("--uartmode1") == "server"
+    assert opt("--uartmode1") == "server" and opt("--rtcuseutc") == "on"
     attached = [c for c in calls if c[:1] == ("storageattach",)]
     assert [c[c.index("--port") + 1] for c in attached] == ["1", "2"]
 

@@ -331,6 +331,9 @@ def create_vm(base: str, spec: VMSpec, folder: Path, disk_dir: Path) -> None:
         "--cableconnected2", "on",
         "--audio-driver", "none", "--graphicscontroller", "vmsvga",
         "--paravirt-provider", PARAVIRT, "--nat-localhostreachable1", "off",
+        # The guest's hardware clock in UTC, as RHEL expects (Vagrant set it too): left at the box's
+        # local time, a lab VM's clock runs ahead or behind by the host's offset from UTC.
+        "--rtcuseutc", "on",
         "--uart1", "0x3F8", "4", "--uartmode1", "server", str(console_socket(spec.name)),
         timeout=60, check=True)
     vbm("storagectl", spec.name, "--name", SATA, "--portcount", "6", check=True)
