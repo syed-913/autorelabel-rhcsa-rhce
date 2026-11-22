@@ -33,7 +33,9 @@ checks:
   - id: fs-size
     covers: [R2]
     desc: the file system grew too
-    run: test "$(df -m --output=size /srv/{{vg}} | tail -1 | tr -d ' ')" -ge $(({{target}} - 60))
+    # XFS keeps its log inside the file system: 64 MiB here (RHEL 10's minimum), so an LV of exactly
+    # {{target}} MiB shows {{target}} - 64 in df. Not grown, it stays near the old 336 MiB.
+    run: test "$(df -m --output=size /srv/{{vg}} | tail -1 | tr -d ' ')" -ge $(({{target}} - 100))
   - id: data
     guard: true
     covers: [R3]
