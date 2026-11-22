@@ -403,67 +403,97 @@
   },
   "rhcsa.filesystems.extend-ext4": {
     "0": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-25",
+      "box": "RHEL 10.0 20261122.0210",
+      "date": "2026-11-22",
       "detail": "",
-      "digest": "19a443b0cb09",
+      "digest": "2bed3f358ad9",
       "params": {
         "vg": "mailvg"
+      },
+      "shared": {
+        "box": "2c164c703011",
+        "checks": "0ea5820bf25f",
+        "lab": "2e615636aac0"
       },
       "status": "pass"
     },
     "1": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-25",
+      "box": "RHEL 10.0 20261122.0210",
+      "date": "2026-11-22",
       "detail": "",
-      "digest": "19a443b0cb09",
+      "digest": "2bed3f358ad9",
       "params": {
         "vg": "printvg"
+      },
+      "shared": {
+        "box": "2c164c703011",
+        "checks": "0ea5820bf25f",
+        "lab": "2e615636aac0"
       },
       "status": "pass"
     },
     "2": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-25",
+      "box": "RHEL 10.0 20261122.0210",
+      "date": "2026-11-22",
       "detail": "",
-      "digest": "19a443b0cb09",
+      "digest": "2bed3f358ad9",
       "params": {
         "vg": "labvg2"
+      },
+      "shared": {
+        "box": "2c164c703011",
+        "checks": "0ea5820bf25f",
+        "lab": "2e615636aac0"
       },
       "status": "pass"
     }
   },
   "rhcsa.filesystems.extend-xfs": {
     "0": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-25",
+      "box": "RHEL 10.0 20261122.0210",
+      "date": "2026-11-22",
       "detail": "",
-      "digest": "27b55161deca",
+      "digest": "ccf911748120",
       "params": {
         "target": 700,
         "vg": "salesvg"
       },
+      "shared": {
+        "box": "2c164c703011",
+        "checks": "0ea5820bf25f",
+        "lab": "2e615636aac0"
+      },
       "status": "pass"
     },
     "1": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-25",
+      "box": "RHEL 10.0 20261122.0210",
+      "date": "2026-11-22",
       "detail": "",
-      "digest": "27b55161deca",
+      "digest": "ccf911748120",
       "params": {
         "target": 800,
         "vg": "hrvg"
       },
+      "shared": {
+        "box": "2c164c703011",
+        "checks": "0ea5820bf25f",
+        "lab": "2e615636aac0"
+      },
       "status": "pass"
     },
     "2": {
-      "box": "RHEL 10.0 20261019.2036",
-      "date": "2026-10-25",
+      "box": "RHEL 10.0 20261122.0210",
+      "date": "2026-11-22",
       "detail": "",
-      "digest": "27b55161deca",
+      "digest": "ccf911748120",
       "params": {
         "target": 900,
         "vg": "opsdatavg"
+      },
+      "shared": {
+        "box": "2c164c703011",
+        "checks": "0ea5820bf25f",
+        "lab": "2e615636aac0"
       },
       "status": "pass"
     }
