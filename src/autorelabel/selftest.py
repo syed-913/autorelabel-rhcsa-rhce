@@ -50,42 +50,45 @@ def task_digest(task: Task) -> str:
 SHARED = {"checks": "the check and setup libraries", "lab": "the lab's provisioning", "box": "the box build"}
 
 
-def shared_inputs(exam: str) -> dict[str, list[Path | str]]:
-    """What every task's result depends on besides its own files, by component (see SHARED).
-    Files are hashed by content. Strings stand for code: how the grader wraps a check, and the
-    facts tasks are rendered with, so only a change to those counts, not any edit of the module."""
+def shared_inputs(exam: str, provider: str = "libvirt") -> dict[str, list[Path | str]]:
+    """What every task's result on `provider` depends on besides its own files, by component (see
+    SHARED). Files are hashed by content. Strings stand for code: how the grader wraps a check, the
+    facts tasks are rendered with and the VMs' virtual hardware, so only a change to those counts,
+    not any edit of the module. The other hypervisor's hardware is not part of it."""
     prov, lib = paths.VAGRANT_DIR / "provision", paths.BANKS / "lib"
     scripts = {"rhcsa": ["node.sh"], "rhce": ["utility-rhce.sh", "managed.sh", "control.sh"]}[exam]
     content = sorted(p for p in (paths.VAGRANT_DIR / "content").rglob("*") if p.is_file()) if exam == "rhce" else []
     d = config.Settings()
+    subnet = d.lab_subnet_virtualbox if provider == "virtualbox" else d.lab_subnet_libvirt
     facts = [json.dumps(labfacts.build(exam, profile, provider, subnet, d.mgmt_subnet), sort_keys=True, default=str)
-             for profile in config.PROFILES
-             for provider, subnet in (("libvirt", d.lab_subnet_libvirt), ("virtualbox", d.lab_subnet_virtualbox))]
+             for profile in config.PROFILES]
     return {
         "checks": [lib / "check-lib.sh", lib / "setup-lib.sh", paths.BANKS / exam / "pools.yaml",
                    grader.check_script("<lib>", "<check>"), remote._wrap("<script>", {"NAME": "value"})],
-        "lab": [*_vm_hardware(), prov / "common.sh", prov / "utility.sh",
+        "lab": [*_vm_hardware(provider), prov / "common.sh", prov / "utility.sh",
                 *(prov / name for name in scripts), *content,
                 *(repr(labspec.topology(exam, profile)) for profile in config.PROFILES), *facts],
         "box": sorted(p for p in paths.PACKER_DIR.rglob("*") if p.is_file()),
     }
 
 
-def _vm_hardware() -> list[str]:
+def _vm_hardware(provider: str) -> list[str]:
     """What the guests see of their virtual hardware: libvirt's domain and network card
-    definitions, and how a VirtualBox VM is set up (its code; the base VM comes from the box)."""
+    definitions, or how a VirtualBox VM is set up and started (code; the base VM comes from the box)."""
+    if provider == "virtualbox":
+        from .providers import virtualbox as vb
+
+        return [inspect.getsource(vb.create_vm), inspect.getsource(vb.start)]
     from .providers import libvirt as lv
-    from .providers import virtualbox as vb
 
     spec = lv.VMSpec(name="<vm>", cpus=1, memory_mb=1024, disks=[("<disk>", 4)], mgmt_network="<mgmt>",
                      mgmt_mac="<mac>", lab_network="<lab>", lab_mac="<mac>", iso="<iso>")
-    return [lv.domain_xml(spec, "<vda>", ["<vdb>"]), lv.interface_xml("<net>", "<mac>"),
-            inspect.getsource(vb.create_vm)]
+    return [lv.domain_xml(spec, "<vda>", ["<vdb>"]), lv.interface_xml("<net>", "<mac>")]
 
 
-def shared_digests(exam: str) -> dict[str, str]:
+def shared_digests(exam: str, provider: str = "libvirt") -> dict[str, str]:
     out = {}
-    for component, inputs in shared_inputs(exam).items():
+    for component, inputs in shared_inputs(exam, provider).items():
         h = hashlib.sha256()
         for item in inputs:
             if isinstance(item, Path):
@@ -299,7 +302,7 @@ class SelfTest:
     def _stamp(self, provider: str) -> dict[str, Any]:
         manifest = box.manifest(self.engine.settings, provider) or {}
         return {"box": f"RHEL {manifest.get('rhel_version', '?')} {manifest.get('version', '')}".strip(),
-                "date": time.strftime("%Y-%m-%d"), "shared": shared_digests(self.exam)}
+                "date": time.strftime("%Y-%m-%d"), "shared": shared_digests(self.exam, provider)}
 
     def run(self, task_ids: list[str] | None = None, *, only_changed: bool = False,
             stale: bool = False) -> dict[str, Any]:
@@ -310,7 +313,7 @@ class SelfTest:
         results = load_results(self.exam, provider)
         if only_changed or stale:
             ok = verified(self.bank, provider)
-            now = shared_digests(self.exam)
+            now = shared_digests(self.exam, provider)
             tasks = [t for t in tasks if t.id not in ok or (stale and outdated(results[t.id], now))]
         stamp = self._stamp(provider)
         batches = plan_batches(self.bank, tasks)

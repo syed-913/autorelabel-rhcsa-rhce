@@ -60,7 +60,7 @@ def gate(bank: Bank, results: dict[str, dict], sweep: dict) -> list[str]:
 
 def stale(bank: Bank, results: dict[str, dict]) -> list[str]:
     """Passing records made before something every task shares changed (or before that was recorded)."""
-    now = selftest.shared_digests(bank.exam)
+    now = {provider: selftest.shared_digests(bank.exam, provider) for provider in PROVIDERS}
     notes = []
     for tid in sorted(bank.tasks):
         for provider in PROVIDERS:
@@ -70,7 +70,7 @@ def stale(bank: Bank, results: dict[str, dict]) -> list[str]:
             if "shared" not in r:
                 notes.append(f"{tid}: the {provider} self-test ({r.get('date', '?')}) has no record of the lab "
                              "and grader it ran with")
-            elif changed := selftest.outdated(r, now):
+            elif changed := selftest.outdated(r, now[provider]):
                 notes.append(f"{tid}: the {provider} self-test ({r.get('date', '?')}) predates a change to "
                              + " and ".join(selftest.SHARED[c] for c in changed))
     return notes
@@ -99,9 +99,9 @@ def facts(bank: Bank, results: dict[str, dict], sweep: dict) -> dict[str, str]:
         when = f"on {dates[0]}" if dates and dates[0] == dates[-1] else f"{dates[0]} to {dates[-1]}" if dates else ""
         row[f"Self-tested on {name}"] = (f"{current} of {len(bank.tasks)} on their current files, "
                                         f"{', '.join(boxes)}, {when}" if dates else "none")
-    now = selftest.shared_digests(bank.exam)
     fresh = {name: sum(1 for t in tasks if (r := results[provider].get(t.id)) and "shared" in r
-                       and t.id in selftest.verified(bank, provider) and not selftest.outdated(r, now))
+                       and t.id in selftest.verified(bank, provider)
+                       and not selftest.outdated(r, selftest.shared_digests(bank.exam, provider)))
              for provider, name in (("libvirt", "libvirt/KVM"), ("virtualbox", "VirtualBox"))}
     row["Of those, with the current lab, box build and check libraries"] = ", ".join(
         f"{n} of {len(bank.tasks)} on {name}" for name, n in fresh.items())

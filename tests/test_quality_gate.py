@@ -52,8 +52,8 @@ def test_the_report_names_both_exams_and_both_hypervisors():
 def test_a_record_made_before_a_shared_input_changed_is_named(tmp_path, monkeypatch):
     bank = load_bank("rhce")
     results, _ = _records("rhce")
-    now = selftest.shared_digests("rhce")
-    for recs in results.values():
+    for provider, recs in results.items():
+        now = selftest.shared_digests("rhce", provider)
         for r in recs.values():
             r["shared"] = dict(now)
     assert quality.stale(bank, results) == []
@@ -79,3 +79,14 @@ def test_shared_digests_follow_the_files_of_their_own_exam(tmp_path, monkeypatch
     monkeypatch.setattr(selftest.grader, "check_script", lambda lib, check: f"{lib}\n{check}\n")
     after = selftest.shared_digests("rhcsa")
     assert after["checks"] != before["checks"] and after["lab"] == before["lab"] and after["box"] == before["box"]
+
+
+def test_each_hypervisors_records_follow_its_own_virtual_hardware(monkeypatch):
+    """A VirtualBox-only change (how its VMs are set up) leaves libvirt's records current."""
+    from autorelabel.providers import virtualbox as vb
+
+    lv_before, vb_before = selftest.shared_digests("rhcsa", "libvirt"), selftest.shared_digests("rhcsa", "virtualbox")
+    assert lv_before["lab"] != vb_before["lab"]
+    monkeypatch.setattr(selftest.inspect, "getsource", lambda f: "changed" if f is vb.create_vm else "")
+    assert selftest.shared_digests("rhcsa", "libvirt") == lv_before
+    assert selftest.shared_digests("rhcsa", "virtualbox")["lab"] != vb_before["lab"]
