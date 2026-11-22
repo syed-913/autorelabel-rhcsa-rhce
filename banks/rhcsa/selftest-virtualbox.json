@@ -219,7 +219,7 @@
     "box": "RHEL 10.0 20261122.0609",
     "date": "2026-11-22",
     "detail": "",
-    "digest": "19a443b0cb09",
+    "digest": "2bed3f358ad9",
     "shared": {
       "box": "2c164c703011",
       "checks": "0ea5820bf25f",
@@ -231,7 +231,7 @@
     "box": "RHEL 10.0 20261122.0609",
     "date": "2026-11-22",
     "detail": "",
-    "digest": "27b55161deca",
+    "digest": "ccf911748120",
     "shared": {
       "box": "2c164c703011",
       "checks": "0ea5820bf25f",
