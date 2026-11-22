@@ -4,6 +4,22 @@ Changes to the program, newest first. Planned versions are in [ROADMAP.md](ROADM
 
 Versions follow [semantic versioning](https://semver.org): a patch release (1.0.1) only fixes things, a minor release (1.1.0) adds something without breaking what you use, and a major release (2.0.0) may change how things work. The website and documentation aren't versioned. Check yours with `./autorelabel --version`.
 
+## 1.5.0 (2026-11-22)
+
+### Changed
+
+- **autorelabel no longer needs Vagrant.** HashiCorp ends Vagrant at the end of 2026, so autorelabel now makes the lab VMs itself, with exactly the same virtual hardware: the same disks and network cards, with the same names inside the VMs, so every task works as before. The box is kept as autorelabel's own files in your lab storage folder (`boxes/`). Installing is shorter: no Vagrant, and no `vagrant-libvirt` plugin, which needed a compiler and Ruby's development files.
+- **Your box and your lab carry over.** A box built by an earlier version is converted once, the first time a lab needs it, so you don't build it again; then Vagrant's copy is removed. A lab Vagrant made keeps working, and so does an exam on it: autorelabel reaches its VMs with the keys Vagrant left. Vagrant can stay installed for your own projects, or go if nothing else of yours uses it.
+- **Keys of your own.** Each box build makes an SSH key on your computer, and each lab swaps a key of its own into every VM on first boot. No box trusts Vagrant's well-known key any more.
+- **VirtualBox labs take far less disk.** Each lab VM is a linked clone of the box: it starts as a few kilobytes on top of it, where Vagrant copied the box's 1.4 GB disk into every VM (about 7 GB for an RHCE lab).
+
+### Fixed
+
+- **Old box images piled up in libvirt's storage pool.** `vagrant-libvirt` copied the box into the pool and never removed it, about 600 MB for each box you built. autorelabel now removes the images no lab uses, including those.
+- `./autorelabel uninstall --keep-box` keeps the box, now that it lives in the lab storage folder.
+- **The host check no longer stops you while a VirtualBox lab runs.** It took the lab's own network, which exists only while lab VMs use it, for another network on the lab's addresses, and called it a problem to fix.
+- The uninstaller now removes the storage pool's disks one by one (it asked libvirt for a list with an option libvirt doesn't have, and relied on removing the folder).
+
 ## 1.4.2 (2026-11-21)
 
 ### Fixed
