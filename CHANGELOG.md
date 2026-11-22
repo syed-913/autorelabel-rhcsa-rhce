@@ -4,6 +4,14 @@ Changes to the program, newest first. Planned versions are in [ROADMAP.md](ROADM
 
 Versions follow [semantic versioning](https://semver.org): a patch release (1.0.1) only fixes things, a minor release (1.1.0) adds something without breaking what you use, and a major release (2.0.0) may change how things work. The website and documentation aren't versioned. Check yours with `./autorelabel --version`.
 
+## 1.5.1 (2026-11-22)
+
+### Fixed
+
+- **Growing a file system to exactly the size asked could lose a check.** `df` leaves out the space a file system keeps for itself, so two RHCSA tasks read a correct answer as too small:
+  - *Extend a logical volume and its XFS file system*: XFS keeps a 64 MiB log inside the file system, so a logical volume grown to exactly the lower bound shows 64 MiB less in `df`. The check now allows for the log.
+  - *Extend a logical volume with an ext4 file system*: an ext4 grown to exactly 700 MiB shows about 646 MiB in `df` (its journal and inode tables). The check now reads the size the file system records, from `tune2fs -l`.
+
 ## 1.5.0 (2026-11-22)
 
 ### Changed
