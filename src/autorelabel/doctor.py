@@ -247,8 +247,11 @@ def check_iso(settings: Settings) -> Check:
 def check_subnets(settings: Settings) -> Check:
     ours = [ipaddress.IPv4Network(settings.mgmt_subnet), ipaddress.IPv4Network(settings.lab_subnet)]
     clashes = []
+    lab = ipaddress.IPv4Network(settings.lab_subnet)
     for net, iface in hostinfo.host_routes():
-        if iface in OUR_BRIDGES:
+        # The lab's own networks: libvirt's bridges, and VirtualBox's host-only interface for the
+        # lab subnet (it has a route only while lab VMs use it).
+        if iface in OUR_BRIDGES or (iface.startswith("vboxnet") and net == lab):
             continue
         for mine in ours:
             if net.overlaps(mine):

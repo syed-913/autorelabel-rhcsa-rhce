@@ -259,3 +259,17 @@ def test_a_lab_is_made_from_the_box_then_keyed(tmp_path, monkeypatch):
     assert lab.key_file.exists() and lab.state()["keys"] == {"node1": "lab", "node2": "lab"}
     box_key = box.key_path(settings, "libvirt")
     assert keys_seen == [box_key, lab.key_file, box_key, lab.key_file]   # box's key first, then the lab's
+
+
+def test_a_running_virtualbox_lab_is_no_subnet_clash(monkeypatch):
+    """vboxnet0 carries the lab subnet while lab VMs run: that is the lab's own network."""
+    import ipaddress
+
+    from autorelabel import doctor, hostinfo
+
+    settings = Settings(provider="virtualbox")
+    routes = [(ipaddress.IPv4Network(settings.lab_subnet), "vboxnet0")]
+    monkeypatch.setattr(hostinfo, "host_routes", lambda: routes)
+    assert doctor.check_subnets(settings).status is doctor.Status.OK
+    routes.append((ipaddress.IPv4Network(settings.lab_subnet).supernet(), "wlp3s0"))   # someone else's
+    assert doctor.check_subnets(settings).status is doctor.Status.FAIL
