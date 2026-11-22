@@ -29,9 +29,14 @@ checks:
     covers: [R1]
     on: node2
     desc: file system ≥ 700 MiB (ext4)
+    # The size the file system records (blocks x block size), not df's: df leaves out the journal
+    # and the inode tables, and shows 646 MiB for an ext4 grown to exactly 700 MiB.
     run: |
       test "$(findmnt -no FSTYPE /srv/{{vg}}-home)" = ext4
-      test "$(df -m --output=size /srv/{{vg}}-home | tail -1 | tr -d ' ')" -ge 650
+      sb="$(tune2fs -l "$(findmnt -no SOURCE /srv/{{vg}}-home)")"
+      blocks="$(sed -n 's/^Block count: *//p' <<<"$sb")"
+      bsize="$(sed -n 's/^Block size: *//p' <<<"$sb")"
+      test "$((blocks * bsize))" -ge $((700 * 1048576))
       test "$(lvs --noheadings --units m -o lv_size {{vg}}/homelv | tr -d ' m' | cut -d. -f1)" -ge 700
   - id: data
     guard: true
