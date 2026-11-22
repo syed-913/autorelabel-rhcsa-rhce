@@ -228,7 +228,12 @@ section "VirtualBox host-only interfaces" "${VBOX_HOSTONLY[@]}"
 section "systemd user units" "${UNITS[@]}"
 ((BOXES)) && section "Vagrant box" "$BOX (all providers and versions)"
 ((INDEX_ENTRIES > 0)) && section "Vagrant machine index (vagrant global-status)" "$INDEX_ENTRIES autorelabel entries"
-section "directories" "${DIRS[@]}"
+DIRS_SHOW=()
+for d in "${DIRS[@]}"; do
+  if ((KEEP_BOX)) && [[ -d "$d/boxes" ]]; then DIRS_SHOW+=("$d (everything except the box in $d/boxes, kept: --keep-box)")
+  else DIRS_SHOW+=("$d"); fi
+done
+section "directories" "${DIRS_SHOW[@]}"
 REPO_ITEMS=()
 if [[ -n "$REPO" ]]; then
   for d in "$REPO/.workspace" "$REPO/.venv"; do [[ -e "$d" ]] && REPO_ITEMS+=("$d"); done

@@ -361,6 +361,8 @@ def test_keep_box_keeps_the_box_in_the_lab_storage(tmp_path):
         (storage / sub).mkdir(parents=True)
     (storage / "boxes" / "libvirt" / "rhel10.qcow2").write_text("disk")
     (storage / "boxes" / "manifest-libvirt.json").write_text("{}")
+    plan = _run_uninstaller(tmp_path / "plan", storage, "--dry-run", "--keep-box")
+    assert "except the box" in plan.stdout and (storage / "content").exists(), plan.stdout + plan.stderr
     out = _run_uninstaller(tmp_path, storage, "--keep-box")
     assert sorted(p.name for p in storage.iterdir()) == ["boxes"], out.stdout + out.stderr
     assert (storage / "boxes" / "libvirt" / "rhel10.qcow2").exists()
