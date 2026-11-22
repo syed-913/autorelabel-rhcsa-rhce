@@ -1,0 +1,19 @@
+== utility
+lo 00:00:00:00:00:00
+mgmt0 52:54:00:fa:01:0a
+enp0s8 52:54:00:fb:01:0a
+sda   20G disk
+sr0  7.9G rom
+== node1
+lo 00:00:00:00:00:00
+mgmt0 52:54:00:fa:01:0b
+enp0s8 52:54:00:fb:01:0b
+sda   20G disk
+sdb    8G disk
+sdc    4G disk
+== node2
+lo 00:00:00:00:00:00
+mgmt0 52:54:00:fa:01:0c
+enp0s8 52:54:00:fb:01:0c
+sda   20G disk
+sdb    4G disk
