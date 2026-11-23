@@ -38,11 +38,11 @@ Not in this version. The exam is on RHEL 10, so the lab is too, and the tasks ar
 
 ### Does it work on Windows or macOS?
 
-Not yet. autorelabel needs a Linux x86_64 computer. Windows support (with VirtualBox) is planned for version 2. WSL isn't supported, because nested virtualization and networking are unreliable there.
+Not yet. autorelabel needs a Linux x86_64 computer, and today it doesn't run inside WSL. Windows support is planned for version 2: inside WSL2 on Windows 11, which can run KVM itself, with native VirtualBox as the fallback for Windows 10. It needs testing on real Windows machines first; the [roadmap](../../ROADMAP.md) has where it stands. macOS isn't planned.
 
 ### How much memory and disk space do I need?
 
-About 3 GB of free RAM for an RHCSA exam with the *lite* profile, and about 5.5 GB for RHCE. About 30 GB of free disk (40 GB for RHCE), in the folder you choose. See the table in [Installing](01-installing.md#3-setup-three-questions).
+About 3.5 GB of free RAM for an RHCSA exam with the *lite* profile, and about 6 GB for RHCE. About 30 GB of free disk (40 GB for RHCE), in the folder you choose. See the table in [Installing](01-installing.md#3-setup-three-questions).
 
 ### Does it need the internet?
 
