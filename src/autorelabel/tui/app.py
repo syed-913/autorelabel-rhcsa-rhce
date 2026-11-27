@@ -189,7 +189,7 @@ class AutorelabelApp(App[None]):
     def retake(self, sess: S.Session) -> None:
         def fn(step, line, cancel):
             step("Restoring the exam starting point")
-            return Engine().retake(sess)
+            return Engine().retake(sess, on_step=step, on_line=line)
 
         self.push_screen(OperationScreen("Retake: same tasks, fresh start", fn, cancellable=False),
                          lambda s: s and self.show_instructions(s))

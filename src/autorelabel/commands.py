@@ -467,7 +467,7 @@ def cmd_exam_results(args: argparse.Namespace) -> int:
 
 def cmd_exam_retake(_args: argparse.Namespace) -> int:
     eng = _engine()
-    new = eng.retake(_current())
+    new = eng.retake(_current(), on_step=lambda s: print(f"==> {s}", flush=True))
     print(f"Retake ready: session {new.id}. Start with: ./autorelabel exam begin")
     return 0
 

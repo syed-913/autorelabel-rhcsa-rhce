@@ -4,6 +4,7 @@ later, the browser UI). Every operation is safe to call again after a crash."""
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import random
 import shutil
@@ -54,6 +55,13 @@ if [ -n "$BASH_VERSION" ] && [ -t 0 ] && [ -t 1 ]; then
 fi
 """
 CODE_SERVER_LOCAL_PORT = 18080        # first port tried for the code-server tunnel on this host
+
+
+def starting_point(sess: S.Session) -> str:
+    """What a session's starting point is made of: its exam, tasks with their parameters, and
+    root passwords. A retake copies all of them, so it matches the session it retakes."""
+    data = json.dumps([sess.exam, sess.tasks, sess.passwords], sort_keys=True, default=str)
+    return hashlib.sha256(data.encode()).hexdigest()[:16]
 
 
 class EngineError(RuntimeError):
@@ -159,6 +167,7 @@ class Engine:
             self._apply_setups(sess, bank, lab, step, on_line)
             step("Saving the exam starting point (for Reset node / Retake)")
             lab.snapshot_all(EXAM_START, f"session {sess.id}")
+            lab.save_state(exam_start=starting_point(sess))
             lab.start_all()
             healthy = [n for n in lab.names() if n not in sess.broken_nodes]
             missing = lab.wait_all(healthy, timeout=600)
@@ -191,7 +200,7 @@ class Engine:
                    on_line=line, cancel=cancel)
             step("Saving the clean lab (baseline snapshot)")
             lab.snapshot_all(BASELINE, "clean provisioned lab")
-            lab.save_state(phase="baseline")
+            lab.save_state(phase="baseline", exam_start=None)
 
     def _apply_setups(self, sess: S.Session, bank: Bank, lab: Lab, step: StepFn, line: LineFn | None) -> None:
         facts = lab.facts()
@@ -357,14 +366,23 @@ class Engine:
             sess.transition(S.ABANDONED)
         S.set_current(None)
 
-    def retake(self, sess: S.Session) -> S.Session:
-        """Same tasks, same parameters, back to the exam starting point."""
+    def retake(self, sess: S.Session, *, on_step: StepFn | None = None, on_line: LineFn | None = None,
+               cancel: threading.Event | None = None) -> S.Session:
+        """Same tasks, same parameters, back to the exam starting point.
+
+        The lab keeps one starting point: the last session prepared on it. When that was another
+        session (a practice since, the other exam's lab in between) or the lab was rebuilt, the
+        snapshot would start this retake from someone else's tasks, so it is prepared again."""
         lab = self.lab(sess.exam)
         new = S.Session(**{**{k: getattr(sess, k) for k in S.Session.__dataclass_fields__},
                            "id": S.new_id(), "created": time.time(), "state": S.NEW, "marks": {},
                            "started": None, "ended": None, "incidents": [], "code_port": 0})
         new.save()
         new.event("retake_of", session=sess.id)
+        if not self._holds_starting_point(lab, sess):
+            S.set_current(new)                 # a failed preparation can be retried from the home screen
+            self.prepare(new, on_step=on_step, on_line=on_line, cancel=cancel)
+            return S.load(new.id)
         new.transition(S.PROVISIONING)
         lab.revert(EXAM_START)
         lab.start_all()
@@ -372,6 +390,12 @@ class Engine:
         new.transition(S.READY)
         S.set_current(new)
         return new
+
+    @staticmethod
+    def _holds_starting_point(lab: Lab, sess: S.Session) -> bool:
+        if lab.state().get("exam_start") != starting_point(sess) or not lab.exists():
+            return False
+        return all(EXAM_START in lab.hv.snapshots(v.domain) for v in lab.vms)
 
     # --- recovery after crashes / reboots -------------------------------------------------------
     def recover(self, sess: S.Session) -> str:
