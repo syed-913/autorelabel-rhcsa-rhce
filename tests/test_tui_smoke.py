@@ -64,6 +64,35 @@ def test_practice_picker_lists_the_bank(configured, exam):
     asyncio.run(run())
 
 
+def test_enter_starts_practice_and_space_ticks(configured):
+    """Enter starts the practice: the ticked tasks, or the highlighted one when none is ticked.
+    It used to toggle the tick like space and never start."""
+    from autorelabel.tui.exam import PracticeList, PracticePicker
+
+    started: list[list[str]] = []
+
+    async def run() -> None:
+        app = AutorelabelApp()
+        app.start_practice = lambda ids, exam="rhcsa": started.append(list(ids))
+        async with app.run_test(size=(140, 45)) as pilot:
+            await pilot.pause()
+            app.push_screen(PracticePicker("rhcsa"))
+            await pilot.pause()
+            lst = app.screen.query_one(PracticeList)
+            lst.focus()
+            await pilot.pause()
+            first = lst.get_option_at_index(0).value
+            second = lst.get_option_at_index(1).value
+            await pilot.press("enter")
+            await pilot.pause()
+            assert started == [[first]] and not lst.selected
+            await pilot.press("down", "space", "down", "enter")
+            await pilot.pause()
+            assert started[-1] == [second] and lst.selected == [second]
+
+    asyncio.run(run())
+
+
 def test_banner_fits_and_degrades():
     from autorelabel import banner
 

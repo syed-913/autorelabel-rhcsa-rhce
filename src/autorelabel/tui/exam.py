@@ -617,6 +617,13 @@ class ResultsScreen(Screen[None]):
 
 
 # --------------------------------------------------------------------------- Practice
+class PracticeList(SelectionList[str]):
+    """Space ticks a task; Enter starts the practice. SelectionList binds Enter to the same toggle
+    as space, which left Enter undoing a tick and never starting."""
+
+    BINDINGS = [Binding("enter", "screen.start", "Start", show=False)]
+
+
 class PracticePicker(Screen[None]):
     BINDINGS = [("escape", "back", "Back"), ("enter", "start", "Start")]
 
@@ -628,7 +635,7 @@ class PracticePicker(Screen[None]):
         from ..bank import load_bank
 
         bank = load_bank(self.exam)
-        yield Static(f"{self.exam.upper()} practice: choose tasks (space to select, Enter to start)",
+        yield Static(f"{self.exam.upper()} practice: choose tasks (space to tick several, Enter to start)",
                      classes="title")
         yield Static("Untimed. You can check your work at any time (k) and after a reboot (r), and read the "
                      "solution (v).", classes="muted")
@@ -641,7 +648,7 @@ class PracticePicker(Screen[None]):
             name, color = BADGE[t.difficulty]
             label.append(f"  {name}", style=color)
             options.append((label, t.id))
-        yield SelectionList[str](*options, id="practice-list")
+        yield PracticeList(*options, id="practice-list")
         with Horizontal(id="form-buttons"):
             yield Button("Start practice", id="start", variant="primary")
             yield Button("Back", id="back")
@@ -654,9 +661,13 @@ class PracticePicker(Screen[None]):
             self.app.pop_screen()
 
     def action_start(self) -> None:
-        chosen = list(self.query_one(SelectionList).selected)
+        """The ticked tasks, or with none ticked, the highlighted one."""
+        lst = self.query_one(PracticeList)
+        chosen = list(lst.selected)
+        if not chosen and lst.highlighted is not None:
+            chosen = [lst.get_option_at_index(lst.highlighted).value]
         if not chosen:
-            self.notify("Select at least one task (space).", severity="warning")
+            self.notify("Tick at least one task (space).", severity="warning")
             return
         if len(chosen) > 10:
             self.notify("Pick at most 10 tasks per practice session.", severity="warning")
