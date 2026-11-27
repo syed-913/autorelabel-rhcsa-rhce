@@ -38,6 +38,9 @@ READ_SIZE = 64 * 1024
 MAX_PENDING = 1 << 20    # typed or pasted input waiting for the program to read it
 ALT_ON = re.compile(rb"\x1b\[\?(?:1049|1047|47)h")
 ALT_OFF = re.compile(rb"\x1b\[\?(?:1049|1047|47)l")
+# Questions a program asks the terminal (where is the cursor, what are you). Replayed to a new tab,
+# its terminal would answer them all over again, as if typed on the command line.
+QUERIES = re.compile(rb"\x1b\[[?>=]?[0-9;]*[cn]")
 
 
 @dataclass
@@ -167,8 +170,8 @@ class Terminal:
         else:
             tail = bytes(self.scrollback[-(256 * 1024):])
             cut = tail.find(b"\n") + 1 if len(self.scrollback) > len(tail) else 0
-            if tail[cut:]:
-                send(tail[cut:])
+            if replay := QUERIES.sub(b"", tail[cut:]):
+                send(replay)
         return client
 
     def detach(self, client: Client) -> None:

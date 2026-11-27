@@ -31,6 +31,7 @@ import contextlib
 import hmac
 import json
 import logging
+import re
 import secrets
 import time
 from collections.abc import Callable
@@ -82,6 +83,8 @@ CODE_ALPHABET = "ABCDEFGHJKMNPQRSTVWXYZ23456789"    # no 0/O, 1/I/L, U: easy to 
 CODE_TRIES = 3
 AUTH_TIMEOUT = 2.0
 MAX_TERMINALS = 12
+CONSOLE_SIZE_DELAY = 0.4       # quiet seconds after a console tile's last resize before the node is told
+CURSOR_REPORT = re.compile(rb"\x1b\[\d+;\d+R")      # a terminal's answer to "where is the cursor?"
 NOT_STARTED = {S.NEW, S.PROVISIONING, S.PROVISION_FAILED, S.READY}
 
 
@@ -122,6 +125,8 @@ class Desk:
         self.ready = asyncio.Event()
         self._n = 0
         self._jobs: set[asyncio.Task] = set()       # grading started here, kept until done
+        self._sizing: dict[str, asyncio.TimerHandle] = {}     # console tiles still being resized
+        self._sizers: set[asyncio.Task] = set()
 
     # --- addresses ---------------------------------------------------------------------------------
     @property
@@ -146,6 +151,8 @@ class Desk:
                 await self.stop.wait()
             finally:
                 watcher.cancel()
+                for handle in self._sizing.values():
+                    handle.cancel()
                 for t in list(self.terminals.values()):
                     t.close()
 
@@ -244,6 +251,11 @@ class Desk:
         try:
             async for message in ws:
                 if isinstance(message, bytes):
+                    # The console size hook asks the terminal where the cursor is; with the console
+                    # open in two windows both answer, and the second answer would land on the
+                    # command line. The first window's answer is enough.
+                    if len(term.clients) > 1 and client is not term.clients[0] and CURSOR_REPORT.fullmatch(message):
+                        continue
                     result = term.write(message)
                     if result != "ok":
                         await ws.send(json.dumps({"ended": True} if result == "ended" else
@@ -258,6 +270,8 @@ class Desk:
                     if "resize" in control:
                         cols, rows = control["resize"]
                         term.resize(int(cols), int(rows))
+                        if term.kind == "console":
+                            self._console_resized(term)
                 except (ValueError, TypeError, OverflowError):   # Infinity, NaN, wrong shapes: ignored
                     continue
         except (ConnectionClosed, TypeError, ValueError):
@@ -305,6 +319,31 @@ class Desk:
         argv = ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "LogLevel=ERROR",
                 f"{user}@{vm.lab_ip}"]
         return argv, f"SSH to {node} as {user}."
+
+    def _console_resized(self, term: Terminal) -> None:
+        """A serial console can't pass on its window's size, so tell the node, once the resizing
+        stops. Every tile (re)opening sends its size, which also covers a node that rebooted."""
+        assert self.loop is not None
+        if (old := self._sizing.pop(term.id, None)) is not None:
+            old.cancel()
+        self._sizing[term.id] = self.loop.call_later(CONSOLE_SIZE_DELAY, self._size_console, term)
+
+    def _size_console(self, term: Terminal) -> None:
+        self._sizing.pop(term.id, None)
+        if term.exited or self._read_only():
+            return
+
+        def tell() -> None:
+            try:
+                sess = self.load_session()
+                if sess is not None:
+                    self._engine().size_console(sess, term.node, term.cols, term.rows)
+            except Exception as exc:      # a node that's down or locked out: the login hook still asks
+                _log.info("could not set the console size on %s: %s", term.node, exc)
+
+        job = asyncio.ensure_future(asyncio.to_thread(tell))
+        self._sizers.add(job)
+        job.add_done_callback(self._sizers.discard)
 
     def _read_only(self) -> bool:
         return self.snapshot.get("state") != S.IN_PROGRESS

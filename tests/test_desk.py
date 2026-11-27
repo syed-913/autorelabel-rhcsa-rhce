@@ -31,6 +31,7 @@ class FakeEngine:
                              lab_ip="172.25.250.11", domain="lab-node1")
         self._lab = SimpleNamespace(vms=[vm], hv=SimpleNamespace(state=lambda domain: ("running", "")))
         self.calls: list[str] = []
+        self.sized: list[tuple[str, int, int]] = []
 
     def rendered(self, sess):
         return [{"number": 1, "title": "Task one", "prompt": "Do **this**, with `code`.", "difficulty": "easy",
@@ -41,6 +42,10 @@ class FakeEngine:
 
     def console_login(self, sess, node):
         return "Log in as root, password: redhat"
+
+    def size_console(self, sess, node, cols, rows):
+        self.sized.append((node, cols, rows))
+        return True
 
     def proctor_alive(self, sess):
         return True
@@ -218,11 +223,11 @@ def test_silence_or_rubbish_first_is_shown_the_door(sess):
 
 
 # --- shells ---------------------------------------------------------------------------------------
-async def open_shell(desk: Desk, secret: str) -> str:
+async def open_shell(desk: Desk, secret: str, kind: str = "shell") -> str:
     async with ws(desk, "/ws/control") as c:
         await c.send(json.dumps({"secret": secret}))
         await c.recv()
-        await c.send(json.dumps({"do": "shell", "node": "node1"}))
+        await c.send(json.dumps({"do": kind, "node": "node1"}))
         opened = await until(c, lambda m: "opened" in m or "error" in m)
     assert "opened" in opened, opened
     return opened["opened"]["id"]
@@ -254,6 +259,47 @@ def test_a_shell_round_trip_and_its_reattach(sess):
             await read_until(again, b"autorelabel-42")
             await again.send(b"stty size\n")
             await read_until(again, b"40 120")
+    run(make_desk(sess), body)
+
+
+def test_a_console_tile_tells_the_node_its_size_once_resizing_stops(sess):
+    """A serial console can't pass on the window's size; the desk sets it on the node, once per
+    burst of resizes (dragging a window edge sends dozens). SSH shells pass it on themselves."""
+    async def body(desk):
+        secret = await sign_in(desk)
+        for kind in ("console", "shell"):
+            tid = await open_shell(desk, secret, kind)
+            async with ws(desk, f"/ws/term/{tid}") as term:
+                await term.send(json.dumps({"secret": secret}))
+                assert json.loads(await term.recv()) == {"ok": True}
+                for cols, rows in ((100, 30), (120, 40), (132, 45)):
+                    await term.send(json.dumps({"resize": [cols, rows]}))
+                await asyncio.sleep(1.2)
+        assert desk.engine.sized == [("node1", 132, 45)]
+    run(make_desk(sess), body)
+
+
+def test_with_a_console_in_two_windows_one_answer_reaches_it(sess):
+    """Both windows' terminals answer the login hook's "where is the cursor?"; a second answer
+    would land on the command line. What either window types still goes through."""
+    report = b"\x1b[45;132R"
+
+    async def body(desk):
+        secret = await sign_in(desk)
+        tid = await open_shell(desk, secret, "console")
+        got: list[bytes] = []
+        term = desk.terminals[tid]
+        write = term.write
+        term.write = lambda data: (got.append(bytes(data)), write(data))[1]
+        async with ws(desk, f"/ws/term/{tid}") as one, ws(desk, f"/ws/term/{tid}") as two:
+            for conn in (one, two):
+                await conn.send(json.dumps({"secret": secret}))
+                assert json.loads(await conn.recv()) == {"ok": True}
+            await one.send(report)
+            await two.send(report)
+            await two.send(b"x")
+            await asyncio.sleep(0.5)
+        assert got.count(report) == 1 and b"x" in got
     run(make_desk(sess), body)
 
 
@@ -346,6 +392,16 @@ def test_the_alternate_screen_is_tracked():
     sent: list[bytes] = []
     term.attach(sent.append)
     assert b"hello" in sent[0]
+
+
+def test_a_replay_leaves_out_the_questions_programs_asked_the_terminal():
+    """A new tab's terminal would answer them again, as typed input: the cursor position the
+    console hook asked for, or vim's "what terminal are you?"."""
+    term = Terminal("t", "local", "sh", ["/bin/sh"])
+    term._keep(b"login ok\x1b7\x1b[9999;9999H\x1b[6n\x1b8 prompt\x1b[>c\x1b[c\x1b[5n done\x1b[1;31mred")
+    sent: list[bytes] = []
+    term.attach(sent.append)
+    assert sent == [b"login ok\x1b7\x1b[9999;9999H\x1b8 prompt done\x1b[1;31mred"]
 
 
 # --- the vendored files ---------------------------------------------------------------------------
