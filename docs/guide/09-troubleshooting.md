@@ -36,6 +36,7 @@ The same check is on the home screen (**Doctor**, or press `d`). It never change
 | **I don't know node1's root password.** | It is in the instructions: press `i` on the exam screen, or run `./autorelabel exam tasks`. The console also prints it when you connect. Only node2's password is unknown in an RHCSA exam, on purpose. |
 | **SSH to node1 doesn't work at the start.** | Expected: node1 has no network until you configure it. Use the console (`c` on the exam screen, or `./autorelabel console node1`). |
 | **The console shows nothing.** | Press Enter. A serial console only prints when something writes to it. |
+| **A long command on the console runs over the prompt.** | The console learns its window's width when you log in on it, and in the Exam Desk whenever its tile changes size. If you resized your terminal after logging in on the console with `c`, log out and in again. |
 | **My computer crashed, rebooted or slept during an exam.** | Open `./autorelabel`. It notices and offers to resume. The time it was off isn't counted (unless you turned off *Forgive host downtime*). |
 | **A node hangs, or I powered it off.** | Select it on the exam screen, press `n`, and choose **Reset** or **Power on**. |
 | **I broke a node completely.** | Press `n` and choose **Reset to exam start**. All your work on that node is lost; your other nodes are not touched. |

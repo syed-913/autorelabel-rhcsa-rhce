@@ -6,8 +6,8 @@ Practice mode is for learning, not for testing yourself. You pick the tasks, the
 
 On the home screen choose **Practice RHCSA: pick tasks** (or **Practice RHCE**). The list shows every task in the bank, grouped by objective domain, with its difficulty.
 
-- Press **Space** to select or deselect a task.
-- Press **Enter** to start.
+- Press **Space** to tick or untick a task.
+- Press **Enter** to start with the ticked tasks. With none ticked, Enter starts the highlighted task.
 - You can pick up to 10 tasks per session.
 
 autorelabel then prepares the lab, as for an exam, and shows the instructions. Press **Start**, and the exam screen opens without a clock.

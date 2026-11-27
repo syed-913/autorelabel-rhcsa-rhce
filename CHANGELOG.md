@@ -11,6 +11,9 @@ Versions follow [semantic versioning](https://semver.org): a patch release (1.0.
 - **Growing a file system to exactly the size asked could lose a check.** `df` leaves out the space a file system keeps for itself, so two RHCSA tasks read a correct answer as too small:
   - *Extend a logical volume and its XFS file system*: XFS keeps a 64 MiB log inside the file system, so a logical volume grown to exactly the lower bound shows 64 MiB less in `df`. The check now allows for the log.
   - *Extend a logical volume with an ext4 file system*: an ext4 grown to exactly 700 MiB shows about 646 MiB in `df` (its journal and inode tables). The check now reads the size the file system records, from `tune2fs -l`.
+- **Enter didn't start a practice.** In the list of practice tasks, Enter undid the tick Space had made. Enter now starts the practice with the ticked tasks, or, with none ticked, with the highlighted one.
+- **A long command on a serial console ran over the prompt.** A serial console can't tell the node how wide the window showing it is, so the shell assumed 80 columns and drew the rest of a longer line over the start of the prompt. A login on the console now asks the terminal for its size, and the Exam Desk sets it again whenever a console's tile changes size, so the shell and full-screen programs like `vim` redraw to fit.
+- **No more login banner on the lab nodes.** Every login showed a note about `mgmt0` and the `vagrant` account. The exam's instructions already give those rules, and the real exam shows no such banner.
 
 ## 1.5.0 (2026-11-22)
 
