@@ -20,7 +20,7 @@ Many tasks draw random details, such as a user name, a port or a size. The sweep
 |---|---|---|
 | **Tasks** | 102 (2 practice-only) | 55 |
 | **Objective lines** | 62, each practised by 2 or more tasks | 57, each practised by 2 or more tasks |
-| **Accepted alternatives tested** | 39 | 14 |
+| **Accepted alternatives tested** | 41 | 14 |
 | **Classic mistakes tested** | 118 | 63 |
 | **Self-tested on libvirt/KVM** | 102 of 102 on their current files, RHEL 10.0, on 2026-11-22 | 55 of 55 on their current files, RHEL 10.0, on 2026-11-22 |
 | **Self-tested on VirtualBox** | 102 of 102 on their current files, RHEL 10.0, on 2026-11-22 | 55 of 55 on their current files, RHEL 10.0, on 2026-11-22 |
