@@ -29,6 +29,30 @@ LineFn = Callable[[str], None]
 BASELINE = "baseline"
 EXAM_START = "exam-start"
 SETUP_REPO = "/etc/yum.repos.d/zz-autorelabel-setup.repo"
+CONSOLE_HOOK = "/etc/profile.d/autorelabel-console.sh"
+# A serial console has no way to tell the guest how big the window showing it is, so the shell
+# assumes 80 columns, and a longer command line wraps back over the prompt. At each login on the
+# console this asks the terminal itself (move the cursor far down and right, ask where it is) and
+# sets the size. Inert anywhere else: SSH logins, scripts, the grader. The Exam Desk also sets the
+# size whenever its window changes (Engine.size_console).
+CONSOLE_HOOK_SH = r"""# autorelabel: let a login on the serial console know the size of the window showing it.
+if [ -n "$BASH_VERSION" ] && [ -t 0 ] && [ -t 1 ]; then
+    case "$(tty)" in
+    /dev/ttyS*)
+        __ar_tty=$(stty -g)
+        stty -echo -icanon min 0 time 10
+        printf '\0337\033[9999;9999H\033[6n\0338'
+        IFS='[;' read -r -d R -t 1 __ar_esc __ar_rows __ar_cols
+        stty "$__ar_tty"
+        case "$__ar_rows:$__ar_cols" in
+        *[!0-9:]* | :* | *:) ;;
+        *) stty rows "$__ar_rows" cols "$__ar_cols" ;;
+        esac
+        unset __ar_tty __ar_esc __ar_rows __ar_cols
+        ;;
+    esac
+fi
+"""
 CODE_SERVER_LOCAL_PORT = 18080        # first port tried for the code-server tunnel on this host
 
 
@@ -183,8 +207,9 @@ class Engine:
         if sess.exam == "rhce":
             sess.accounts = lab.accounts()
             sess.save()
-        # Prelude: passwords, a reminder banner, the Red Hat signing keys, temporary setup
-        # repository (the RHCE control node keeps the lab.repo it was built with).
+        # Prelude: passwords, the Red Hat signing keys, the console size hook, temporary setup
+        # repository (the RHCE control node keeps the lab.repo it was built with). No login banner:
+        # the exam's rules say to leave mgmt0 and the grading account alone, as the real exam's do.
         # The keys are imported with rpm because dnf's own key parsing (libdnf keysFromFd on
         # RHEL 10.0) intermittently fails with "Parsing armored OpenPGP packet(s) failed", which
         # broke setups and would break a candidate's first `dnf install` the same way.
@@ -192,9 +217,7 @@ class Engine:
             script = (
                 f"echo 'root:{sess.passwords[n]}' | chpasswd\n"
                 "rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release\n"
-                f"cat > /etc/motd <<'EOF'\n"
-                f"autorelabel {sess.exam.upper()} lab node. Do not modify the 'mgmt0' interface or the\n"
-                f"'vagrant' account: they are how your work gets graded.\nEOF\n"
+                f"cat > {CONSOLE_HOOK} <<'EOF'\n{CONSOLE_HOOK_SH}EOF\n"
             )
             if lab.vm(n).spec.role != "control":
                 script += f"cat > {SETUP_REPO} <<'EOF'\n{repo}EOF\n"
@@ -418,6 +441,14 @@ class Engine:
                 "console_only": s.task.console_only,
             })
         return out
+
+    def size_console(self, sess: S.Session, node: str, cols: int, rows: int) -> bool:
+        """Give a node's serial console the size of the window showing it. The kernel tells the
+        program on the console (SIGWINCH), so the shell and full-screen programs redraw at once."""
+        cols, rows = max(2, min(int(cols), 500)), max(2, min(int(rows), 300))
+        lab = self.lab(sess.exam)
+        res = remote.run_script(lab.target(node), f"stty -F /dev/ttyS0 rows {rows} cols {cols}\n", timeout=20)
+        return res.ok
 
     def console_login(self, sess: S.Session, node: str, markdown: bool = False) -> str:
         """How to log in on a node's console, as the exam instructions give it."""
