@@ -116,7 +116,7 @@ code {font-family: var(--mono); font-size: .92em; background: var(--surface); bo
 .stage.two {grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)}
 .stage-note {display: grid; place-content: center; text-align: center; color: var(--muted); padding: 24px}
 .stage-note h2 {font-family: var(--display); font-weight: 650; color: var(--text); margin: 0 0 6px}
-.tile {display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; background: var(--term-bg); border: 1px solid var(--term-rule);
+.tile {display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); min-height: 0; background: var(--term-bg); border: 1px solid var(--term-rule);
        border-radius: 2px; color: var(--term-text)}
 .tile.focus {border-color: var(--link)}
 .tile-head {display: flex; gap: 10px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--term-rule); font: 12px/1.4 var(--mono)}
@@ -125,7 +125,7 @@ code {font-family: var(--mono); font-size: .92em; background: var(--surface); bo
 .tile-head .state {white-space: nowrap}
 .tile-head .x {font: inherit; color: var(--term-muted); background: none; border: 0; cursor: pointer; padding: 0 4px}
 .tile-head .x:hover {color: var(--term-text)}
-.tile-body {position: relative; min-height: 0; padding: 6px 4px 4px 10px}
+.tile-body {position: relative; min-height: 0; min-width: 0; overflow: hidden; padding: 6px 4px 4px 10px}   /* never wider than the tile: the fit reads this width */
 .tile-body .xterm {height: 100%}
 .tile-strip {font: 12px/1.4 var(--mono); padding: 6px 10px; border-top: 1px solid var(--term-rule); color: #FFD15C}
 .tile.dim .tile-body {opacity: .45}

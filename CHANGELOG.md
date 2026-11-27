@@ -13,6 +13,7 @@ Versions follow [semantic versioning](https://semver.org): a patch release (1.0.
   - *Extend a logical volume with an ext4 file system*: an ext4 grown to exactly 700 MiB shows about 646 MiB in `df` (its journal and inode tables). The check now reads the size the file system records, from `tune2fs -l`.
 - **Enter didn't start a practice.** In the list of practice tasks, Enter undid the tick Space had made. Enter now starts the practice with the ticked tasks, or, with none ticked, with the highlighted one.
 - **A long command on a serial console ran over the prompt.** A serial console can't tell the node how wide the window showing it is, so the shell assumed 80 columns and drew the rest of a longer line over the start of the prompt. A login on the console now asks the terminal for its size, and the Exam Desk sets it again whenever a console's tile changes size, so the shell and full-screen programs like `vim` redraw to fit.
+- **In the Exam Desk's split view, a console could be wider than its tile**, with its right edge cut off, after it had been shown at full width. A tile's terminal now always fits the tile.
 - **No more login banner on the lab nodes.** Every login showed a note about `mgmt0` and the `vagrant` account. The exam's instructions already give those rules, and the real exam shows no such banner.
 
 ## 1.5.0 (2026-11-22)
